@@ -72,10 +72,11 @@ var _last_report: Dictionary = {}
 var _turn_battle: Dictionary = {}
 var _news_pending := false
 ## The expedition's stages fought so far (KingdomState._advance_expedition), for their replays
-## (M14i): each stage plays by itself after the important report of the turn it was fought, and
+## (M14i): each stage plays by itself at the start of the next turn, before its battle, and
 ## the expedition window can replay any of them while the expedition is out.
 var _expedition_stages: Array[Dictionary] = []
 var _stage_replay_pending := false
+var _economy_refresh_queued := false
 
 
 func _ready() -> void:
@@ -118,9 +119,9 @@ func _ready() -> void:
 	KingdomState.shown_color = state.player_color
 	board_view.team_color = state.player_color
 	state.hand.changed.connect(_rebuild_piece_cards)
-	state.stockpile.changed.connect(_refresh_economy)
-	state.army.changed.connect(_refresh_economy)
-	state.diplomacy.changed.connect(_refresh_economy)
+	state.stockpile.changed.connect(_queue_economy_refresh)
+	state.army.changed.connect(_queue_economy_refresh)
+	state.diplomacy.changed.connect(_queue_economy_refresh)
 	state.board.resized.connect(func(_shift: Vector2i) -> void:
 		board_view.queue_redraw()
 		_focus_camera())
@@ -137,9 +138,9 @@ func _ready() -> void:
 
 	build_panel.setup(_buildings, _resource_types)
 	build_panel.build_window_requested.connect(_open_build_window)
-	state.castle_changed.connect(_refresh_economy)
-	state.generals.changed.connect(_refresh_economy)
-	state.advisors.changed.connect(_refresh_economy)
+	state.castle_changed.connect(_queue_economy_refresh)
+	state.generals.changed.connect(_queue_economy_refresh)
+	state.advisors.changed.connect(_queue_economy_refresh)
 	army_panel.setup(units, _resource_types)
 	army_panel.recruit_window_requested.connect(_open_recruit_window)
 	army_panel.disband_requested.connect(_on_disband_requested)
@@ -366,19 +367,29 @@ func _on_end_turn_pressed() -> void:
 	var lines: Array[String] = ["Lượt %d bắt đầu. Xem bảng thông báo bên trái." % state.turn]
 	_pending_victory = report.victory
 	if report.has("pending_invasion"):
-		var invasion: Dictionary = report.pending_invasion
-		lines.append("%s kéo quân xâm lược!" % _clan_name(invasion.clan_id))
-		_play_invasion(invasion.clan_id, invasion.simulator)
+		lines.append("%s kéo quân xâm lược!" % _clan_name(report.pending_invasion.clan_id))
 	elif report.has("pending_raid"):
 		lines.append("Quân cướp tấn công!")
-		_play_raid(report.pending_raid)
 	if not report.events.is_empty():
 		lines.append("Có %d sự kiện mới." % report.events.size())
 	placement_status.text = "\n".join(lines)
 	# With a battle at the start of the turn, the autosave, the events and the end screen wait until it is over.
 	if not report.has("pending_invasion") and not report.has("pending_raid"):
 		_autosave()
-		_continue_turn_start()
+	# The expedition stage was fought during the night (its squads are already home): its replay
+	# plays first, then the battle that came at dawn, then the rest of the turn's start.
+	var begin := func() -> void:
+		if report.has("pending_invasion"):
+			_play_invasion(report.pending_invasion.clan_id, report.pending_invasion.simulator)
+		elif report.has("pending_raid"):
+			_play_raid(report.pending_raid)
+		else:
+			_continue_turn_start()
+	if _stage_replay_pending:
+		_stage_replay_pending = false
+		_play_expedition(_expedition_stages.size() - 1, begin)
+	else:
+		begin.call()
 
 
 ## Plays a battle on the battle screen, then calls `on_finished` with its record.
@@ -622,10 +633,6 @@ func _continue_turn_start() -> void:
 			report_window.open(news)
 			report_window.closed.connect(_continue_turn_start)
 			return
-	if _stage_replay_pending:
-		_stage_replay_pending = false
-		_play_expedition(_expedition_stages.size() - 1, _continue_turn_start)
-		return
 	if state.events.current_event() == null:
 		_show_end_game_if_any()
 		return
@@ -878,6 +885,19 @@ func _build_resource_labels() -> void:
 
 ## Resource bar (stock, net income per turn and its breakdown) and the army tab depend on stock,
 ## army, territory and trade agreements.
+## Signals from the state (a battle's outcome changes every squad, each one a signal) ask for one
+## refresh at the end of the frame instead of one each.
+func _queue_economy_refresh() -> void:
+	if not _economy_refresh_queued:
+		_economy_refresh_queued = true
+		_flush_economy_refresh.call_deferred()
+
+
+func _flush_economy_refresh() -> void:
+	_economy_refresh_queued = false
+	_refresh_economy()
+
+
 func _refresh_economy() -> void:
 	_refresh_notices()
 	var net := state.get_net_income()
