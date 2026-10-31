@@ -183,7 +183,7 @@ Màn hình ngang, chia theo bề ngang:
 
 **Sĩ khí:** mỗi loại lính có mức sĩ khí riêng; lính càng tốt sĩ khí càng cao (như Shogun 2). Sĩ khí giảm mỗi khi đơn vị mất thêm 25% quân, và khi tướng chết (khi có tướng). Về 0 thì đơn vị **vỡ**.
 
-**Kết thúc trận:** phe có toàn bộ đơn vị bị vỡ hoặc chết hết thì thua. Hết giờ thì phe còn tỉ lệ quân cao hơn thắng (bằng nhau thì phe phòng thủ thắng).
+**Kết thúc trận:** phe có toàn bộ đơn vị bị vỡ hoặc chết hết thì thua. Hết giờ (120 giây) mà bên tấn công chưa thắng thì **bên tấn công thua** (như Total War): ta đánh gia tộc / thảo phạt mà hết giờ là thất bại; bị cướp / xâm lược mà cầm cự đủ 120 giây là thắng. Cả hai phe cùng vỡ một lúc thì phe còn tỉ lệ quân cao hơn thắng (bằng nhau thì phe phòng thủ thắng).
 
 **Thiệt hại khi thua** (cả thua thường lẫn rút lui):
 - Đơn vị **đã vỡ** (hết quân hoặc hết sĩ khí): **mất sạch**.
