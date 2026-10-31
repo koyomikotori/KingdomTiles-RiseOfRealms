@@ -144,11 +144,19 @@ func _refresh() -> void:
 	_fill_equipment()
 
 
+## "Đang thảo phạt" or the wound under the role ("" when ready).
+func _status_text(officer: Officer) -> String:
+	if officer.away:
+		return "\nĐang đi thảo phạt"
+	return "" if officer.wounded_turns <= 0 else "\nBị thương, còn %d lượt" % officer.wounded_turns
+
+
 func _fill_general(general: General) -> void:
 	var generals := _state.generals
 	var role := "Tổng tướng" if general == generals.commander else "Dự bị"
-	_role.text = role + ("" if general.is_ready() else "\nBị thương, còn %d lượt" % general.wounded_turns)
-	_commander_button.disabled = general == generals.commander
+	_role.text = role + _status_text(general)
+	_commander_button.disabled = general == generals.commander or general.away
+	_dismiss_button.disabled = general.away
 	_stat_row("Võ lực", general.might, Generals.STAT_MAX, generals.can_spend_point(general, &"might"),
 			generals.spend_point.bind(general, &"might"), general.item_bonus(&"might"))
 	_stat_row("Thống suất", general.command, Generals.STAT_MAX, generals.can_spend_point(general, &"command"),
@@ -168,7 +176,8 @@ func _fill_general(general: General) -> void:
 func _fill_advisor(advisor: Advisor) -> void:
 	var advisors := _state.advisors
 	var post := Advisors.POST_NAMES[advisor.post] if advisor.post != Advisor.NO_POST else "Chưa giữ chức"
-	_role.text = post + ("" if advisor.is_ready() else "\nBị thương, còn %d lượt" % advisor.wounded_turns)
+	_role.text = post + _status_text(advisor)
+	_dismiss_button.disabled = advisor.away
 	for stat in Advisors.STAT_IDS:
 		_stat_row(Advisors.STAT_NAMES[stat], advisor.get_stat(stat), Advisors.STAT_MAX,
 				advisors.can_spend_point(advisor, stat), advisors.spend_point.bind(advisor, stat), advisor.item_bonus(stat))

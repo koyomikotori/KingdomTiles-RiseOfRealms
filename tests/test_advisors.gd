@@ -198,7 +198,7 @@ func test_stratagems_fire_at_the_start() -> void:
 			continue
 		worked += 1
 		check_eq(used[0].stratagem, &"fire_attack", "Event names the stratagem")
-		check(is_equal_approx(enemy.units[0].soldiers, 20.0 * (1.0 - 0.1)), "Largest unit lost 5% + 0.5% × 10")
+		check(is_equal_approx(enemy.units[0].soldiers, 20.0 * (1.0 - 0.085)), "Largest unit lost 4% + 0.45% × 10")
 		check_eq(enemy.units[1].soldiers, 10.0, "Other units untouched")
 	# 25% + 30% = 55%.
 	check(worked > 12 and worked < 32, "Works about half the time (%d/40)" % worked)

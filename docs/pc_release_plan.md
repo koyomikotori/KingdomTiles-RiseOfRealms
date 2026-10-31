@@ -6,8 +6,8 @@ Danh sách người chơi (chủ dự án) đưa ra sau M14e (2026-10-30). Làm 
 |---|---|---|
 | M14f | Đặc vụ: mỗi gia tộc 1 đặc vụ, tỉ lệ lộ +1%/lượt | Xong (đã merge) |
 | M14g | Bảng báo cáo quan trọng + nút mũi tên xem tướng/mưu sĩ | Xong (đã merge) |
-| M14h | Chọn độ khó ván mới + tướng/mưu sĩ của gia tộc địch | Xong, chờ chơi thử |
-| M14i | Thảo phạt đạo tặc (vùng đỏ, chuyến thảo phạt, màn phát lại kiểu Dungeon Village) | Chưa làm |
+| M14h | Chọn độ khó ván mới + tướng/mưu sĩ của gia tộc địch | Xong (đã merge) |
+| M14i | Thảo phạt đạo tặc (vùng đỏ, chuyến thảo phạt, màn phát lại kiểu Dungeon Village) | Xong, chờ chơi thử |
 | M14j | Cutscene mờ sau menu chính (kiểu Kairosoft) + nhạc nền mới | Chưa làm |
 | M14c | Build Windows, phát hành bản máy tính | Cuối cùng |
 
@@ -90,15 +90,7 @@ Tham khảo mini game thảo phạt trong Dungeon Village (Kairosoft).
 - Mưu sĩ đang giữ chức (vd. Ngoại giao) đi thì **tạm mất tác dụng chức** cho tới khi về.
 - **Không chiêu mộ người mới thay chỗ, không sa thải** tướng/mưu sĩ đang đi.
 
-Câu hỏi cần chốt:
-- Tần suất vùng đỏ xuất hiện, sớm nhất từ lượt nào, mấy vùng cùng lúc?
-- Vùng đỏ to tối đa bao nhiêu? Ô trong vùng còn đặt đất / xây được không?
-- Bỏ mặc lâu thì sao (cướp thêm, trừ tài nguyên…)?
-- Cả đội thua (mất hết lính) thì sao: tướng bị thương / chết, vùng đỏ còn nguyên?
-- Thảo phạt có tốn chi phí (lương thực đi đường) không?
-- Mỗi lượt đi bao nhiêu ải: hết cả chuyến trong 1 lượt hay mỗi lượt 1 ải?
-- Không xem màn phát lại thì có nút bỏ qua / tự giải quyết không?
-- Lính đi thảo phạt có được tính vào chỗ chứa quân và phí nuôi khi vắng nhà không?
+Đã chốt (luật đầy đủ ở GDD §15): từ lượt 8, 10%/lượt, một vùng; lan tới khi chạm thành chính; ô bị khóa hẳn; bỏ mặc chỉ khóa công trình; có tướng nổi loạn cuối ải với tỉ lệ tăng dần; thua như thua trận thường; miễn phí; mỗi lượt một ải; thưởng theo số ải và độ lớn vùng.
 
 ---
 

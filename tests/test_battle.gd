@@ -179,10 +179,16 @@ func test_retreat_ends_battle_as_a_loss() -> void:
 	check_eq(simulator.record.sides[BattleRecord.DEFENDER].alive_total(), soldiers_after, "No fighting after the end")
 
 
-func test_time_limit_tie_goes_to_defender() -> void:
+func test_time_limit_goes_to_defender() -> void:
 	var record := BattleSimulator.simulate(_side([[_wall(), 10]]), _side([[_wall(), 10]]), 9)
 	check_eq([record.winner, record.end_reason], [BattleRecord.DEFENDER, BattleRecord.EndReason.TIME_LIMIT], "Defender holds")
 	check(absf(record.duration - BattleSimulator.TIME_LIMIT) < 0.01, "Lasted the full time")
+	# The attacker has more of its soldiers left, but has not won in time: it still loses.
+	var defender := _side([[_wall(), 10]])
+	defender.units[0].soldiers = 4.0
+	record = BattleSimulator.simulate(_side([[_wall(), 10]]), defender, 9)
+	check_eq([record.winner, record.end_reason], [BattleRecord.DEFENDER, BattleRecord.EndReason.TIME_LIMIT],
+			"An attacker that runs out of time loses even when ahead")
 
 
 func test_kills_never_exceed_enemy_soldiers() -> void:

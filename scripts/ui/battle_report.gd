@@ -103,7 +103,7 @@ static func _end_reason_text(reason: BattleRecord.EndReason) -> String:
 			return "bị vỡ hoặc tiêu diệt toàn bộ"
 		BattleRecord.EndReason.RETREAT:
 			return "rút lui"
-	return "rút lui khi hết giờ vì còn ít quân hơn"
+	return "không hạ được địch trước khi hết giờ"
 
 
 func close() -> void:

@@ -71,6 +71,11 @@ var _last_report: Dictionary = {}
 ## still has to be shown this turn (M14g).
 var _turn_battle: Dictionary = {}
 var _news_pending := false
+## The expedition's stages fought so far (KingdomState._advance_expedition), for their replays
+## (M14i): each stage plays by itself after the important report of the turn it was fought, and
+## the expedition window can replay any of them while the expedition is out.
+var _expedition_stages: Array[Dictionary] = []
+var _stage_replay_pending := false
 
 
 func _ready() -> void:
@@ -123,6 +128,9 @@ func _ready() -> void:
 	_map_life = MapLifeView.new()
 	board_view.add_child(_map_life)
 	_map_life.setup(state)
+	var uprising_view := UprisingView.new()
+	board_view.add_child(uprising_view)
+	uprising_view.setup(state)
 	_apply_settings()
 	GameSettings.notifier.changed.connect(_apply_settings)
 	Sfx.music(&"kingdom")
@@ -195,6 +203,8 @@ func _on_cell_clicked(coord: Vector2i) -> void:
 		_place_selected_piece(coord)
 	elif _selected_building != NO_BUILDING:
 		_build_selected(coord)
+	elif state.board.get_cell(coord).occupied:
+		_open_expedition()
 	elif state.board.get_cell(coord).has_building():
 		_open_building(state.board.get_cell(coord).building_origin)
 	else:
@@ -347,6 +357,11 @@ func _on_end_turn_pressed() -> void:
 	_last_report = report
 	_turn_battle = {}
 	_news_pending = true
+	_stage_replay_pending = not report.expedition.is_empty()
+	if _stage_replay_pending:
+		if report.expedition.stage == 0:
+			_expedition_stages.clear()
+		_expedition_stages.append(report.expedition)
 	_refresh_notices()
 	var lines: Array[String] = ["Lượt %d bắt đầu. Xem bảng thông báo bên trái." % state.turn]
 	_pending_victory = report.victory
@@ -541,6 +556,33 @@ func _amount_text(resource_id: StringName, amount: int) -> String:
 	return UiFormat.amounts(amounts, _resource_types)
 
 
+## The uprising zone was tapped (GDD §15 M14i): send an expedition, or follow the one on its way.
+func _open_expedition() -> void:
+	_clear_selection()
+	var window := ExpeditionWindow.new()
+	$UI.add_child(window)
+	window.open(state, _expedition_stages.size() if state.expedition != null else 0)
+	window.replay_requested.connect(func(index: int) -> void: _play_expedition(index, func() -> void: pass))
+	window.closed.connect(_refresh_economy)
+
+
+## Replays the expedition's stage at `index` in _expedition_stages, then calls `after`.
+func _play_expedition(index: int, after: Callable) -> void:
+	if index < 0 or index >= _expedition_stages.size():
+		after.call()
+		return
+	_clear_selection()
+	var stage := _expedition_stages[index]
+	var screen := ExpeditionScreen.new()
+	$UI.add_child(screen)
+	screen.open(stage, stage.stages)
+	_map_life.ambient = false
+	screen.closed.connect(func() -> void:
+		_map_life.ambient = true
+		_refresh_economy()
+		after.call())
+
+
 ## The Sở cảnh sát's agents tab ("Đặc vụ" in the Tướng sĩ tab).
 func _open_agents() -> void:
 	for cell in state.board.get_all_cells():
@@ -580,6 +622,10 @@ func _continue_turn_start() -> void:
 			report_window.open(news)
 			report_window.closed.connect(_continue_turn_start)
 			return
+	if _stage_replay_pending:
+		_stage_replay_pending = false
+		_play_expedition(_expedition_stages.size() - 1, _continue_turn_start)
+		return
 	if state.events.current_event() == null:
 		_show_end_game_if_any()
 		return

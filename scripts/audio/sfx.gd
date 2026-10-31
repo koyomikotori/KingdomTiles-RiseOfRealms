@@ -16,7 +16,7 @@ const EFFECTS: Array[StringName] = [&"click", &"open", &"error", &"place_land", 
 		&"hammer", &"battle_start", &"bow", &"crossbow", &"gun", &"cannon", &"charge", &"clash_1", &"clash_2",
 		&"clash_3", &"horn", &"general_fallen", &"stratagem"]
 ## Looping music, and the short pieces played once (`sting`).
-const MUSIC: Array[StringName] = [&"menu", &"kingdom", &"battle"]
+const MUSIC: Array[StringName] = [&"menu", &"kingdom", &"battle", &"expedition"]
 const STINGS: Array[StringName] = [&"victory", &"defeat"]
 
 

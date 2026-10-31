@@ -183,7 +183,7 @@ Màn hình ngang, chia theo bề ngang:
 
 **Sĩ khí:** mỗi loại lính có mức sĩ khí riêng; lính càng tốt sĩ khí càng cao (như Shogun 2). Sĩ khí giảm mỗi khi đơn vị mất thêm 25% quân, và khi tướng chết (khi có tướng). Về 0 thì đơn vị **vỡ**.
 
-**Kết thúc trận:** phe có toàn bộ đơn vị bị vỡ hoặc chết hết thì thua. Hết giờ thì phe còn tỉ lệ quân cao hơn thắng (bằng nhau thì phe phòng thủ thắng).
+**Kết thúc trận:** phe có toàn bộ đơn vị bị vỡ hoặc chết hết thì thua. Hết giờ (120 giây) mà bên tấn công chưa thắng thì **bên tấn công thua** (như Total War): ta đánh gia tộc / thảo phạt mà hết giờ là thất bại; bị cướp / xâm lược mà cầm cự đủ 120 giây là thắng. Cả hai phe cùng vỡ một lúc thì phe còn tỉ lệ quân cao hơn thắng (bằng nhau thì phe phòng thủ thắng).
 
 **Thiệt hại khi thua** (cả thua thường lẫn rút lui):
 - Đơn vị **đã vỡ** (hết quân hoặc hết sĩ khí): **mất sạch**.
@@ -431,7 +431,7 @@ Phần cộng và phần giảm của Nội chính làm tròn tới số nguyên
 
 | Mưu kế | Hiệu ứng |
 |---|---|
-| Hỏa công | Đơn vị địch đông nhất mất 5% + 0,5% × ML lính |
+| Hỏa công | Đơn vị địch đông nhất mất 4% + 0,45% × ML lính (giảm ở M14i) |
 | Mưa tên | Mọi đơn vị địch mất 2% + 0,3% × ML lính |
 | Trống trận | Toàn quân mình +1 + 0,2 × ML sĩ khí |
 | Phục binh | Toàn quân địch −1 − 0,2 × ML sĩ khí |
@@ -501,6 +501,8 @@ Màn hình trận hiện dòng chữ cho mỗi mưu kế thành công (ví dụ 
 | Đao thuẫn vệ binh tinh nhuệ | 20 | 11/15/13/5/13 | 7 Lương, 3 Gỗ, 3 Khoáng | 3 Lương |
 | Pháo binh nhẹ | 8 | 2/2/2/0/6, 1 phát 25 trúng mọi hàng | 4 Lương, 4 Gỗ cứng, 3 Khoáng | 2 Lương |
 | Pháo binh nặng | 8 | 2/3/3/0/7, 1 phát 40 trúng mọi hàng | 6 Lương, 6 Gỗ cứng, 5 Khoáng | 3 Lương |
+
+M14i giảm sát thương pháo ~15%: sát thương mỗi lính pháo nhẹ 5 → 4,25, pháo nặng 7 → 6.
 | Lính hỏa mai tinh nhuệ | 15 | 10/9/6/4/11, 1 phát 14 rồi cận chiến | 6 Lương, 2 Gỗ cứng, 4 Khoáng | 3 Lương |
 
 Save cũ: đơn vị Kiếm sĩ / Thương binh / Cung thủ trở thành bậc nông dân (giữ nguyên chỉ số); Doanh trại đã có là cấp 1.
@@ -944,6 +946,17 @@ Bảng thông tin ô đất chuyển xuống đáy cột này.
 - **Huyền thoại** mở cho các ván sau khi thắng (thống nhất) một ván Bình thường, Khó hoặc Huyền thoại (nhớ theo máy).
 - **Tướng và mưu sĩ của gia tộc**, theo quân lực hiện tại của gia tộc (không tính hệ số độ khó): **yếu** (dưới 150 lính) không có ai ra trận; **trung bình** (150–399) có **một tướng hoặc một mưu sĩ** 1–2 sao (mỗi gia tộc luôn cùng một loại); **mạnh** (từ 400) có **cả tướng lẫn mưu sĩ 3 sao**. Huyền thoại: trung bình +1 sao, mạnh +2 sao. Không có trang bị, không có đặc tính. Gia tộc lớn lên thì được người mới sao cao hơn; bị đánh yếu đi thì tạm không cho họ ra trận.
 - Họ ra trận như của ta: tướng có đội cận vệ và cộng chỉ số cho quân gia tộc (không cho quân được gửi sang giúp), đội cận vệ tan thì cả quân mất nhuệ khí; mưu sĩ dùng mưu kế đầu trận. Tướng địch ngã ngựa: **30% tử trận** (gia tộc có tướng mới sau 5 lượt), không thì bị thương 3 lượt; mưu sĩ địch thua trận có 50% bị thương 3 lượt. Người bị thương ở nhà. Bảng kết quả trận ghi số phận của họ; bảng gia tộc trên bản đồ ghi tên và sao của họ.
+
+**Thảo phạt đạo tặc (M14i, đã chốt):**
+- **Vùng nổi loạn:** từ lượt 8, khi chưa có vùng nào, mỗi lượt có **10%** xuất hiện một vùng **3×3** trên đất của vương quốc, chạm rìa lãnh thổ, không bao giờ trùng thành chính; chỉ một vùng cùng lúc, dẹp xong phải chờ ít nhất **5 lượt** mới có vùng mới. Báo trong bảng báo cáo quan trọng.
+- Ô trong vùng **bị khóa hẳn**: công trình không sản xuất, không tính để mở lính / tác dụng; không đặt đất, không xây, không nâng cấp, không di chuyển công trình vào hay ra. Vùng nhấp nháy đỏ, có lính cướp đứng trong đó.
+- Chưa có đội thảo phạt thì cứ **2 lượt** vùng lan thêm một ô về mọi phía còn lan được (chỉ trên đất của mình); dừng khi chạm thành chính. Đất mất đi thì ô đó rời vùng. Bỏ mặc chỉ khóa công trình, không mất gì thêm.
+- **Bảng thảo phạt** (bấm vào vùng đỏ): tab **Quân địch** (số ô, số ải và trận phục kích, quân cướp mỗi trận, tỉ lệ gặp tướng nổi loạn, phần thưởng) và tab **Cử quân**: tối đa **1 tướng, 1 mưu sĩ, 10 đơn vị lính** (không tốn chi phí); bấm **Tiến hành thảo phạt** thì bảng đóng. Đang đi thì bấm vào vùng đỏ xem tiến trình và nút **Xem trận ải N**.
+- **Số ải theo cấp thành** 1–6: 1/1/2/2/3/4 ải, mỗi ải 1/1/2/2/3/3 trận phục kích liền nhau. **Mỗi lượt đi một ải** (đánh vào cuối lượt). Mỗi trận 1–5 đơn vị cướp (theo ải, số vùng đã dẹp và độ lớn vùng; nhân theo độ khó), ải sau lính cướp có cấp cao hơn. **Cuối mỗi ải có thể gặp tướng nổi loạn** (15% + 20% mỗi ải sau + 5% mỗi vùng đã dẹp, tối đa 90%) dẫn thêm một đơn vị.
+- Trận vẫn là giả lập như thường; đơn vị **bỏ chạy hoặc bị tiêu diệt là mất luôn** (khỏi quân đội); **hết ải cả đội hồi phục đủ quân**. Thua một trận là cả đội tan như thua trận thường: lính mất hết, tướng ngã ngựa 30% tử trận (không thì bị thương), mưu sĩ 50% bị thương; vùng đỏ vẫn còn, cử đội khác được.
+- **Màn phát lại** (mỗi ải **tự phát đầu lượt sau**, sau bảng tin quan trọng; bấm vùng đỏ để xem lại bất kỳ ải nào đã đánh): màn hình ngang, đội đi từ trái sang phải, **mỗi đơn vị một nhân vật**, xếp **cột 3 hàng ngang** (tướng đứng đầu, rồi kỵ binh, cận chiến, đánh xa, mưu sĩ theo sau), thanh máu dưới chân; toán cướp xông ra từ bên phải, hai bên giáp nhau, ai hết quân / vỡ trận thì **văng xoay ra khỏi màn hình**; đánh liên tục các trận; nhạc riêng; x1/x2/x4, Bỏ qua; xong thì **bảng thống kê** ải (trận, tướng nổi loạn, mỗi đơn vị: lính, mất, hạ, kết cục).
+- **Phần thưởng khi đội về** (thắng hay thua đều nhận phần đã kiếm được): mỗi trận thắng tướng / mưu sĩ +30, lính +20 kinh nghiệm; mỗi ải vượt qua **40 × số thứ tự ải × độ lớn vùng** mỗi loại lương thực / gỗ / đá và **một món trang bị** (ải sau dễ ra đồ hiếm, có cơ hội nhỏ ra Huyền thoại).
+- **Khi đi vắng:** tướng / mưu sĩ không chỉ huy, không giữ tác dụng chức (vd. Ngoại giao) và không ra trận ở nhà, **không sa thải được**; tổng tướng đi vắng thì quân ở nhà đánh không có tướng. Lính đi vắng vẫn chiếm chỗ và tốn phí nuôi, không đánh trận ở nhà, không tự bổ sung, không giải tán được. Danh sách tướng sĩ và quân đội ghi "đang thảo phạt".
 
 **Bản lưu cũ** (bản đồ 6 gia tộc) không tải được nữa: báo phiên bản cũ, bắt đầu ván mới.
 

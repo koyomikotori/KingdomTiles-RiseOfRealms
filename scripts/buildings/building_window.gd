@@ -280,6 +280,8 @@ func _refresh_building_upgrade(cell: CellData) -> void:
 			text += "\nKhông còn đội thợ rảnh: chờ một công trình xây xong."
 		KingdomState.UpgradeResult.FORGING:
 			text += "\nXưởng đang rèn: chờ rèn xong rồi mới nâng cấp."
+		KingdomState.UpgradeResult.REBELS:
+			text += "\nQuân nổi loạn đang chiếm ô này: thảo phạt trước đã."
 	_upgrade.text = text
 	_upgrade_button.disabled = result != KingdomState.UpgradeResult.OK
 

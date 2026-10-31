@@ -187,7 +187,7 @@ func count_buildings(building_id: StringName, include_unfinished: bool = false) 
 	var count := 0
 	for cell in _cells:
 		if cell.building_id == building_id and cell.coord == cell.building_origin:
-			if include_unfinished or not cell.is_constructing():
+			if include_unfinished or not cell.is_idle():
 				count += 1
 	return count
 
@@ -197,7 +197,7 @@ func count_buildings(building_id: StringName, include_unfinished: bool = false) 
 func highest_building_level(building_id: StringName) -> int:
 	var best := 0
 	for cell in _cells:
-		if cell.building_id == building_id and cell.coord == cell.building_origin and not cell.is_constructing():
+		if cell.building_id == building_id and cell.coord == cell.building_origin and not cell.is_idle():
 			best = maxi(best, cell.building_level)
 	return best
 
@@ -280,6 +280,7 @@ func expand(direction: Vector2i, amount: int) -> void:
 		cell.building_level = old.building_level
 		cell.building_turns = old.building_turns
 		cell.building_upgrading = old.building_upgrading
+		cell.occupied = old.occupied
 	resized.emit(shift)
 
 

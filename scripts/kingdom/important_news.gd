@@ -51,6 +51,18 @@ static func build(state: KingdomState, report: Dictionary, battle: Dictionary = 
 			allies.append("%s rời bỏ liên minh vì quan hệ đi xuống." % clans[entry.clan_id].data.display_name)
 	_add(result, "Đồng minh rời bỏ", allies)
 
+	var expedition: Dictionary = report.get("expedition", {})
+	var expedition_lines: Array[String] = []
+	if report.get("uprising", &"") == &"started":
+		expedition_lines.append("Đạo tặc nổi loạn chiếm %d ô đất của vương quốc: công trình ở đó ngừng hoạt động. Bấm vào vùng đỏ để thảo phạt." %
+				state.uprising.cells.size())
+	match expedition.get("general_fate", &"none"):
+		&"dead":
+			expedition_lines.append("Tướng dẫn đội thảo phạt đã tử trận!")
+		&"wounded":
+			expedition_lines.append("Tướng dẫn đội thảo phạt bị thương, nghỉ %d lượt." % Generals.WOUND_TURNS)
+	_add(result, "Nổi loạn", expedition_lines)
+
 	if report.get("castle_in_danger", false):
 		_add(result, "Thành chính nguy hiểm", ["Chỉ còn %d ô đất ngoài thành: mất hết là thua!" %
 				state.board.count_land_outside_castle()] as Array[String])

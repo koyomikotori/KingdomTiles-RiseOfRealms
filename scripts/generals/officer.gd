@@ -16,6 +16,8 @@ const FEMALE_GIVEN_NAMES: Array[String] = ["Lan", "Mai", "Hoa", "Thảo", "Ngọ
 var name: String
 var stars: int
 var wounded_turns := 0
+## On an expedition (M14i): no command, post or battle at home, cannot be dismissed.
+var away := false
 var level := 1
 ## XP gathered toward the next level (reset on each level up).
 var xp := 0
@@ -35,8 +37,9 @@ static func random_name(rng: RandomNumberGenerator, female: bool, given_names: A
 			middle[rng.randi_range(0, middle.size() - 1)], given[rng.randi_range(0, given.size() - 1)]]
 
 
+## Not wounded and not away on an expedition (M14i): commands, holds a post, fights at home.
 func is_ready() -> bool:
-	return wounded_turns <= 0
+	return wounded_turns <= 0 and not away
 
 
 ## Name color by stars, the equipment rarity colors (Item.RARITY_COLORS): 1–2★ gray, 3★ green,
@@ -111,13 +114,14 @@ func _officer_save() -> Dictionary:
 	for slot in items:
 		worn[String(slot)] = items[slot].to_save()
 	return {"name": name, "stars": stars, "wounded_turns": wounded_turns, "level": level, "xp": xp, "points": points,
-			"look": look.to_save(), "items": worn}
+			"look": look.to_save(), "items": worn, "away": away}
 
 
 func _officer_load(data: Dictionary) -> void:
 	name = data.name
 	stars = int(data.stars)
 	wounded_turns = int(data.wounded_turns)
+	away = bool(data.get("away", false))
 	level = int(data.level)
 	xp = int(data.xp)
 	points = int(data.points)

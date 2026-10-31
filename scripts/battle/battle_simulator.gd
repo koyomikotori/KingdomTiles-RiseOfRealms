@@ -305,10 +305,11 @@ func _check_end() -> void:
 			winner = BattleRecord.DEFENDER if out[0] else BattleRecord.ATTACKER
 		_finish(winner, BattleRecord.EndReason.ALL_BROKEN)
 	elif time >= TIME_LIMIT - 0.0001:
-		_finish(_better_side(), BattleRecord.EndReason.TIME_LIMIT)
+		# An attacker that has not won when time runs out has failed: the defender holds.
+		_finish(BattleRecord.DEFENDER, BattleRecord.EndReason.TIME_LIMIT)
 
 
-## Higher fraction of soldiers left wins; ties go to the defender.
+## Both sides broke at once: the higher fraction of soldiers left wins; ties go to the defender.
 func _better_side() -> int:
 	if _sides[0].fraction_alive() > _sides[1].fraction_alive():
 		return BattleRecord.ATTACKER

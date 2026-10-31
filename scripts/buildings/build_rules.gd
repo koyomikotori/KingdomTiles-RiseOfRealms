@@ -3,7 +3,7 @@ extends RefCounted
 ## Decides whether a building may be constructed, and constructs it (paying its cost).
 
 enum Result { OK, OUT_OF_BOUNDS, NOT_OWNED, OCCUPIED, WRONG_TERRAIN, LIMIT_REACHED, CANNOT_AFFORD, CASTLE_TOO_LOW,
-		NO_BUILDERS, UNDER_CONSTRUCTION }
+		NO_BUILDERS, UNDER_CONSTRUCTION, REBELS }
 
 ## Each castle level above the one a building needs allows this many more of it (GDD §8,
 ## economy v2; M14e counts from BuildingData.required_castle_level).
@@ -48,6 +48,8 @@ static func check(board: BoardData, stockpile: Stockpile, building: BuildingData
 				return Result.NOT_OWNED
 			if cell.has_building():
 				return Result.OCCUPIED
+			if cell.occupied:
+				return Result.REBELS
 			if not building.allowed_terrains.is_empty() and not building.allowed_terrains.has(cell.terrain_id):
 				return Result.WRONG_TERRAIN
 	var type_result := check_type(board, building, castle_level, builders_free)
@@ -72,6 +74,8 @@ static func check_move(board: BoardData, building: BuildingData, from_origin: Ve
 				return Result.NOT_OWNED
 			if cell.has_building() and cell.building_origin != from_origin:
 				return Result.OCCUPIED
+			if cell.occupied or board.get_cell(from_origin).occupied:
+				return Result.REBELS
 			if not building.allowed_terrains.is_empty() and not building.allowed_terrains.has(cell.terrain_id):
 				return Result.WRONG_TERRAIN
 	return Result.OK
@@ -110,6 +114,8 @@ static func describe(result: Result) -> String:
 			return "Cần nâng cấp thành chính."
 		Result.NO_BUILDERS:
 			return "Không còn đội thợ rảnh: chờ một công trình xây xong."
+		Result.REBELS:
+			return "Vùng này đang bị quân nổi loạn chiếm: thảo phạt trước đã."
 		Result.UNDER_CONSTRUCTION:
 			return "Công trình đang thi công."
 	return ""

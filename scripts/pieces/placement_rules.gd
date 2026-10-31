@@ -7,7 +7,7 @@ extends RefCounted
 ## - the piece must overlap or edge-touch the player's territory.
 ## Overlapping existing land replaces its terrain and key cell.
 
-enum Result { OK, OUT_OF_BOUNDS, ON_BUILDING, NOT_CONNECTED }
+enum Result { OK, OUT_OF_BOUNDS, ON_BUILDING, NOT_CONNECTED, REBELS }
 
 
 static func check(board: BoardData, piece: LandPiece, origin: Vector2i) -> Result:
@@ -18,6 +18,8 @@ static func check(board: BoardData, piece: LandPiece, origin: Vector2i) -> Resul
 	for coord in coords:
 		if board.get_cell(coord).has_building():
 			return Result.ON_BUILDING
+		if board.get_cell(coord).occupied:
+			return Result.REBELS
 	if not _touches_territory(board, coords):
 		return Result.NOT_CONNECTED
 	return Result.OK
@@ -44,6 +46,8 @@ static func describe(result: Result) -> String:
 			return "Không thể đặt đè lên công trình."
 		Result.NOT_CONNECTED:
 			return "Mảnh đất phải chạm cạnh hoặc đè lên lãnh thổ."
+		Result.REBELS:
+			return "Vùng này đang bị quân nổi loạn chiếm: thảo phạt trước đã."
 	return ""
 
 
