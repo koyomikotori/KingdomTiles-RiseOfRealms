@@ -26,6 +26,8 @@ func _ready() -> void:
 	background.color = BACKGROUND_COLOR
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
+	# Gameplay playing by itself, blurred (GDD §15 M14j).
+	add_child(MenuBackdrop.new())
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)

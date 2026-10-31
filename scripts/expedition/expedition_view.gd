@@ -55,6 +55,8 @@ var _next_clash := 0.0
 ## When each unit of each battle leaves the fight, in battle seconds: _out[b][side][i] (INF = never).
 var _out: Array = []
 var _stage_text := ""
+## No sounds and no banners (the main menu's backdrop, MenuBackdrop).
+var quiet := false
 
 
 func setup(battles: Array[BattleRecord], stage_text: String) -> void:
@@ -95,13 +97,13 @@ func _process(delta: float) -> void:
 	var phase := _phase_at(_clock)
 	if phase.kind == &"march" or (phase.kind == &"approach"):
 		_scroll += delta * _speed * MARCH_SPEED * (1.0 if phase.kind == &"march" else 0.4)
-	if phase.kind == &"fight":
+	if phase.kind == &"fight" and not quiet:
 		if _phase_at(before).kind != &"fight":
 			Sfx.play(&"charge")
 		if _clock >= _next_clash:
 			_next_clash = _clock + CLASH_INTERVAL
 			Sfx.play([&"clash_1", &"clash_2", &"clash_3"].pick_random(), -8.0)
-	if phase.kind == &"end" and _phase_at(before).kind != &"end":
+	if phase.kind == &"end" and _phase_at(before).kind != &"end" and not quiet:
 		Sfx.play(&"complete")
 	queue_redraw()
 	if _clock >= total_time() and not _done:
@@ -191,7 +193,8 @@ func _draw() -> void:
 		for spot: Array in _formation(record.sides[BattleRecord.DEFENDER]).spots:
 			_draw_unit(record, BattleRecord.DEFENDER, spot[0], Vector2(enemy_front + spot[1].x, ground + spot[1].y), -1.0,
 					phase, battle_time)
-	_draw_banner(phase)
+	if not quiet:
+		_draw_banner(phase)
 
 
 func _slot_width(unit: BattleSide.Unit) -> float:

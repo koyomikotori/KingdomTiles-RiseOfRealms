@@ -7,8 +7,8 @@ Danh sách người chơi (chủ dự án) đưa ra sau M14e (2026-10-30). Làm 
 | M14f | Đặc vụ: mỗi gia tộc 1 đặc vụ, tỉ lệ lộ +1%/lượt | Xong (đã merge) |
 | M14g | Bảng báo cáo quan trọng + nút mũi tên xem tướng/mưu sĩ | Xong (đã merge) |
 | M14h | Chọn độ khó ván mới + tướng/mưu sĩ của gia tộc địch | Xong (đã merge) |
-| M14i | Thảo phạt đạo tặc (vùng đỏ, chuyến thảo phạt, màn phát lại kiểu Dungeon Village) | Xong, chờ chơi thử |
-| M14j | Cutscene mờ sau menu chính (kiểu Kairosoft) + nhạc nền mới | Chưa làm |
+| M14i | Thảo phạt đạo tặc (vùng đỏ, chuyến thảo phạt, màn phát lại kiểu Dungeon Village) | Xong (đã merge) |
+| M14j | Cutscene mờ sau menu chính (kiểu Kairosoft) + nhạc nền mới | Xong, chờ chơi thử |
 | M14c | Build Windows, phát hành bản máy tính | Cuối cùng |
 
 ---
@@ -99,8 +99,7 @@ Tham khảo mini game thảo phạt trong Dungeon Village (Kairosoft).
 - **Cutscene chạy mờ** phía sau menu chính, như game Kairosoft (vd. cảnh vương quốc nhỏ có dân đi lại, mây trôi, quân đi tuần).
 - **Nhạc nền mới:** người chơi tự làm, thả vào `assets/audio/custom/` (cùng tên file sẽ thay nhạc cũ, xem GDD §14).
 
-Câu hỏi cần chốt:
-- Cảnh lấy từ bản đồ thật (một vương quốc dựng sẵn + MapLife) hay vẽ riêng?
+Đã chốt: cảnh nền là **một trận đánh gia tộc và một ải thảo phạt chạy luân phiên** (gameplay cơ bản, như Kairosoft), làm mờ, camera lia chậm qua lại để không bị bảng menu che (GDD §10.1).
 
 ---
 
