@@ -156,10 +156,21 @@ static func _army_items(state: KingdomState, report: Dictionary) -> Array[Dictio
 	var candidates: Array[String] = []
 	if state.generals.candidates_turn == state.turn and not report.is_empty():
 		candidates.append("Có ứng viên mới (thành chính, tab Chiêu hiền)")
+	# The uprising and the expedition (GDD §15 M14i).
+	var uprising: Array[String] = []
+	if state.expedition != null:
+		var stage: Dictionary = report.get("expedition", {})
+		uprising.append("Đội thảo phạt ở ải %d/%d, đã thắng %d trận" % [mini(state.expedition.stage + 1, state.expedition.stages),
+				state.expedition.stages, state.expedition.wins])
+		if not stage.is_empty():
+			uprising.append("Ải %d vừa đánh xong: bấm vùng đỏ để xem lại trận" % (stage.stage + 1))
+	elif state.uprising.is_active():
+		uprising.append("Quân nổi loạn chiếm %d ô đất: bấm vùng đỏ để thảo phạt" % state.uprising.cells.size())
 	var danger: Array[String] = []
 	if report.get("castle_in_danger", false):
 		danger.append("Chỉ còn %d ô đất ngoài thành!" % state.board.count_land_outside_castle())
-	return [_item(&"danger", "Thành chính nguy hiểm", danger, true), _item(&"deserted", "Lính bỏ trốn", deserted, true),
+	return [_item(&"danger", "Thành chính nguy hiểm", danger, true), _item(&"uprising", "Thảo phạt", uprising, true),
+			_item(&"deserted", "Lính bỏ trốn", deserted, true),
 			_item(&"replenished", "Bổ sung quân", replenished), _item(&"wounded", "Tướng sĩ bị thương", wounded),
 			_item(&"healed", "Vừa lành vết thương", healed), _item(&"candidates", "Ứng viên mới", candidates)]
 

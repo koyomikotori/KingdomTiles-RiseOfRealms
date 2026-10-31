@@ -95,7 +95,7 @@ static func field_buildings_around(board: BoardData, buildings: Dictionary[Strin
 			if near == coord or not board.is_in_bounds(near):
 				continue
 			var cell := board.get_cell(near)
-			if cell.has_building() and not cell.is_constructing() and buildings.has(cell.building_id) \
+			if cell.has_building() and not cell.is_idle() and buildings.has(cell.building_id) \
 					and buildings[cell.building_id].field_resource != &"":
 				result[cell.building_origin] = buildings[cell.building_id]
 	return result
@@ -120,7 +120,7 @@ static func buildings_yield(board: BoardData, buildings: Dictionary[StringName, 
 	var total: Dictionary[StringName, int] = {}
 	for cell in board.get_all_cells():
 		if cell.has_building() and cell.coord == cell.building_origin and buildings.has(cell.building_id) \
-				and not cell.is_constructing():
+				and not cell.is_idle():
 			add_into(total, production(board, buildings[cell.building_id], cell))
 	return total
 

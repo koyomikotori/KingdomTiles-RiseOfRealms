@@ -22,6 +22,9 @@ var building_turns := 0
 ## The construction is an upgrade to building_level + 1 (the building stays at building_level).
 var building_upgrading := false
 
+## Held by the uprising (Uprising.apply, M14i): locked, its building does nothing. Not saved here;
+## the uprising marks its cells again on load.
+var occupied := false
 
 func _init(p_coord: Vector2i) -> void:
 	coord = p_coord
@@ -38,3 +41,8 @@ func has_building() -> bool:
 ## A building is being built or upgraded here (and does nothing until it is finished).
 func is_constructing() -> bool:
 	return has_building() and building_turns > 0
+
+
+## A building that does nothing now: being built or upgraded, or held by the uprising (M14i).
+func is_idle() -> bool:
+	return is_constructing() or occupied

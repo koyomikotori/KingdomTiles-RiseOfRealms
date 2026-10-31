@@ -54,7 +54,8 @@ static func create_kingdom_side(state: KingdomState) -> BattleSide:
 	var side := BattleSide.new(state.kingdom_name)
 	side.color = state.player_color
 	for squad in state.army.squads:
-		side.add_unit(state.units[squad.unit_id], squad.soldiers, squad)
+		if not squad.away:
+			side.add_unit(state.units[squad.unit_id], squad.soldiers, squad)
 	return side
 
 

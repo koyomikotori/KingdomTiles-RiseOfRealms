@@ -56,6 +56,11 @@ var equipment := Equipment.new()
 var agents := Agents.new()
 ## The clans' generals and advisors (GDD §15 M14h).
 var clan_officers := ClanOfficers.new()
+## The bandit and rebel zone and the expedition against it (GDD §15 M14i); `rebels` makes and
+## leads the rebel generals met at the end of a stage.
+var uprising := Uprising.new()
+var expedition: Expedition
+var rebels := Generals.new()
 ## Picked when the game starts (GDD §15 M14h): Difficulty.Level, the kingdom's name and color.
 var difficulty: int = Difficulty.Level.NORMAL
 var kingdom_name := DEFAULT_KINGDOM_NAME
@@ -92,6 +97,8 @@ func _init(p_board: BoardData, p_hand: PieceHand, p_terrains: Dictionary[StringN
 	equipment.rng.seed = seed_value + 3
 	agents.rng.seed = seed_value + 4
 	clan_officers.rng.seed = seed_value + 5
+	uprising.rng.seed = seed_value + 6
+	rebels.rng.seed = seed_value + 7
 	diplomacy.admin_effect = building_effect
 	wars.sabotage = agents.sabotage_on
 	generals.advisors = advisors
@@ -157,7 +164,8 @@ func to_save() -> Dictionary:
 			"diplomacy": diplomacy.to_save(), "wars": wars.to_save(), "victory": victory.to_save(), "stats": stats.duplicate(),
 			"events": events.to_save(), "generals": generals.to_save(), "advisors": advisors.to_save(),
 			"equipment": equipment.to_save(), "agents": agents.to_save(), "clan_officers": clan_officers.to_save(),
-			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false)}
+			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false),
+			"uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
 
 
 ## Restores everything but the board from to_save() data. Random rolls are not saved: they come
@@ -200,6 +208,10 @@ func load_save(data: Dictionary) -> void:
 	else:
 		agents.refresh_candidates(castle_level, turn)
 	clan_officers.load_save(data.get("clan_officers", {}))
+	# Saves from before M14i have no uprising.
+	uprising.load_save(data.get("uprising", {}), board)
+	var saved_expedition: Dictionary = data.get("expedition", {})
+	expedition = Expedition.from_save(saved_expedition, self) if not saved_expedition.is_empty() else null
 
 
 ## What a save slot shows: {"turn", "cells", "soldiers"}.
@@ -245,7 +257,7 @@ func forge_origin() -> Vector2i:
 ## The working forge's level (finished, not being upgraded), 0 without one.
 func forge_level() -> int:
 	for cell in board.get_all_cells():
-		if cell.building_id == FORGE_ID and cell.coord == cell.building_origin and not cell.is_constructing():
+		if cell.building_id == FORGE_ID and cell.coord == cell.building_origin and not cell.is_idle():
 			return cell.building_level
 	return 0
 
@@ -256,6 +268,8 @@ func start_forge(kind: StringName, slot: StringName) -> Equipment.Result:
 
 ## Dismisses an officer; their items go back to storage (a general killed in battle loses them).
 func dismiss_officer(officer: Officer) -> void:
+	if officer.away:
+		return
 	equipment.take_back(officer)
 	if officer is General:
 		generals.dismiss(officer)
@@ -372,7 +386,7 @@ func move_building(from_origin: Vector2i, to_origin: Vector2i) -> BuildRules.Res
 # --- Building levels (GDD §8, economy v2) -------------------------------------------------
 
 enum UpgradeResult { OK, NOT_UPGRADABLE, MAX_LEVEL, CASTLE_TOO_LOW, CANNOT_AFFORD, NO_BUILDERS, UNDER_CONSTRUCTION,
-		FORGING }
+		FORGING, REBELS }
 
 
 ## What raising the building at `origin` one level costs right now (Nội chính discount included).
@@ -396,6 +410,8 @@ func check_building_upgrade(origin: Vector2i) -> UpgradeResult:
 		return UpgradeResult.UNDER_CONSTRUCTION
 	if cell.building_id == FORGE_ID and not equipment.forge_job.is_empty():
 		return UpgradeResult.FORGING
+	if cell.occupied:
+		return UpgradeResult.REBELS
 	if cell.building_level + buildings[cell.building_id].castle_level_gap >= castle_level:
 		return UpgradeResult.CASTLE_TOO_LOW
 	if not has_free_builder():
@@ -454,7 +470,8 @@ func recruit(unit_id: StringName) -> RecruitmentRules.Result:
 
 ## Removes a squad for good. Nothing is refunded.
 func disband(squad: Army.Squad) -> void:
-	army.remove_squad(squad)
+	if not squad.away:
+		army.remove_squad(squad)
 
 
 ## Most squads the kingdom may have: castle garrison, every castle level reached and every
@@ -552,7 +569,7 @@ func building_effect(effect_id: StringName) -> float:
 		return 0.0
 	var total := 0.0
 	for cell in board.get_all_cells():
-		if cell.has_building() and cell.coord == cell.building_origin and not cell.is_constructing() \
+		if cell.has_building() and cell.coord == cell.building_origin and not cell.is_idle() \
 				and buildings.has(cell.building_id):
 			var building := buildings[cell.building_id]
 			total += building.effects.get(effect_id, 0.0) + building.level_effects.get(effect_id, 0.0) * cell.building_level
@@ -562,7 +579,7 @@ func building_effect(effect_id: StringName) -> float:
 ## The finished Sở cảnh sát's level, 0 without one (GDD §8 M14e).
 func police_level() -> int:
 	for cell in board.get_all_cells():
-		if cell.building_id == POLICE_ID and cell.coord == cell.building_origin and not cell.is_constructing():
+		if cell.building_id == POLICE_ID and cell.coord == cell.building_origin and not cell.is_idle():
 			return cell.building_level
 	return 0
 
@@ -607,7 +624,7 @@ func replenish_fraction() -> float:
 		return 0.0
 	var fraction := REPLENISH_FRACTION
 	for cell in board.get_all_cells():
-		if cell.has_building() and cell.coord == cell.building_origin and not cell.is_constructing() \
+		if cell.has_building() and cell.coord == cell.building_origin and not cell.is_idle() \
 				and buildings.has(cell.building_id):
 			fraction += buildings[cell.building_id].replenish_per_level * cell.building_level
 	return fraction
@@ -666,7 +683,7 @@ func get_building_upkeep() -> Dictionary[StringName, int]:
 func building_type_upkeep(building_id: StringName) -> Dictionary[StringName, int]:
 	var total: Dictionary[StringName, int] = {}
 	for cell in board.get_all_cells():
-		if cell.building_id == building_id and cell.coord == cell.building_origin and not cell.is_constructing():
+		if cell.building_id == building_id and cell.coord == cell.building_origin and not cell.is_idle():
 			Economy.add_into(total, buildings[building_id].upkeep_at(cell.building_level))
 	return total
 
@@ -740,7 +757,7 @@ func get_income_breakdown() -> Dictionary[StringName, Array]:
 		var produced := {}  # building_id -> amounts
 		for cell in board.get_all_cells():
 			if cell.has_building() and cell.coord == cell.building_origin and buildings.has(cell.building_id) \
-					and not cell.is_constructing():
+					and not cell.is_idle():
 				var amounts: Dictionary[StringName, int] = produced.get_or_add(cell.building_id, {} as Dictionary[StringName, int])
 				Economy.add_into(amounts, Economy.production(board, buildings[cell.building_id], cell))
 		for building_id in produced:
@@ -819,6 +836,8 @@ func end_turn() -> Dictionary:
 	var treaties := alliances.end_turn()
 	var declared := wars.end_turn(rng, turn)
 	var agent_events := agents.end_turn(diplomacy, police_level(), castle_level, turn + 1)
+	var expedition_report := _advance_expedition()
+	var uprising_news := uprising.end_turn(board, turn + 1, expedition != null)
 	clan_officers.end_turn(wars)
 	turn += 1
 	var healing := roundi(building_effect(&"wound_healing"))
@@ -834,6 +853,8 @@ func end_turn() -> Dictionary:
 	report["war_declared"] = declared
 	report["generals_healed"] = healed
 	report["agents"] = agent_events
+	report["expedition"] = expedition_report
+	report["uprising"] = uprising_news
 	report["advisors_healed"] = advisors_healed
 	report["victory"] = victory.end_turn(self)
 	report["castle_in_danger"] = victory.castle_in_danger(self)
@@ -852,6 +873,90 @@ func end_turn() -> Dictionary:
 	turn_started.emit(turn)
 	return report
 
+
+
+# --- Expedition (GDD §15 M14i) --------------------------------------------------------------
+
+enum ExpeditionResult { OK, NO_UPRISING, ALREADY_ON_THE_WAY, NO_SQUADS, TOO_MANY_SQUADS, NOT_READY }
+
+
+func check_expedition(general: General, advisor: Advisor, squads: Array[Army.Squad]) -> ExpeditionResult:
+	if not uprising.is_active():
+		return ExpeditionResult.NO_UPRISING
+	if expedition != null:
+		return ExpeditionResult.ALREADY_ON_THE_WAY
+	if squads.is_empty():
+		return ExpeditionResult.NO_SQUADS
+	if squads.size() > Expedition.MAX_SQUADS:
+		return ExpeditionResult.TOO_MANY_SQUADS
+	for officer: Officer in [general, advisor]:
+		if officer != null and not officer.is_ready():
+			return ExpeditionResult.NOT_READY
+	for squad in squads:
+		if squad.away or not army.squads.has(squad):
+			return ExpeditionResult.NOT_READY
+	return ExpeditionResult.OK
+
+
+## Sends the expedition: the first stage is fought at the end of this turn.
+func start_expedition(general: General, advisor: Advisor, squads: Array[Army.Squad]) -> ExpeditionResult:
+	var result := check_expedition(general, advisor, squads)
+	if result != ExpeditionResult.OK:
+		return result
+	expedition = Expedition.new()
+	expedition.general = general
+	expedition.advisor = advisor
+	expedition.squads.assign(squads)
+	expedition.stages = Expedition.stages_for(castle_level)
+	expedition.ambushes = Expedition.ambushes_for(castle_level)
+	expedition.cleared_before = uprising.cleared
+	expedition.size_factor = uprising.size_factor()
+	for officer: Officer in [general, advisor]:
+		if officer != null:
+			officer.away = true
+	for squad in squads:
+		squad.away = true
+	generals.changed.emit()
+	advisors.changed.emit()
+	army.changed.emit()
+	return ExpeditionResult.OK
+
+
+static func describe_expedition(result: ExpeditionResult) -> String:
+	match result:
+		ExpeditionResult.NO_UPRISING:
+			return "Không có vùng nổi loạn nào."
+		ExpeditionResult.ALREADY_ON_THE_WAY:
+			return "Đội thảo phạt đang trên đường."
+		ExpeditionResult.NO_SQUADS:
+			return "Chọn ít nhất một đơn vị lính."
+		ExpeditionResult.TOO_MANY_SQUADS:
+			return "Tối đa %d đơn vị lính." % Expedition.MAX_SQUADS
+		ExpeditionResult.NOT_READY:
+			return "Có người đang bị thương hoặc đang đi vắng."
+	return ""
+
+
+## The end of a turn with an expedition out: one stage. Returns {} without one, else the stage
+## (Expedition.run_stage) plus "rewards" (Expedition.finish) once it is over and "cleared".
+func _advance_expedition() -> Dictionary:
+	if expedition == null:
+		return {}
+	var result := expedition.run_stage(self, rng)
+	var general := expedition.general
+	if result.general_fate == &"dead" and general != null:
+		general.away = false
+		generals.dismiss(general)
+		expedition.general = null
+	if result.finished:
+		result["rewards"] = expedition.finish(self)
+		result["cleared"] = not expedition.failed
+		if not expedition.failed:
+			uprising.clear(board, turn + 1)
+		result["general_name"] = general.name if general != null else ""
+		result["advisor_name"] = expedition.advisor.name if expedition.advisor != null else ""
+		expedition = null
+	return result
 
 ## The kingdom's army led by its commander (with their bodyguard), plus the soldiers its allies
 ## send against `enemy_clan` (&"" for bandits). `defending`: a raid or invasion, not an attack.
@@ -896,6 +1001,8 @@ func _replenish() -> Dictionary[StringName, int]:
 	if not can_replenish():
 		return added
 	for squad in army.squads.duplicate():
+		if squad.away:
+			continue
 		var full := units[squad.unit_id].squad_size
 		var gain := mini(ceili(full * replenish_fraction()), full - squad.soldiers)
 		if gain > 0:
@@ -1000,6 +1107,9 @@ func finish_attack(clan_id: StringName, record: BattleRecord) -> Dictionary:
 			var side := wars.annex(clan_id)
 			if side != Vector2i.ZERO:
 				board.expand(side, Wars.ANNEX_EXPANSION)
+				# Growing up or left moves every coordinate (BoardData.expand).
+				uprising.shift(board, Vector2i(Wars.ANNEX_EXPANSION if side == Vector2i.LEFT else 0,
+						Wars.ANNEX_EXPANSION if side == Vector2i.UP else 0))
 			result["expanded"] = side
 			result["agents_recalled"] = agents.recall_from(clan_id)
 			annexed = true

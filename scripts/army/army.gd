@@ -12,6 +12,8 @@ class Squad:
 	var soldiers: int
 	## Average XP per soldier (Experience.squad_level).
 	var xp := 0.0
+	## On an expedition (M14i): no battles at home, no replenishment, cannot be disbanded.
+	var away := false
 
 	func _init(p_unit_id: StringName, p_soldiers: int, p_xp: float = 0.0) -> void:
 		unit_id = p_unit_id
@@ -97,7 +99,7 @@ func get_upkeep(units: Dictionary[StringName, UnitData]) -> Dictionary[StringNam
 func to_save() -> Array:
 	var result: Array = []
 	for squad in squads:
-		result.append({"unit": String(squad.unit_id), "soldiers": squad.soldiers, "xp": squad.xp})
+		result.append({"unit": String(squad.unit_id), "soldiers": squad.soldiers, "xp": squad.xp, "away": squad.away})
 	return result
 
 
@@ -107,4 +109,5 @@ func load_save(data: Array, units: Dictionary[StringName, UnitData]) -> void:
 	for entry: Dictionary in data:
 		if units.has(StringName(entry.unit)) and int(entry.soldiers) > 0:
 			squads.append(Squad.new(StringName(entry.unit), int(entry.soldiers), float(entry.xp)))
+			squads.back().away = bool(entry.get("away", false))
 	changed.emit()

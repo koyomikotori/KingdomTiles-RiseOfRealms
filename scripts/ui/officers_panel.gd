@@ -69,7 +69,9 @@ func _row(officer: Officer, role: String) -> Control:
 	row.add_child(column)
 	column.add_child(_line("%s %s" % [officer.name, officer.star_text()], 14, officer.name_color()))
 	column.add_child(_line("%s · Cấp %d" % [role, officer.level], 12, UiPalette.MUTED))
-	if not officer.is_ready():
+	if officer.away:
+		column.add_child(_line("Đang đi thảo phạt", 12, UiPalette.ACCENT))
+	elif not officer.is_ready():
 		column.add_child(_line("Bị thương, còn %d lượt" % officer.wounded_turns, 12, WARNING_COLOR))
 	if officer.points > 0:
 		column.add_child(_line("Còn %d điểm cộng" % officer.points, 12, UiPalette.ACCENT))
