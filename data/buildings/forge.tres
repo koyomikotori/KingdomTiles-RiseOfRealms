@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"forge"
 display_name = "Xưởng rèn khí giới"
-description = "Rèn trang bị cho tướng và mưu sĩ bằng Khoáng sản và Gỗ cứng (bấm vào xưởng, tab Rèn). Chỉ có 1 xưởng. Nâng cấp tới cấp thành − 2 để dễ ra đồ hiếm hơn. Xây trên ô cỏ."
+description = "Rèn trang bị cho tướng và mưu sĩ (tab Rèn). Cấp càng cao càng dễ ra đồ hiếm."
 cost = Dictionary[StringName, int]({&"wood": 12, &"stone": 10, &"ore": 6})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

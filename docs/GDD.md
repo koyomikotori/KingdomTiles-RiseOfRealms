@@ -1015,3 +1015,23 @@ Thêm vào hệ sự kiện (§9c), cùng cách tung 0–3 sự kiện mỗi lư
 "Đạo tặc kéo đến lượt sau" chỉ thay cho lần tung tỉ lệ cướp; nếu lượt đó có gia tộc xâm lược thì trận cướp dời sang lượt kế. Tướng hoặc mưu sĩ đang đi thảo phạt không bị các sự kiện này ảnh hưởng.
 
 Để sang M16e (cần trận đánh hoặc nhuệ khí tối đa): Đạo tặc bắt quan chức, Mật thư bị đánh cắp, Đặc vụ báo tin khẩn cấp.
+
+## 19. Đột phá giới hạn (M16c, đã chốt)
+
+Tướng và mưu sĩ đã đạt cấp tối đa có thể đột phá để lên tiếp.
+
+- **Mỗi lần đột phá:** trần mỗi chỉ số +2 (10 → 12 → 14 → 16) và cấp tối đa +2. Điểm mới phải kiếm lại bằng kinh nghiệm; điểm đang dư thì dùng ngay được.
+- **Số lần theo sao:** 1–2★ được 1 lần, 3–4★ được 2 lần, 5–6★ được 3 lần.
+- **Điều kiện:** đạt cấp tối đa hiện tại, không đang đi thảo phạt.
+- **Chi phí lần N:** N × (100 lương, 100 gỗ, 100 đá, 20 khoáng sản, 20 gỗ cứng, 20 ngựa) và N cuốn Bí kíp đột phá.
+- **Bí kíp đột phá:** chỉ có khi thảo phạt thắng (dẹp yên vùng nổi loạn): 1 cuốn mỗi 2 ải, tối thiểu 1 (1–2 ải: 1, 3–4 ải: 2). Thảo phạt thua không có. Chợ đen (M16d) sẽ bán thêm.
+- **Giao diện:** tab Chỉ số của cửa sổ tướng sĩ có mục "Đột phá N/M" (lần tới được gì, cần gì, nút Đột phá bấm hai lần để xác nhận, hoặc lý do chưa được). Tab Tướng sĩ ghi số Bí kíp đang có, "Đột phá N" cạnh cấp và "Có thể đột phá" khi đủ điều kiện.
+
+### Yêu cầu và chi phí bằng icon (M16c, sau góp ý của người chơi)
+
+Mọi bảng thông tin / nâng cấp trình bày điều kiện bằng hình thay vì câu chữ (`RequirementView`):
+- **YÊU CẦU:** mỗi điều kiện một dòng, dấu ✓ xanh khi đạt, ✗ đỏ khi chưa (thành chính cấp N, đội thợ rảnh, còn chỗ, công trình cần có, số gia tộc, cấp tối đa, Bí kíp…).
+- **CHI PHÍ:** ô icon tài nguyên + số, xanh khi đủ, đỏ khi thiếu; rê chuột xem cần / đang có. Thời gian có icon đồng hồ cát.
+- **NHẬN ĐƯỢC / TÁC DỤNG:** mũi tên vàng cho từng lợi ích; sản lượng và phí duy trì là ô icon.
+- Áp dụng ở: tab Thông tin và Nâng cấp của mọi công trình và thành chính, cửa sổ Xây dựng, Tuyển lính, tab Rèn, Chiêu hiền, Chiêu mộ đặc vụ, mục Đột phá và phí nuôi trong cửa sổ tướng sĩ.
+- **Gọn hơn (góp ý lần 2):** mô tả công trình chỉ còn công dụng (giới hạn, cấp thành, địa hình, phí duy trì đã có dòng riêng); mỗi tác dụng một dòng; tab Thông tin không liệt kê lính nữa (xem ở tab Quân đội); tab Nâng cấp chỉ hiện ô hình + tên các loại lính tuyển được ngay sau khi lên cấp, loại còn thiếu công trình khác gộp thành "+N loại lính khác…"; công trình không nâng cấp được thì không có tab Nâng cấp; hồi quân hiện "+1% → +1.5%".

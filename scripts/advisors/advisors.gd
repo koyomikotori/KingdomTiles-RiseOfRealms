@@ -142,7 +142,7 @@ func post_effect(post_id: StringName, effect_id: StringName) -> float:
 
 
 ## Adds one of the advisor's level points to a stat (STAT_IDS). False (nothing changes) without
-## points or when that stat is already at STAT_MAX.
+## points or when that stat is already at its cap (STAT_MAX, raised by limit breaks: Officer.stat_cap).
 func spend_point(advisor: Advisor, stat: StringName) -> bool:
 	if not can_spend_point(advisor, stat):
 		return false
@@ -161,7 +161,7 @@ func spend_point(advisor: Advisor, stat: StringName) -> bool:
 func can_spend_point(advisor: Advisor, stat: StringName) -> bool:
 	if advisor == null or advisor.points <= 0 or not STAT_IDS.has(stat):
 		return false
-	return advisor.get_stat(stat) < STAT_MAX
+	return advisor.get_stat(stat) < advisor.stat_cap(STAT_MAX)
 
 
 ## What a post gives right now with `points` in its stat, for the UI.

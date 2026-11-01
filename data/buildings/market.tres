@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"market"
 display_name = "Chợ"
-description = "Buôn bán với các gia tộc: mỗi chợ cho đổi thêm 10 giá trị hàng với mỗi gia tộc mỗi lượt và giá lợi hơn 3% (tối đa 15%). Mở ở thành cấp 2: 1 chợ, +1 mỗi cấp thành. Xây trên ô cỏ."
+description = "Buôn bán với các gia tộc: đổi được nhiều hàng hơn, giá lợi hơn."
 cost = Dictionary[StringName, int]({&"wood": 10, &"stone": 6})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

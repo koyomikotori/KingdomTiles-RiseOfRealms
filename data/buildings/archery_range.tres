@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"archery_range"
 display_name = "Trại bắn tên"
-description = "Luyện nỏ binh: tuyển Nỏ binh nông dân (cấp 1), chuyên nghiệp (cấp 2), tinh nhuệ (cấp 3). Nỏ bắn chậm nhưng xuyên giáp. Chỉ có 1 cái, cần thành cấp 3. Nâng cấp tới cấp thành − 2 (tối đa 3). Xây trên ô cỏ."
+description = "Luyện nỏ binh. Nỏ bắn chậm nhưng xuyên giáp."
 cost = Dictionary[StringName, int]({&"wood": 12, &"stone": 4, &"hardwood": 4})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

@@ -870,6 +870,80 @@ def tab(selected: bool) -> Canvas:
     return c
 
 
+# --- Requirement icons (12×12, saved ×2; RequirementView, M16c) ----------------------------------
+
+def icon_check() -> Canvas:
+    """A green tick: a requirement met."""
+    c = Canvas(12, 12)
+    for x, y in ((1, 6), (2, 7), (3, 8), (4, 9), (5, 8), (6, 7), (7, 6), (8, 5), (9, 4), (10, 3)):
+        c.rect(x, y - 1, 1, 2, P["grass_dark"])
+    for x, y in ((2, 6), (3, 7), (4, 8), (5, 7), (6, 6), (7, 5), (8, 4), (9, 3), (10, 2)):
+        c.px(x, y, P["grass_light"] if "grass_light" in P else P["grass"])
+    c.outline()
+    return c
+
+
+def icon_cross() -> Canvas:
+    """A red cross: a requirement not met."""
+    c = Canvas(12, 12)
+    for i in range(2, 10):
+        c.rect(i, i, 1, 2, P["red"])
+        c.rect(i, 11 - i - 1, 1, 2, P["red"])
+    for i in range(3, 9):
+        c.px(i, i, P["red_light"] if "red_light" in P else P["red"])
+    c.outline()
+    return c
+
+
+def icon_gain() -> Canvas:
+    """A gold arrow pointing up: what the action gives."""
+    c = Canvas(12, 12)
+    for row in range(5):
+        c.hline(5 - row, 6 + row, 1 + row, P["gold"])
+    c.hline(1, 10, 5, P["gold_dark"])
+    c.rect(4, 6, 4, 5, P["gold"])
+    c.vline(4, 6, 10, P["gold_light"])
+    c.outline()
+    return c
+
+
+def icon_time() -> Canvas:
+    """An hourglass: turns to wait."""
+    c = Canvas(12, 12)
+    c.hline(2, 9, 0, P["wood_dark"])
+    c.hline(2, 9, 11, P["wood_dark"])
+    c.hline(2, 9, 1, P["wood"])
+    c.hline(2, 9, 10, P["wood"])
+    for row, (x0, x1) in enumerate(((3, 8), (3, 8), (4, 7), (5, 6), (5, 6), (4, 7), (3, 8), (3, 8))):
+        c.hline(x0, x1, 2 + row, P["paper"])
+    c.hline(4, 7, 3, P["thatch"])
+    c.hline(5, 6, 4, P["thatch"])
+    c.px(5, 6, P["thatch"])
+    c.hline(4, 7, 8, P["thatch"])
+    c.hline(3, 8, 9, P["thatch_dark"])
+    c.outline()
+    return c
+
+
+def icon_scroll() -> Canvas:
+    """Bí kíp đột phá: a rolled scroll tied with a red cord."""
+    c = Canvas(12, 12)
+    c.rect(2, 3, 8, 6, P["paper"])
+    c.hline(2, 9, 8, P["paper_shade"])
+    c.rect(1, 2, 2, 8, P["wood"])
+    c.rect(9, 2, 2, 8, P["wood"])
+    c.vline(1, 2, 9, P["wood_light"])
+    c.vline(9, 2, 9, P["wood_light"])
+    c.rect(5, 3, 2, 6, P["red"])
+    c.px(5, 4, P["red_light"] if "red_light" in P else P["red"])
+    c.outline()
+    return c
+
+
+REQUIREMENT_ICONS = (("check", icon_check), ("cross", icon_cross), ("gain", icon_gain), ("time", icon_time),
+                     ("scroll", icon_scroll))
+
+
 def app_icon() -> Canvas:
     """The game's icon (Android launcher, window): the level 6 castle on a sky and grass tile."""
     c = Canvas(48, 48)
@@ -919,6 +993,8 @@ def main() -> None:
         draw().save(f"buildings/{name}.png")
     for name, draw in (("food", icon_food), ("wood", icon_wood), ("stone", icon_stone), ("ore", icon_ore),
                        ("hardwood", icon_hardwood), ("horses", icon_horses)):
+        draw().save(f"icons/{name}.png", UI_SCALE)
+    for name, draw in REQUIREMENT_ICONS:
         draw().save(f"icons/{name}.png", UI_SCALE)
     panel_paper().save("ui/panel_paper.png", UI_SCALE)
     panel_wood().save("ui/panel_wood.png", UI_SCALE)

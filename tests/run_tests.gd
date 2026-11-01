@@ -31,6 +31,7 @@ const TEST_FILES := [
 	"res://tests/test_difficulty.gd",
 	"res://tests/test_expedition.gd",
 	"res://tests/test_war_events.gd",
+	"res://tests/test_limit_break.gd",
 ]
 
 

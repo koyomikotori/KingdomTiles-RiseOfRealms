@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"watchtower"
 display_name = "Trạm lính canh"
-description = "Mỗi trạm giảm 4% khả năng bị cướp. Lúc đầu xây được 1 trạm, +1 mỗi cấp thành, tối đa 4. Phí duy trì 1 lương thực/lượt. Xây trên ô cỏ."
+description = "Canh gác biên giới: mỗi trạm giảm 4% khả năng bị cướp."
 cost = Dictionary[StringName, int]({&"wood": 4, &"stone": 3})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

@@ -153,6 +153,8 @@ static func summary_lines(report: Dictionary) -> Array[String]:
 		if not items.is_empty():
 			lines.append("Trang bị: %s." % ", ".join(items.map(func(item: Item) -> String:
 				return "%s (%s)" % [item.display_name, Item.RARITY_NAMES[item.rarity]])))
+		if rewards.get("scrolls", 0) > 0:
+			lines.append("Bí kíp đột phá: +%d." % rewards.scrolls)
 		if rewards.xp_officer > 0:
 			lines.append("Kinh nghiệm: tướng sĩ +%d, lính +%d." % [rewards.xp_officer, rewards.xp_squad])
 	return lines

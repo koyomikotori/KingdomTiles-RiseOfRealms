@@ -1,7 +1,8 @@
 class_name OfficersPanel
 extends VBoxContainer
 ## The "Tướng sĩ" side tab (GDD §13, M12c, Ninja Village style): one row per general and advisor
-## with their battle sprite, name, stars, post, level and status. Tapping a row emits
+## with their battle sprite, name, stars, post, level and status, then the limit-break scrolls held
+## (M16c). Tapping a row emits
 ## `officer_selected`; the kingdom scene opens the officer's window. Read-only.
 
 signal officer_selected(officer: Officer)
@@ -22,14 +23,15 @@ func refresh(state: KingdomState) -> void:
 		add_child(_small("Chưa có tướng nào. Tuyển ở thành chính, tab Chiêu hiền."))
 	for general in generals.generals:
 		var role := "Tổng tướng" if general == generals.commander else "Dự bị"
-		add_child(_row(general, role))
+		add_child(_row(state, general, role))
 	var advisors := state.advisors
 	add_child(_header("Mưu sĩ (%d/%d)" % [advisors.advisors.size(), Advisors.MAX_ADVISORS]))
 	if advisors.advisors.is_empty():
 		add_child(_small("Chưa có mưu sĩ nào. Tuyển ở thành chính, tab Chiêu hiền."))
 	for advisor in advisors.advisors:
 		var role := Advisors.POST_NAMES[advisor.post] if advisor.post != Advisor.NO_POST else "Chưa giữ chức"
-		add_child(_row(advisor, role))
+		add_child(_row(state, advisor, role))
+	add_child(_small("Bí kíp đột phá: %d (có được khi dẹp yên một vùng nổi loạn)." % state.scrolls))
 	var agents := state.agents.agents
 	var busy := agents.filter(func(a: Agent) -> bool: return a.is_busy()).size()
 	add_child(_header("Đặc vụ (%d/%d)" % [agents.size(), state.agent_slots()]))
@@ -43,8 +45,9 @@ func refresh(state: KingdomState) -> void:
 		add_child(_small("Cần Sở cảnh sát (thành cấp 3) để tuyển và cử đặc vụ."))
 
 
-## A tappable row: battle sprite, "Name ★★", "role · level", wounds and unspent points.
-func _row(officer: Officer, role: String) -> Control:
+## A tappable row: battle sprite, "Name ★★", "role · level", wounds, unspent points and whether a
+## limit break is possible.
+func _row(state: KingdomState, officer: Officer, role: String) -> Control:
 	var panel := PanelContainer.new()
 	panel.theme_type_variation = &"InsetPanel"
 	panel.custom_minimum_size = Vector2(0, ROW_HEIGHT)
@@ -68,13 +71,16 @@ func _row(officer: Officer, role: String) -> Control:
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(column)
 	column.add_child(_line("%s %s" % [officer.name, officer.star_text()], 14, officer.name_color()))
-	column.add_child(_line("%s · Cấp %d" % [role, officer.level], 12, UiPalette.MUTED))
+	var breaks := " · Đột phá %d" % officer.breaks if officer.breaks > 0 else ""
+	column.add_child(_line("%s · Cấp %d%s" % [role, officer.level, breaks], 12, UiPalette.MUTED))
 	if officer.away:
 		column.add_child(_line("Đang đi thảo phạt", 12, UiPalette.ACCENT))
 	elif not officer.is_ready():
 		column.add_child(_line("Bị thương, còn %d lượt" % officer.wounded_turns, 12, WARNING_COLOR))
 	if officer.points > 0:
 		column.add_child(_line("Còn %d điểm cộng" % officer.points, 12, UiPalette.ACCENT))
+	if state.check_limit_break(officer) == LimitBreak.Result.OK:
+		column.add_child(_line("Có thể đột phá", 12, UiPalette.ACCENT))
 	return panel
 
 

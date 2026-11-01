@@ -30,6 +30,8 @@ var _equip_box: VBoxContainer
 var _slot: StringName = &"weapon"
 ## Item waiting for a second press on "Phân rã".
 var _dismantling: Item
+## "Đột phá" was pressed once and waits for the second press.
+var _break_armed := false
 
 
 func open(state: KingdomState, officer: Officer) -> void:
@@ -75,6 +77,8 @@ func open(state: KingdomState, officer: Officer) -> void:
 	state.generals.changed.connect(_refresh)
 	state.advisors.changed.connect(_refresh)
 	state.equipment.changed.connect(_refresh)
+	# Cost chips turn green or red with the stockpile (RequirementView, M16c).
+	state.stockpile.changed.connect(_refresh)
 	_refresh()
 
 
@@ -135,12 +139,14 @@ func _refresh() -> void:
 	else:
 		_fill_advisor(_officer as Advisor)
 	_stats.add_child(_muted(_officer.level_text()))
+	_add_limit_break()
 	if _officer.points > 0:
 		var points := _label("Còn %d điểm cộng: bấm +1 cạnh một chỉ số." % _officer.points, 13)
 		points.add_theme_color_override("font_color", UiPalette.ACCENT)
 		_stats.add_child(points)
-	_stats.add_child(_muted("Phí nuôi: %s mỗi lượt." % UiFormat.amounts(_state.generals.ranks[_officer.stars].upkeep,
-			_resource_types)))
+	var upkeep := RequirementView.new()
+	upkeep.amounts("Phí nuôi mỗi lượt:", _state.generals.ranks[_officer.stars].upkeep)
+	_stats.add_child(upkeep)
 	_fill_equipment()
 
 
@@ -157,9 +163,9 @@ func _fill_general(general: General) -> void:
 	_role.text = role + _status_text(general)
 	_commander_button.disabled = general == generals.commander or general.away
 	_dismiss_button.disabled = general.away
-	_stat_row("Võ lực", general.might, Generals.STAT_MAX, generals.can_spend_point(general, &"might"),
+	_stat_row("Võ lực", general.might, general.stat_cap(Generals.STAT_MAX), generals.can_spend_point(general, &"might"),
 			generals.spend_point.bind(general, &"might"), general.item_bonus(&"might"))
-	_stat_row("Thống suất", general.command, Generals.STAT_MAX, generals.can_spend_point(general, &"command"),
+	_stat_row("Thống suất", general.command, general.stat_cap(Generals.STAT_MAX), generals.can_spend_point(general, &"command"),
 			generals.spend_point.bind(general, &"command"), general.item_bonus(&"command"))
 	var armor := general.item_bonus(&"guard_armor")
 	if armor > 0:
@@ -179,7 +185,7 @@ func _fill_advisor(advisor: Advisor) -> void:
 	_role.text = post + _status_text(advisor)
 	_dismiss_button.disabled = advisor.away
 	for stat in Advisors.STAT_IDS:
-		_stat_row(Advisors.STAT_NAMES[stat], advisor.get_stat(stat), Advisors.STAT_MAX,
+		_stat_row(Advisors.STAT_NAMES[stat], advisor.get_stat(stat), advisor.stat_cap(Advisors.STAT_MAX),
 				advisors.can_spend_point(advisor, stat), advisors.spend_point.bind(advisor, stat), advisor.item_bonus(stat))
 	if advisor.post != Advisor.NO_POST:
 		_stats.add_child(_label(Advisors.describe_post(advisor.post, advisor.stat_for(advisor.post)), 13))
@@ -375,6 +381,53 @@ func _muted(text: String) -> Label:
 	var label := _label(text, 13)
 	label.add_theme_color_override("font_color", UiPalette.MUTED)
 	return label
+
+
+## "Đột phá 1/3": the next break's requirements (✓ / ✗), cost chips and gains, then its button.
+func _add_limit_break() -> void:
+	var most := LimitBreak.max_breaks(_officer)
+	if most == 0:
+		return
+	var view := RequirementView.new()
+	_stats.add_child(view)
+	view.header("Đột phá %d/%d" % [_officer.breaks, most])
+	if _officer.breaks >= most:
+		view.note("Đã đột phá hết số lần của bậc %d sao." % _officer.stars)
+		return
+	view.requirement("Đạt cấp tối đa (%d/%d)" % [_officer.level, _officer.max_level()],
+			_officer.level >= _officer.max_level())
+	var needed := LimitBreak.scrolls_needed(_officer)
+	view.requirement("Bí kíp đột phá: %d/%d" % [_state.scrolls, needed], _state.scrolls >= needed)
+	if _officer.away:
+		view.requirement("Đang đi thảo phạt", false)
+	view.header("Chi phí")
+	view.costs(LimitBreak.cost(_officer), _state.stockpile)
+	view.header("Nhận được")
+	var cap := _officer.stat_cap(Generals.STAT_MAX)
+	view.gain("Chỉ số tối đa %d → %d" % [cap, cap + LimitBreak.STAT_STEP])
+	view.gain("Cấp tối đa %d → %d" % [_officer.max_level(), _officer.max_level() + LimitBreak.LEVEL_STEP])
+	var button := _button("Chắc chắn?" if _break_armed else "Đột phá", _limit_break)
+	button.custom_minimum_size = Vector2(160, 40)
+	button.disabled = _state.check_limit_break(_officer) != LimitBreak.Result.OK
+	_stats.add_child(_row([button]))
+
+
+## A break spends a lot: the first press asks, the second breaks through.
+func _limit_break() -> void:
+	if not _break_armed:
+		_break_armed = true
+		set_status("Bấm lần nữa để đột phá cho %s." % _officer.name, false)
+		_refresh()
+		return
+	_break_armed = false
+	var result := _state.limit_break(_officer)
+	if result == LimitBreak.Result.OK:
+		Sfx.play(&"upgrade")
+		set_status("%s đã đột phá: chỉ số tối đa %d, cấp tối đa %d." % [_officer.name,
+				_officer.stat_cap(Generals.STAT_MAX), _officer.max_level()])
+	else:
+		set_status(LimitBreak.describe(result), false)
+		_refresh()
 
 
 func _is_still_here() -> bool:

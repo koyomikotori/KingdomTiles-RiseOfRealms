@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"mine"
 display_name = "Mỏ khai thác"
-description = "Khai thác đá; cấp 2 trở lên có thêm khoáng sản. Xây trên ô đồi; trên ô ◆ thì sản lượng gấp đôi. Mỗi ô đồi của bạn kề bên (8 ô xung quanh, chưa có công trình) cho thêm 2 đá, ô ◆ cho 4."
+description = "Khai thác đá, từ cấp 2 có thêm khoáng sản. Mỗi ô đồi trống kề bên +2 đá; trên ô ◆ sản lượng gấp đôi."
 cost = Dictionary[StringName, int]({&"wood": 8, &"stone": 4})
 allowed_terrains = Array[StringName]([&"hill"])
 max_count = 3
