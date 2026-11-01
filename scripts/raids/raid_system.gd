@@ -56,6 +56,7 @@ static func create_kingdom_side(state: KingdomState) -> BattleSide:
 	for squad in state.army.squads:
 		if not squad.away:
 			side.add_unit(state.units[squad.unit_id], squad.soldiers, squad)
+	state.bless_army(side)
 	return side
 
 

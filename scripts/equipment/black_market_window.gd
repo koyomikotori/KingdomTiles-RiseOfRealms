@@ -7,7 +7,7 @@ extends ModalWindow
 ## items officers wear with their face) with "Bán" for BlackMarket.sell_value. Closing the window sends the merchant away
 ## (BlackMarket.leave).
 
-const CARD_SIZE := Vector2(270, 250)
+const CARD_SIZE := Vector2(270, 236)
 const GAP := 10
 const PAGE_SIZE := Vector2(CARD_SIZE.x * 3 + GAP * 2, CARD_SIZE.y * 2 + GAP)
 const PORTRAIT_SCALE := 2.0

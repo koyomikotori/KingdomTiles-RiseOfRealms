@@ -25,7 +25,7 @@ func _paint(board: BoardData, terrain: StringName, coords: Array[Vector2i]) -> v
 
 func test_data_loads() -> void:
 	check(buildings.has(&"barracks"), "Barracks is loaded")
-	check_eq(units.size(), 21, "21 unit types (M13)")
+	check_eq(units.size(), 27, "27 unit types (M13, M16f)")
 	check_eq(units.slice(0, 3).map(func(u: UnitData) -> StringName: return u.unit_id),
 			[&"swordsman", &"elite_swordsman", &"royal_swordguard"], "Units in sort order")
 	for unit in units:

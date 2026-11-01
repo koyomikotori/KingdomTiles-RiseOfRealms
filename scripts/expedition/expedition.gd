@@ -209,6 +209,7 @@ func _team_side(state: KingdomState) -> BattleSide:
 	side.color = state.player_color
 	for squad in squads:
 		side.add_unit(state.units[squad.unit_id], squad.soldiers, squad)
+	state.bless_army(side)
 	if general != null:
 		state.generals.lead_officer(side, general)
 	if advisor != null:

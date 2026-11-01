@@ -37,6 +37,8 @@ class Unit:
 	var has_charged := false
 	var has_fired := false
 	var next_volley_at := 0.0
+	## Arrow volleys shot so far (UnitData.charge_after_volleys, M16f).
+	var volleys := 0
 	## Enemy soldiers this unit has taken down.
 	var kills := 0.0
 	## How many 25% casualty steps have already cost morale.
@@ -54,7 +56,7 @@ class Unit:
 			var bonus := level * Experience.SQUAD_LEVEL_BONUS
 			if p_data.is_ranged():
 				range_bonus = bonus
-			if not p_data.is_ranged() or p_data.melee_after_volley:
+			if not p_data.is_ranged() or p_data.fights_in_melee_later():
 				attack_bonus = bonus
 			defense_bonus = bonus
 			morale += bonus
@@ -77,6 +79,13 @@ class Unit:
 	## Still fighting: has soldiers and has not broken.
 	func is_active() -> bool:
 		return not broken and alive() > 0
+
+	## A ranged unit that has left its row for melee: musketeers after their volley, horse
+	## archers after their last volley.
+	func has_closed_in() -> bool:
+		if data.melee_after_volley:
+			return has_fired
+		return data.charge_after_volleys > 0 and volleys >= data.charge_after_volleys
 
 
 var display_name: String

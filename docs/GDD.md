@@ -1089,3 +1089,24 @@ Mọi bảng thông tin / nâng cấp trình bày điều kiện bằng hình th
   - Không nhận: quân ta −1 nhuệ khí tối đa trong ải đó.
 - **Trận tay đôi trông thế nào:** máu mỗi bên là tướng cộng cận vệ, gộp thành 10 người như nhau cho cả hai (nếu lấy đúng số cận vệ theo sao thì tướng nhiều sao thắng gần như chắc chắn), nên thanh máu tụt dần; trên sân chỉ vẽ hai vị tướng. Trận dài khoảng 20 giây; tỉ lệ thắng giữ như cũ (cùng sao ~50%, hơn 2 sao ~90%). Hai tướng vừa đánh vừa phi ngựa qua lại, lên xuống sân, lúc áp sát chém nhau, lúc dạt ra; cảnh xem lại khi thảo phạt cũng vậy.
 - **Bảng thống kê ải:** chia hai cột. Bên trái là diễn biến (tự xuống dòng) và phần thưởng bằng icon; bên phải là bảng đơn vị gộp theo loại lính (Còn = số đội còn lại / số đội đã đi), nên bảng không còn dài đến mức bị thu nhỏ.
+
+## 22. Lính mới, Chùa và chợ nâng cấp (M16f, đã chốt)
+
+- **Kỵ cung** (loại "Kỵ cung", 3 cấp, 12 lính/đơn vị, hàng sau, là kỵ binh nên sợ thương binh):
+  - Cần trại tập bắn + chuồng ngựa cấp 1/2/3 và doanh trại cấp 1/3/6.
+  - Trong trận đứng ở cánh như cung thủ, bắn 3 loạt (yếu hơn cung thủ cùng cấp: tầm xa 5/7/9 so với 6/8/11), sau loạt thứ 3 thì thôi bắn, xông lên hàng trước và xung kích như kỵ binh nhẹ.
+  - Nếu không còn quân nào đứng trước thì kỵ cung thành tiền tuyến và đánh cận chiến luôn (như cung thủ).
+  - Kỵ cung nông dân / tinh nhuệ / hoàng gia: cận chiến 6/7/9, phòng thủ 4/5/7, giáp 2/3/5, xung kích 8/11/14, sĩ khí 8/10/12, nạp tên 4/4/3,5 giây; giá có ngựa (3/4/5).
+- **Võ tăng** (loại "Võ tăng", 3 cấp, 20 lính/đơn vị, hàng trước): Tăng binh / Võ tăng tinh nhuệ / La Hán hộ quốc.
+  - Cần võ trường cấp 1/2/3 và Chùa cấp 1/3/5 (không cần doanh trại).
+  - Ít giáp (2/3/4), đánh mạnh (cận chiến 11/14/17), sĩ khí cao (11/13/16).
+  - **Tĩnh tâm:** không mất nhuệ khí khi tướng ngã, và mưu kế của địch không làm giảm nhuệ khí (các tác dụng khác của mưu kế vẫn có). Trận hiện không có luật "đơn vị bên cạnh tan vỡ làm giảm nhuệ khí", nên phần đó chưa cần.
+- **Chùa** (hành chính, từ thành cấp 2, chỉ 1 chùa, 5 cấp, xây 3 lượt, nuôi 2 lương thực + 1 mỗi cấp):
+  - Nhuệ khí cho quân ta +1 / 1,5 / 2 / 2,5 / 3 (đơn vị của vương quốc, kể cả đạo thảo phạt và quân sự kiện; quân đồng minh và cận vệ tướng không được).
+  - Hiệu quả công trình sản xuất +5 / 6 / 7 / 8 / 10%.
+- **Chợ** nâng được 6 cấp (không quá cấp thành): mỗi chợ đổi thêm 10 / 12 / 14 / 16 / 18 / 20 giá trị hàng mỗi lượt; mỗi chợ cố định +1% hiệu quả công trình sản xuất ở mọi cấp (thành cấp 6 có 5 chợ → +5%). Giá lợi hơn giữ như cũ.
+- **Giảm sức mưu sĩ (~25%):**
+  - Nội chính: mỗi điểm +1,5% sản lượng, −1,5% giá xây, −1,5% phí nuôi (trước là 2%).
+  - Ngoại giao: mỗi điểm giá lợi 1,5%, khả năng chấp nhận +2,25%, cảnh giác −3%, quà +2,25%.
+  - Quân sư: mỗi điểm +2,5% tỉ lệ mưu kế (trước 3%), +0,25 sĩ khí (trước 0,3).
+- **Gia hạn hợp đồng giao thương:** khi hợp đồng còn 5 lượt trở xuống, cửa sổ hợp đồng có ô "Gia hạn thêm N lượt" (5–30) giữ nguyên điều khoản; khả năng đồng ý tính như ký mới với điều khoản đó. Đồng ý thì số lượt cộng thêm vào số còn lại; mỗi lượt chỉ hỏi được một lần (dùng chung với đề nghị ký).

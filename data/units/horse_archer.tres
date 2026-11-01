@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/army/unit_data.gd" id="1_unit"]
+
+[resource]
+script = ExtResource("1_unit")
+unit_id = &"horse_archer"
+display_name = "Kỵ cung nông dân"
+sort_order = 21
+squad_size = 12
+row = 2
+attack_kind = 1
+melee_attack = 6
+melee_defense = 4
+armor = 2
+charge_attack = 8
+unit_type = 7
+morale = 8
+range_attack = 5
+reload_time = 4.0
+is_cavalry = true
+charge_after_volleys = 3
+recruit_cost = Dictionary[StringName, int]({&"food": 3, &"wood": 2, &"horses": 3})
+upkeep = Dictionary[StringName, int]({&"food": 2})
+required_buildings = Dictionary[StringName, int]({&"archery_range": 1, &"war_stable": 1, &"barracks": 1})

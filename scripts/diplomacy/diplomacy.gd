@@ -10,7 +10,7 @@ enum GiftResult { OK, EMPTY, CANNOT_AFFORD, LIMIT_REACHED, ANNEXED, TOO_SMALL, T
 enum TradeResult { OK, REFUSED, SAME_RESOURCE, EMPTY, CANNOT_AFFORD, OVER_CAPACITY, TOO_SMALL, TOO_FAR }
 ## OK = the clan signed. DECLINED = valid offer, but the clan said no.
 enum ProposalResult { OK, DECLINED, REFUSED, SAME_RESOURCE, EMPTY, TOO_LARGE, BAD_DURATION, ALREADY_HAS, ASKED_THIS_TURN,
-		TOO_FAR }
+		TOO_FAR, NOT_YET }
 
 const TIER_NAMES: Array[String] = ["Thù địch", "Căng thẳng", "Trung lập", "Thân thiện", "Thân thiết"]
 ## Lowest relation of each tier above HOSTILE.
@@ -89,6 +89,9 @@ const AGREEMENT_TURN_GAIN := 1
 const AGREEMENT_COMPLETE_GAIN := 3
 const AGREEMENT_MISSED_PENALTY := 3
 const AGREEMENT_CANCEL_PENALTY := 20
+## A running agreement can be renewed on the same terms during its last turns (M16f, like
+## Alliances.ALLIANCE_RENEW_TURNS).
+const AGREEMENT_RENEW_TURNS := 5
 ## Added to the relation while an agreement runs.
 const AGREEMENT_BASE_BONUS := 15
 ## Added to the relation while allied with the kingdom (GDD §9.7).
@@ -109,10 +112,10 @@ const AGREEMENT_MAX_CHANCE := 0.95
 const AGREEMENT_PERSONALITY: Array[float] = [0.05, -0.1, 0.15, -0.2]
 ## The Ngoại giao advisor (GDD §8, M11f), per point of `envoy`: better trade prices, likelier
 ## acceptance (agreements, alliances, peace), less wariness, bigger gift gains.
-const ENVOY_PRICE := 0.02
-const ENVOY_CHANCE := 0.03
-const ENVOY_WARINESS := 0.04
-const ENVOY_GIFT := 0.03
+const ENVOY_PRICE := 0.015
+const ENVOY_CHANCE := 0.0225
+const ENVOY_WARINESS := 0.03
+const ENVOY_GIFT := 0.0225
 
 
 ## The relation is never stored: it is the sum of lasting factors (base, wariness, treaties) and
@@ -589,6 +592,49 @@ func propose(rng: RandomNumberGenerator, clan_id: StringName, give_id: StringNam
 	return ProposalResult.OK
 
 
+## Whether the running agreement can be renewed for `turns` more turns now (M16f).
+func check_renewal(clan_id: StringName, turns: int) -> ProposalResult:
+	var agreement := get_agreement(clan_id)
+	if agreement == null:
+		return ProposalResult.EMPTY
+	if agreement.turns_left > AGREEMENT_RENEW_TURNS:
+		return ProposalResult.NOT_YET
+	if not in_reach(clan_id):
+		return ProposalResult.TOO_FAR
+	if get_tier(clan_id) < MIN_TRADE_TIER:
+		return ProposalResult.REFUSED
+	if clans[clan_id].proposed_this_turn:
+		return ProposalResult.ASKED_THIS_TURN
+	if turns < AGREEMENT_MIN_TURNS or turns > AGREEMENT_MAX_TURNS:
+		return ProposalResult.BAD_DURATION
+	return ProposalResult.OK
+
+
+## The chance the clan renews the running agreement: agreement_chance for its terms today.
+func renewal_chance(clan_id: StringName) -> float:
+	var agreement := get_agreement(clan_id)
+	if agreement == null:
+		return 0.0
+	return agreement_chance(clan_id, agreement.give_id, agreement.give_amount, agreement.get_id, agreement.get_amount)
+
+
+## Asks to renew the running agreement on the same terms: accepted with renewal_chance(), it runs
+## `turns` more turns on top of the ones left. Either way no other offer this turn.
+func renew_agreement(rng: RandomNumberGenerator, clan_id: StringName, turns: int) -> ProposalResult:
+	var result := check_renewal(clan_id, turns)
+	if result != ProposalResult.OK:
+		return result
+	clans[clan_id].proposed_this_turn = true
+	if rng.randf() >= renewal_chance(clan_id):
+		changed.emit()
+		return ProposalResult.DECLINED
+	var agreement := get_agreement(clan_id)
+	agreement.turns_left += turns
+	agreement.total_turns = agreement.turns_left
+	changed.emit()
+	return ProposalResult.OK
+
+
 ## The player breaks the agreement early: big relation penalty.
 func cancel_agreement(clan_id: StringName) -> void:
 	var agreement := get_agreement(clan_id)
@@ -648,6 +694,8 @@ static func describe_proposal(result: ProposalResult) -> String:
 			return "Họ cần thời gian cân nhắc. Hãy đề nghị lại vào lượt sau."
 		ProposalResult.TOO_FAR:
 			return "Quá xa: chỉ qua lại được với gia tộc cách lãnh thổ tối đa %d vùng." % REACH
+		ProposalResult.NOT_YET:
+			return "Chỉ gia hạn được khi hợp đồng còn %d lượt trở xuống." % AGREEMENT_RENEW_TURNS
 	return ""
 
 

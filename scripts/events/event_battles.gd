@@ -228,6 +228,7 @@ static func _detachment_side(state: KingdomState, battle: Dictionary, rng: Rando
 	side.color = state.player_color
 	for squad in squads:
 		side.add_unit(state.units[squad.unit_id], squad.soldiers, squad)
+	state.bless_army(side)
 	state.generals.lead(side, state.board, defending)
 	return side
 

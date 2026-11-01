@@ -123,10 +123,12 @@ func _use_stratagems(s: int) -> void:
 		if targets.is_empty():
 			continue
 		var points := side.strategy
+		var on_enemy := not stratagem.target in [StratagemData.Target.OWN_ALL, StratagemData.Target.OWN_FRONT]
 		for unit in targets:
 			var loss := stratagem.soldier_loss_base + stratagem.soldier_loss_per_point * points
 			unit.soldiers = maxf(0.0, unit.soldiers * (1.0 - loss))
-			unit.morale += stratagem.morale_base + stratagem.morale_per_point * points
+			if not (on_enemy and unit.data.steadfast):  # Tĩnh tâm (M16f)
+				unit.morale += stratagem.morale_base + stratagem.morale_per_point * points
 			unit.attack_mult += stratagem.attack_base + stratagem.attack_per_point * points
 			unit.defense_mult += stratagem.defense_base + stratagem.defense_per_point * points
 			unit.range_mult = maxf(0.1, unit.range_mult + stratagem.range_base + stratagem.range_per_point * points)
@@ -177,7 +179,10 @@ func _fire_arrows(s: int) -> void:
 			continue
 		unit.next_volley_at += unit.data.reload_time
 		_ranged_attack(s, unit, ARROW_FACTOR, true)
+		unit.volleys += 1
 		record.events.append({"time": time, "type": &"arrow_volley", "side": s, "unit": i})
+		if unit.has_closed_in():  # horse archers ride in after their last volley (M16f)
+			unit.row = UnitData.Row.FRONT
 
 
 ## Arrows rain on every row; bullets hit the front row. Damage within a row is split by soldiers.
@@ -201,7 +206,7 @@ func _fight_melee(s: int) -> void:
 		var unit := _sides[s].units[i]
 		if not unit.is_active():
 			continue
-		if unit.data.is_ranged() and not _is_in_melee(s, unit) and not (unit.data.melee_after_volley and unit.has_fired):
+		if unit.data.is_ranged() and not _is_in_melee(s, unit) and not unit.has_closed_in():
 			continue
 		var charging := not unit.has_charged
 		unit.has_charged = true
@@ -279,7 +284,7 @@ func _update_morale(s: int, i: int) -> void:
 
 
 ## The commander falls once their bodyguard breaks or dies: every other unit of the side loses
-## Generals.FALL_MORALE_LOSS morale (GDD §8, M11d).
+## Generals.FALL_MORALE_LOSS morale (GDD §8, M11d); steadfast units (Tĩnh tâm, M16f) lose none.
 func _check_general(s: int) -> void:
 	var side := _sides[s]
 	if side.general_fallen:
@@ -290,7 +295,7 @@ func _check_general(s: int) -> void:
 			side.general_fallen = true
 			record.events.append({"time": time, "type": &"general_fallen", "side": s, "unit": i})
 			for other in side.units:
-				if other != unit and other.is_active():
+				if other != unit and other.is_active() and not other.data.steadfast:
 					other.morale -= Generals.FALL_MORALE_LOSS
 			return
 
