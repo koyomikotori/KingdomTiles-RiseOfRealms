@@ -164,7 +164,8 @@ func dismiss(general: General) -> void:
 
 
 ## Adds one of the general's level points to &"might" (Võ lực) or &"command" (Thống suất).
-## False (nothing changes) without points or when that stat is already at STAT_MAX.
+## False (nothing changes) without points or when that stat is already at its cap (STAT_MAX, raised
+## by limit breaks: Officer.stat_cap).
 func spend_point(general: General, stat: StringName) -> bool:
 	if not can_spend_point(general, stat):
 		return false
@@ -182,9 +183,9 @@ func can_spend_point(general: General, stat: StringName) -> bool:
 		return false
 	match stat:
 		&"might":
-			return general.might < STAT_MAX
+			return general.might < general.stat_cap(STAT_MAX)
 		&"command":
-			return general.command < STAT_MAX
+			return general.command < general.stat_cap(STAT_MAX)
 	return false
 
 

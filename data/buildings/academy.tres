@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"academy"
 display_name = "Học quán"
-description = "Mỗi lượt mọi tướng và mưu sĩ học thêm 5 kinh nghiệm mỗi cấp học quán, kể cả người không ra trận. Chỉ có 1. Nâng cấp tới cấp thành. Xây trên ô cỏ."
+description = "Mỗi lượt mọi tướng và mưu sĩ học thêm kinh nghiệm, kể cả người không ra trận."
 cost = Dictionary[StringName, int]({&"wood": 10, &"stone": 8})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

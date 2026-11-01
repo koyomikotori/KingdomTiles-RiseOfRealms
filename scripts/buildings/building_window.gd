@@ -39,6 +39,9 @@ var _building: BuildingData
 var _tabs: TabContainer
 var _info: Label
 var _upgrade: Label
+## Icons for what a building gives and needs (RequirementView, M16c), under _info / _upgrade.
+var _info_view: RequirementView
+var _upgrade_view: RequirementView
 var _upgrade_button: Button
 var _confirm_box: VBoxContainer
 var _confirm_text: Label
@@ -82,10 +85,14 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 	_tabs.custom_minimum_size = Vector2(0, 180)
 	body.add_child(_tabs)
 	_info = _tab_label("Thông tin")
-	_upgrade = _tab_label("Nâng cấp")
+	_info_view = _view_under(_info)
+	# Buildings that never level up get no Upgrade tab (M16c).
+	if _is_castle or (_building != null and _building.is_upgradable()):
+		_upgrade = _tab_label("Nâng cấp")
+		_upgrade_view = _view_under(_upgrade)
 	if cell.building_id == KingdomState.FORGE_ID:
 		_forge_box = _tab_box(FORGE_TAB)
-		_tabs.current_tab = 2
+		_tabs.current_tab = _tabs.get_tab_count() - 1
 		state.equipment.changed.connect(_refresh)
 	if _is_castle:
 		_recruit_box = _tab_box("Chiêu hiền")
@@ -161,54 +168,45 @@ func _tab_label(title: String) -> Label:
 	for edge in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + edge, 10)
 	_tabs.add_child(margin)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 6)
+	margin.add_child(column)
 	var label := _label("", 14)
-	margin.add_child(label)
+	column.add_child(label)
 	return label
+
+
+## A RequirementView under a tab's label (_tab_label).
+func _view_under(label: Label) -> RequirementView:
+	var view := RequirementView.new()
+	label.get_parent().add_child(view)
+	return view
 
 
 func _refresh() -> void:
 	var cell := _state.board.get_cell(_origin)
 	var terrain: TerrainData = _state.terrains.get(cell.terrain_id)
 	var lines: Array[String] = []
+	_info_view.clear()
 	if _is_castle:
 		lines.append("Trung tâm của vương quốc. Không thể phá hủy hay di chuyển; mất hết đất xung quanh mà thua thêm một trận xâm lược thì thành thất thủ.")
-		lines.append("Chỗ cho đơn vị lính: %d (gồm doanh trại và cấp thành)." % _state.get_squad_capacity())
-		lines.append("Tướng và mưu sĩ tuyển được: tới %d sao (tab Chiêu hiền)." % _state.castle_level)
+		_info_view.header("Hiện có")
+		_info_view.gain("Chỗ cho đơn vị lính: %d (gồm doanh trại và cấp thành)" % _state.get_squad_capacity())
+		_info_view.gain("Tướng và mưu sĩ tuyển được: tới %d sao" % _state.castle_level)
 		var commander := _state.generals.commander
-		lines.append("Tổng tướng: %s (quản lý ở tab Tướng sĩ)." % ("%s %s" % [commander.name, commander.star_text()]
+		_info_view.gain("Tổng tướng: %s" % ("%s %s" % [commander.name, commander.star_text()]
 				if commander != null else "chưa có"))
 	elif _building != null:
 		lines.append(_building.description)
-		lines.append("Vị trí: ô (%d, %d), %s%s." % [_origin.x, _origin.y, terrain.display_name if terrain != null else "đất hoang",
-				" ◆" if cell.is_key else ""])
+		var place := "Ô (%d, %d), %s%s" % [_origin.x, _origin.y, terrain.display_name if terrain != null else "đất hoang",
+				" ◆" if cell.is_key else ""]
 		if _building.is_upgradable():
-			lines.append("Cấp %d/%d." % [cell.building_level, _building.max_level()])
-		var unlocked := _units_unlocked(1, cell.building_level)
-		if not unlocked.is_empty():
-			lines.append("Mở tuyển: %s." % ", ".join(unlocked))
-		var produced := Economy.production(_state.board, _building, cell)
-		if not produced.is_empty():
-			lines.append("Mỗi lượt: %s%s." % [UiFormat.amounts(produced, _resource_types, true),
-					"" if _state.buildings_supplied else " (đang ngừng vì thiếu phí duy trì)"])
-		if _building.field_resource != &"":
-			var fields := Economy.field_yield(_state.board, _building, _origin)
-			lines.append("Trong đó từ ô đất xung quanh: %s." % (UiFormat.amounts(fields, _resource_types, true)
-					if not fields.is_empty() else "chưa có"))
-		if _building.replenish_per_level > 0.0:
-			lines.append("Tăng tốc hồi quân: +%d%% (cấp %d)." % [roundi(_building.replenish_per_level * cell.building_level * 100),
-					cell.building_level])
-		var effects := _building.describe_effects(cell.building_level)
-		if not effects.is_empty():
-			lines.append("Tác dụng hiện tại: %s%s." % [effects,
-					"" if _state.buildings_supplied else " (đang ngừng vì thiếu phí duy trì)"])
-		var upkeep := _building.upkeep_at(cell.building_level)
-		if not upkeep.is_empty():
-			lines.append("Phí duy trì: %s mỗi lượt." % UiFormat.amounts(upkeep, _resource_types))
+			place += " · Cấp %d/%d" % [cell.building_level, _building.max_level()]
 		var most := BuildRules.limit(_building, _state.castle_level)
 		if most > 0:
-			lines.append("Đang có %d/%d%s." % [_state.board.count_buildings(_building.building_id), most,
-					"" if _building.fixed_count else " (thêm 1 chỗ mỗi cấp thành%s)" % (
-						", tối đa %d" % _building.max_limit if _building.max_limit > 0 else "")])
+			place += " · Đang có %d/%d" % [_state.board.count_buildings(_building.building_id), most]
+		lines.append(place)
+		_fill_building_effects(_info_view, cell, cell.building_level, false)
 	_info.text = "\n".join(lines)
 	if not _is_castle:
 		_refresh_building_upgrade(cell)
@@ -218,87 +216,142 @@ func _refresh() -> void:
 			_refresh_agents()
 		return
 	_refresh_generals()
+	_refresh_castle_upgrade()
+
+
+## What a building does at `level`: output per turn (with the share from the fields around it),
+## replenishment, effects, units it opens and its upkeep (GDD §8). `next`: the upgrade preview.
+func _fill_building_effects(view: RequirementView, cell: CellData, level: int, next: bool) -> void:
+	var stopped := not _state.buildings_supplied and not next
+	var produced: Dictionary[StringName, int]
+	if next:
+		produced = Economy.building_yield(_building, cell.is_key, level)
+		Economy.add_into(produced, Economy.field_yield(_state.board, _building, _origin))
+	else:
+		produced = Economy.production(_state.board, _building, cell)
+	var effects := _building.effect_lines(level)
+	# New units only in the upgrade preview; the army tab lists what can be recruited now.
+	# Units that still need another building are only counted.
+	var unlocked: Array[UnitData] = []
+	var waiting := 0
+	if next:
+		for unit in _units_unlocked(level):
+			if _other_buildings_ready(unit):
+				unlocked.append(unit)
+			else:
+				waiting += 1
+	var has_effects := not produced.is_empty() or _building.replenish_per_level > 0.0 or not effects.is_empty() \
+			or not unlocked.is_empty() or waiting > 0
+	if has_effects:
+		view.header("Cấp %d nhận được" % level if next else "Tác dụng")
+	if not produced.is_empty():
+		view.amounts("Mỗi lượt:", produced, true)
+		if not next and _building.field_resource != &"":
+			var fields := Economy.field_yield(_state.board, _building, _origin)
+			view.note("Trong đó từ ô đất xung quanh: %s." % (UiFormat.amounts(fields, _resource_types, true)
+					if not fields.is_empty() else "chưa có"))
+	if _building.replenish_per_level > 0.0:
+		var share := _percent(_building.replenish_per_level * level)
+		view.gain("Tăng tốc hồi quân %s → %s" % [_percent(_building.replenish_per_level * (level - 1)), share]
+				if next else "Tăng tốc hồi quân %s" % share)
+	for effect in effects:
+		view.gain(effect)
+	view.units("Mở tuyển:", unlocked)
+	if waiting > 0:
+		view.note("+%d loại lính khác khi có thêm công trình quân sự." % waiting)
+	if has_effects and stopped:
+		view.requirement("Đang ngừng vì thiếu phí duy trì", false)
+	var upkeep := _building.upkeep_at(level)
+	if not upkeep.is_empty():
+		view.header("Phí duy trì")
+		view.amounts("Mỗi lượt:", upkeep)
+
+
+## The castle's Upgrade tab: requirements (✓ / ✗), cost, turns and what the new level gives.
+func _refresh_castle_upgrade() -> void:
+	_upgrade_view.clear()
 	var next := _state.next_castle_level()
 	if next == null:
 		_upgrade.text = "Thành chính đã đạt cấp cao nhất (%d)." % _state.castle_level
 		_upgrade_button.disabled = true
 		return
-	var result := _state.check_castle_upgrade()
-	var text := "Lên cấp %d: %s. Mất %d lượt.\nCấp mới: thêm %d chỗ cho đơn vị lính, thêm 1 chỗ cho mỗi loại công trình, thêm 1 đội thợ, công trình nâng được tới cấp %d, tuyển được tướng và mưu sĩ tới %d sao." % [
-			next.level, UiFormat.amounts(_state.castle_upgrade_cost(), _resource_types), _state.castle_upgrade_turns(),
-			next.squad_capacity, next.level, next.level]
-	if next.required_clans > 0:
-		text += "
-Cần thôn tính hoặc liên minh %d gia tộc (đang có %d)." % [next.required_clans,
-				_state.diplomacy.count_united()]
-	if result == KingdomState.CastleResult.NEEDS_CLANS:
-		text += "
-Chưa đủ chiến công: hãy thôn tính hoặc liên minh thêm gia tộc."
-	elif result == KingdomState.CastleResult.CANNOT_AFFORD:
-		text += "\nChưa đủ tài nguyên."
-	elif result == KingdomState.CastleResult.NO_BUILDERS:
-		text += "\nKhông còn đội thợ rảnh: chờ một công trình xây xong."
-	_upgrade.text = text
-	_upgrade_button.disabled = result != KingdomState.CastleResult.OK
+	_upgrade.text = "Lên cấp %d" % next.level
+	var view := _upgrade_view
+	view.header("Yêu cầu")
+	if next.required_clans > 0 and KingdomState.castle_needs_clans:
+		var united := _state.diplomacy.count_united()
+		view.requirement("Thôn tính hoặc liên minh %d gia tộc (đang có %d)" % [next.required_clans, united],
+				united >= next.required_clans)
+	_builders_requirement(view)
+	view.header("Chi phí")
+	view.costs(_state.castle_upgrade_cost(), _state.stockpile)
+	view.line(&"time", "%d lượt" % _state.castle_upgrade_turns())
+	view.header("Cấp %d nhận được" % next.level)
+	view.gain("+%d chỗ cho đơn vị lính" % next.squad_capacity)
+	view.gain("+1 chỗ cho mỗi loại công trình, +1 đội thợ")
+	view.gain("Công trình nâng được tới cấp %d" % next.level)
+	view.gain("Tuyển tướng và mưu sĩ tới %d sao" % next.level)
+	_upgrade_button.disabled = _state.check_castle_upgrade() != KingdomState.CastleResult.OK
 
 
-## The Upgrade tab of a production building: next level's cost, yield and upkeep (GDD §8, economy v2).
+## "✓ Đội thợ rảnh (1/3 đang làm)".
+func _builders_requirement(view: RequirementView) -> void:
+	view.requirement("Có đội thợ rảnh (%d/%d đang làm)" % [_state.builders_busy(), _state.builder_limit()],
+			_state.has_free_builder())
+
+
+## The Upgrade tab of a building: requirements (✓ / ✗), cost, turns and the next level (GDD §8).
+## "+1.5%" (one decimal only when needed).
+static func _percent(share: float) -> String:
+	var text := String.num(share * 100, 1)
+	return "+%s%%" % text.trim_suffix(".0")
+
+
 func _refresh_building_upgrade(cell: CellData) -> void:
-	if _building == null or not _building.is_upgradable():
-		_upgrade.text = "Công trình này chưa có nâng cấp."
+	if _upgrade == null:
 		return
+	_upgrade_view.clear()
 	var result := _state.check_building_upgrade(_origin)
 	var level := cell.building_level
 	if result == KingdomState.UpgradeResult.MAX_LEVEL:
 		_upgrade.text = "Đã đạt cấp cao nhất (%d)." % level
 		_upgrade_button.disabled = true
 		return
-	var text := "Lên cấp %d: %s. Mất %d lượt, công trình ngừng hoạt động trong lúc nâng cấp.\n" % [level + 1,
-			UiFormat.amounts(_state.building_upgrade_cost(_origin), _resource_types), _state.building_upgrade_turns(_origin)]
-	if not _building.level_yields.is_empty():
-		var next_yield := Economy.building_yield(_building, cell.is_key, level + 1)
-		Economy.add_into(next_yield, Economy.field_yield(_state.board, _building, _origin))
-		text += "Mỗi lượt: %s. " % UiFormat.amounts(next_yield, _resource_types, true)
-	if _building.replenish_per_level > 0.0:
-		text += "Tăng tốc hồi quân: +%d%%. " % roundi(_building.replenish_per_level * (level + 1) * 100)
-	var next_effects := _building.describe_effects(level + 1)
-	if not next_effects.is_empty():
-		text += "Tác dụng: %s. " % next_effects
-	text += "Phí duy trì: %s mỗi lượt." % UiFormat.amounts(_building.upkeep_at(level + 1), _resource_types)
-	var unlocked := _units_unlocked(level + 1, level + 1)
-	if not unlocked.is_empty():
-		text += "\nMở tuyển: %s." % ", ".join(unlocked)
-	match result:
-		KingdomState.UpgradeResult.CASTLE_TOO_LOW:
-			text += "\nCần thành chính cấp %d (cấp công trình không vượt cấp thành%s)." % [
-					level + 1 + _building.castle_level_gap,
-					", %s thấp hơn thành %d cấp" % [_building.display_name, _building.castle_level_gap] \
-							if _building.castle_level_gap > 0 else ""]
-		KingdomState.UpgradeResult.CANNOT_AFFORD:
-			text += "\nChưa đủ tài nguyên."
-		KingdomState.UpgradeResult.NO_BUILDERS:
-			text += "\nKhông còn đội thợ rảnh: chờ một công trình xây xong."
-		KingdomState.UpgradeResult.FORGING:
-			text += "\nXưởng đang rèn: chờ rèn xong rồi mới nâng cấp."
-		KingdomState.UpgradeResult.REBELS:
-			text += "\nQuân nổi loạn đang chiếm ô này: thảo phạt trước đã."
-	_upgrade.text = text
+	_upgrade.text = "Lên cấp %d" % (level + 1)
+	var view := _upgrade_view
+	view.header("Yêu cầu")
+	var castle_needed := level + 1 + _building.castle_level_gap
+	view.requirement("Thành chính cấp %d (đang cấp %d)" % [castle_needed, _state.castle_level],
+			_state.castle_level >= castle_needed)
+	_builders_requirement(view)
+	if result == KingdomState.UpgradeResult.FORGING:
+		view.requirement("Xưởng đang rèn: chờ rèn xong", false)
+	if result == KingdomState.UpgradeResult.REBELS:
+		view.requirement("Quân nổi loạn đang chiếm ô này: thảo phạt trước", false)
+	view.header("Chi phí")
+	view.costs(_state.building_upgrade_cost(_origin), _state.stockpile)
+	view.line(&"time", "%d lượt (ngừng hoạt động trong lúc nâng cấp)" % _state.building_upgrade_turns(_origin))
+	_fill_building_effects(view, cell, level + 1, true)
 	_upgrade_button.disabled = result != KingdomState.UpgradeResult.OK
 
 
-## Names of the unit types that need this building at a level from `from_level` to `to_level`
-## (GDD §8, M13); other buildings they need are named in brackets.
-func _units_unlocked(from_level: int, to_level: int) -> Array[String]:
-	var names: Array[String] = []
+## Whether the kingdom already has every other building `unit` needs (so this upgrade alone opens it).
+func _other_buildings_ready(unit: UnitData) -> bool:
+	for building_id in unit.required_buildings:
+		if building_id != _building.building_id \
+				and _state.board.highest_building_level(building_id) < unit.required_buildings[building_id]:
+			return false
+	return true
+
+
+## The unit types this building opens at exactly `level` (GDD §8, M13); other buildings they also
+## need are left to the army tab.
+func _units_unlocked(level: int) -> Array[UnitData]:
+	var list: Array[UnitData] = []
 	for unit: UnitData in _state.units.values():
-		var needed: int = unit.required_buildings.get(_building.building_id, 0)
-		if needed < from_level or needed > to_level:
-			continue
-		var others: Dictionary[StringName, int] = unit.required_buildings.duplicate()
-		others.erase(_building.building_id)
-		names.append(unit.display_name if others.is_empty() else "%s (cần thêm %s)" % [unit.display_name,
-				RecruitmentRules.describe_buildings(others, _state.buildings)])
-	return names
+		if unit.required_buildings.get(_building.building_id, 0) == level:
+			list.append(unit)
+	return list
 
 
 ## First step of an action: say what it will do and wait for confirmation.
@@ -424,10 +477,18 @@ func _refresh_forge() -> void:
 	var parts: Array[String] = []
 	for rarity in odds.size():
 		parts.append("%s %d%%" % [Item.RARITY_NAMES[rarity], roundi(100.0 * odds[rarity] / total)])
-	_forge_box.add_child(_label("Giá: %s. Xong sau %d lượt, ra 1 món ngẫu nhiên độ hiếm:\n%s.\nNâng cấp xưởng để dễ ra đồ hiếm; Huyền thoại chỉ có từ chiến lợi phẩm và sự kiện." % [
-			UiFormat.amounts(Equipment.forge_cost(level), _resource_types), Equipment.FORGE_TURNS, ", ".join(parts)], 14))
-	_forge_box.add_child(_label("Kho đồ: %d/%d món." % [equipment.items.size(), Equipment.MAX_STORAGE], 13))
+	var view := RequirementView.new()
+	_forge_box.add_child(view)
 	var result := equipment.check_forge(_state.stockpile, level)
+	view.header("Yêu cầu")
+	view.requirement("Kho đồ còn chỗ (%d/%d món)" % [equipment.items.size(), Equipment.MAX_STORAGE],
+			equipment.has_room())
+	view.header("Chi phí")
+	view.costs(Equipment.forge_cost(level), _state.stockpile)
+	view.line(&"time", "%d lượt" % Equipment.FORGE_TURNS)
+	view.header("Nhận được")
+	view.gain("1 món ngẫu nhiên: %s" % ", ".join(parts))
+	view.note("Nâng cấp xưởng để dễ ra đồ hiếm; Huyền thoại chỉ có từ chiến lợi phẩm và sự kiện.")
 	var start := _button("Rèn", func() -> void:
 		var started := _state.start_forge(_forge_kind, _forge_slot)
 		if started == Equipment.Result.OK:
@@ -439,7 +500,7 @@ func _refresh_forge() -> void:
 	start.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	start.disabled = result != Equipment.Result.OK
 	_forge_box.add_child(start)
-	if result != Equipment.Result.OK:
+	if result != Equipment.Result.OK and result != Equipment.Result.CANNOT_AFFORD and result != Equipment.Result.FULL:
 		var reason := _label(Equipment.describe(result), 13)
 		reason.add_theme_color_override("font_color", WARNING_COLOR)
 		_forge_box.add_child(reason)
@@ -495,9 +556,8 @@ func _refresh_agents() -> void:
 				candidate.star_text(), UiFormat.amounts(cost, _resource_types)], _recruit_agent.bind(i)))
 		button.disabled = result != Agents.Result.OK
 		button.custom_minimum_size = Vector2(110, 44)
-		var reason := "" if result == Agents.Result.OK else " " + Agents.describe(result)
-		_agent_hire_box.add_child(_candidate_row(candidate, _agent_text(candidate),
-				"Giá: %s.%s" % [UiFormat.amounts(cost, _resource_types), reason], [button]))
+		var reason := "" if result == Agents.Result.OK or result == Agents.Result.CANNOT_AFFORD else Agents.describe(result)
+		_agent_hire_box.add_child(_candidate_row(candidate, _agent_text(candidate), reason, [button], cost))
 	var refresh := _button("Làm mới ngay (%s)" % UiFormat.amounts(Agents.REFRESH_COST, _resource_types),
 			_ask_custom.bind("Đổi danh sách đặc vụ ngay? Trả %s." % UiFormat.amounts(Agents.REFRESH_COST, _resource_types),
 			func() -> void: agents.buy_refresh(_state.stockpile, _state.castle_level, _state.turn)))
@@ -565,14 +625,12 @@ func _refresh_generals() -> void:
 		button.custom_minimum_size = Vector2(110, 44)
 		var reason := ""
 		if result == Generals.RecruitResult.NO_ROOM:
-			reason = " Đã đủ %d mưu sĩ." % Advisors.MAX_ADVISORS if is_advisor else " Đã đủ %d tướng." % Generals.MAX_GENERALS
-		elif result != Generals.RecruitResult.OK:
-			reason = " Chưa đủ tài nguyên."
-		var extra := "Giá: %s.%s" % [UiFormat.amounts(cost, _resource_types), reason]
+			reason = "Đã đủ %d mưu sĩ." % Advisors.MAX_ADVISORS if is_advisor else "Đã đủ %d tướng." % Generals.MAX_GENERALS
+		var upkeep := generals.ranks[candidate.stars].upkeep
 		if is_advisor:
-			_recruit_box.add_child(_advisor_row(candidate as Advisor, extra, [button]))
+			_recruit_box.add_child(_advisor_row(candidate as Advisor, reason, [button], cost, upkeep))
 		else:
-			_recruit_box.add_child(_general_row(candidate as General, extra, [button]))
+			_recruit_box.add_child(_general_row(candidate as General, reason, [button], cost, upkeep))
 	var refresh := _button("Làm mới ngay (%s)" % UiFormat.amounts(Generals.REFRESH_COST, _resource_types),
 			_ask_custom.bind("Đổi danh sách ứng viên ngay? Trả %s." % UiFormat.amounts(Generals.REFRESH_COST, _resource_types),
 			_buy_refresh))
@@ -581,29 +639,33 @@ func _refresh_generals() -> void:
 
 
 ## Name, stars, the three stats and the stratagems, plus a line and buttons.
-func _advisor_row(advisor: Advisor, extra: String, buttons: Array) -> Control:
+func _advisor_row(advisor: Advisor, extra: String, buttons: Array, cost: Dictionary[StringName, int] = {},
+		upkeep: Dictionary[StringName, int] = {}) -> Control:
 	var names: Array[String] = []
 	for id in advisor.stratagems:
 		var stratagem: StratagemData = _state.advisors.stratagems.get(id)
 		names.append(stratagem.display_name if stratagem != null else String(id))
 	var text := "Mưu sĩ %s %s · Nội chính %d · Ngoại giao %d · Mưu lược %d\nMưu kế: %s" % [advisor.name,
 			advisor.star_text(), advisor.admin, advisor.diplomacy, advisor.strategy, ", ".join(names)]
-	return _candidate_row(advisor, text, extra, buttons)
+	return _candidate_row(advisor, text, extra, buttons, cost, upkeep)
 
 
 ## Name, stars, stats and trait (with whether its condition holds), plus a line and buttons.
-func _general_row(general: General, extra: String, buttons: Array) -> Control:
+func _general_row(general: General, extra: String, buttons: Array, cost: Dictionary[StringName, int] = {},
+		upkeep: Dictionary[StringName, int] = {}) -> Control:
 	var text := "%s %s · Võ lực %d · Thống suất %d" % [general.name, general.star_text(), general.might, general.command]
 	var trait_data: GeneralTraitData = _state.generals.traits.get(general.trait_id)
 	if trait_data != null:
 		var active := trait_data.is_active(_state.board, trait_data.defending_only)
 		text += "\nĐặc tính %s: %s (%s%s)" % [trait_data.display_name, trait_data.description,
 				trait_data.describe_condition(_state.terrains, _state.buildings), " — đang có tác dụng" if active else " — chưa đạt"]
-	return _candidate_row(general, text, extra, buttons)
+	return _candidate_row(general, text, extra, buttons, cost, upkeep)
 
 
 ## Portrait, then the text and a muted line, then the buttons.
-func _candidate_row(officer: Officer, text: String, extra: String, buttons: Array) -> Control:
+## `cost` / `upkeep` show as resource chips (green or red by the stockpile) under the text.
+func _candidate_row(officer: Officer, text: String, extra: String, buttons: Array,
+		cost: Dictionary[StringName, int] = {}, upkeep: Dictionary[StringName, int] = {}) -> Control:
 	var portrait := PortraitView.new()
 	portrait.setup(officer, CANDIDATE_PORTRAIT_SCALE)
 	var column := VBoxContainer.new()
@@ -611,9 +673,16 @@ func _candidate_row(officer: Officer, text: String, extra: String, buttons: Arra
 	var name_label := _label(text, 14)
 	name_label.add_theme_color_override("font_color", officer.name_color())
 	column.add_child(name_label)
-	column.add_child(_muted(extra))
+	if not cost.is_empty():
+		var view := RequirementView.new()
+		view.costs(cost, _state.stockpile, "Giá:")
+		view.amounts("Nuôi mỗi lượt:", upkeep)
+		column.add_child(view)
+	if extra != "":
+		column.add_child(_muted(extra))
 	var row := _row([portrait, column])
 	for button: Button in buttons:
+		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		row.add_child(button)
 	return row
 

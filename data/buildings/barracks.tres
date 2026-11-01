@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"barracks"
 display_name = "Doanh trại"
-description = "Cho phép tuyển quân và bổ sung quân mỗi lượt. Mỗi doanh trại thêm 4 chỗ cho đơn vị, và mỗi cấp của nó tăng tốc hồi quân thêm 1% (cấp 5: +5%). Doanh trại cấp cao nhất mở bậc lính: cấp 1 nông dân, cấp 3 tinh nhuệ, cấp 6 vệ binh hoàng gia (nâng cấp tới cấp thành). Tối đa 3 (+1 mỗi cấp thành). Xây trên ô cỏ."
+description = "Tuyển và bổ sung quân. Mỗi doanh trại thêm 4 chỗ cho đơn vị; cấp càng cao mở bậc lính càng mạnh và hồi quân càng nhanh."
 cost = Dictionary[StringName, int]({&"wood": 6, &"stone": 2})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 3

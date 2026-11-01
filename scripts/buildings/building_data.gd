@@ -91,6 +91,11 @@ static func load_all() -> Dictionary[StringName, BuildingData]:
 
 ## What this building does at `level`, as one line ("" without effects).
 func describe_effects(level: int) -> String:
+	return ", ".join(effect_lines(level))
+
+
+## One line per effect at `level` (RequirementView gains, M16c).
+func effect_lines(level: int) -> Array[String]:
 	var parts: Array[String] = []
 	for effect_id in EFFECT_TEXTS:
 		var amount: float = effects.get(effect_id, 0.0) + level_effects.get(effect_id, 0.0) * level
@@ -100,7 +105,7 @@ func describe_effects(level: int) -> String:
 		if text.contains("%d"):
 			text = text % roundi(amount * (100.0 if PERCENT_EFFECTS.has(effect_id) else 1.0))
 		parts.append(text)
-	return ", ".join(parts)
+	return parts
 
 
 ## Levels this building has (1 when it cannot be upgraded).

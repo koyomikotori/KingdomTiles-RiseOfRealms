@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"infirmary"
 display_name = "Y quán"
-description = "Chữa thương: tướng và mưu sĩ bị thương hồi gấp đôi; mỗi cấp tổng tướng gục ngã ít chết hơn 4%, và khi thua trận quân còn sống giữ thêm 4%. Chỉ có 1. Nâng cấp tới cấp thành. Xây trên ô cỏ."
+description = "Chữa thương cho tướng và mưu sĩ, giữ mạng tổng tướng và quân lính khi thua trận."
 cost = Dictionary[StringName, int]({&"wood": 8, &"stone": 6, &"food": 10})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"police"
 display_name = "Sở cảnh sát"
-description = "Chiêu mộ đặc vụ và cử họ sang các gia tộc để tăng quan hệ hoặc phá hoại (bấm vào sở). Mỗi cấp giữ thêm 1 đặc vụ và giảm 1% tỉ lệ bị lộ. Chỉ có 1. Mở ở thành cấp 3, nâng cấp tới cấp thành − 2. Xây trên ô cỏ."
+description = "Chiêu mộ đặc vụ và cử sang các gia tộc để tăng quan hệ hoặc phá hoại (tab Đặc vụ)."
 cost = Dictionary[StringName, int]({&"wood": 12, &"stone": 12, &"ore": 4})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

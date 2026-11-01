@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"lumber_mill"
 display_name = "Xưởng gỗ"
-description = "Đốn gỗ; cấp 2 trở lên có thêm gỗ cứng. Xây trên ô rừng; trên ô ◆ thì sản lượng gấp đôi. Mỗi ô rừng của bạn kề bên (8 ô xung quanh, chưa có công trình) cho thêm 2 gỗ, ô ◆ cho 4."
+description = "Đốn gỗ, từ cấp 2 có thêm gỗ cứng. Mỗi ô rừng trống kề bên +2 gỗ; trên ô ◆ sản lượng gấp đôi."
 cost = Dictionary[StringName, int]({&"wood": 6, &"stone": 4})
 allowed_terrains = Array[StringName]([&"forest"])
 max_count = 3

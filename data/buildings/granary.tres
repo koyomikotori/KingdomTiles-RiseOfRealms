@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"granary"
 display_name = "Kho lương"
-description = "Cất giữ lương thảo: mỗi kho giữ lại 10% tài nguyên khi bị quân cướp hay quân xâm lược cướp phá (tối đa 50%) và giảm 2% lương thực nuôi quân và tướng. Mở ở thành cấp 2: 1 kho, +1 mỗi cấp thành. Xây trên ô cỏ."
+description = "Cất giữ lương thảo: bớt thiệt hại khi bị cướp phá và tiết kiệm lương nuôi quân."
 cost = Dictionary[StringName, int]({&"wood": 12, &"stone": 4})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

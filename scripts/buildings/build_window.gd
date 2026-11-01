@@ -64,16 +64,42 @@ func _picture(id: StringName) -> Control:
 func _entry_details(id: StringName) -> String:
 	var building := _state.buildings[id]
 	var lines: Array[String] = [building.description]
-	var produced := building.yields_at(1)
-	if not produced.is_empty():
-		lines.append("Mỗi lượt (cấp 1): %s. Nâng được tới cấp %d (không vượt cấp thành)." % [
-				UiFormat.amounts(produced, _resource_types, true), building.max_level()])
-	if not building.upkeep.is_empty():
-		lines.append("Phí duy trì: %s mỗi lượt." % UiFormat.amounts(building.upkeep, _resource_types))
-	lines.append("Giá: %s." % UiFormat.amounts(_state.building_cost(building), _resource_types))
-	lines.append("Thời gian xây: %d lượt (công trình chưa hoạt động khi đang xây)." % building.build_turns)
-	lines.append("Đội thợ: %d/%d đang làm." % [_state.builders_busy(), _state.builder_limit()])
+	if building.is_upgradable():
+		lines.append("Nâng được tới cấp %d (không vượt cấp thành)." % building.max_level())
 	return "\n".join(lines)
+
+
+func _fill_requirements(id: StringName, view: RequirementView) -> void:
+	var building := _state.buildings[id]
+	view.header("Yêu cầu")
+	var terrains: Array[String] = []
+	for terrain_id in building.allowed_terrains:
+		var terrain: TerrainData = _state.terrains.get(terrain_id)
+		terrains.append(terrain.display_name if terrain != null else String(terrain_id))
+	if not terrains.is_empty():
+		view.note("Xây trên ô %s." % " / ".join(terrains))
+	if building.required_castle_level > 1:
+		view.requirement("Thành chính cấp %d (đang cấp %d)" % [building.required_castle_level, _state.castle_level],
+				_state.castle_level >= building.required_castle_level)
+	var most := BuildRules.limit(building, _state.castle_level)
+	if most > 0:
+		var count := _state.board.count_buildings(id, true)
+		view.requirement("Còn chỗ xây (%d/%d)" % [count, most], count < most)
+	view.requirement("Có đội thợ rảnh (%d/%d đang làm)" % [_state.builders_busy(), _state.builder_limit()],
+			_state.has_free_builder())
+	view.header("Chi phí")
+	view.costs(_state.building_cost(building), _state.stockpile)
+	view.line(&"time", "%d lượt (chưa hoạt động khi đang xây)" % building.build_turns)
+	var produced := building.yields_at(1)
+	var effects := building.effect_lines(1)
+	if not produced.is_empty() or not effects.is_empty():
+		view.header("Cấp 1 nhận được")
+		view.amounts("Mỗi lượt:", produced, true)
+		for effect in effects:
+			view.gain(effect)
+	if not building.upkeep.is_empty():
+		view.header("Phí duy trì")
+		view.amounts("Mỗi lượt:", building.upkeep)
 
 
 func _block_reason(id: StringName) -> String:

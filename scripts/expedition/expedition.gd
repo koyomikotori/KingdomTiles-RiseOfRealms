@@ -29,6 +29,8 @@ const STAGE_RESOURCES := 40
 const REWARD_RESOURCES: Array[StringName] = [&"food", &"wood", &"stone"]
 const STAGE_ITEM_ODDS: Array = [[50, 35, 13, 2, 0], [35, 35, 22, 7, 1], [20, 35, 30, 12, 3], [10, 30, 35, 20, 5]]
 const REBEL_NAME := "Quân nổi loạn"
+## Limit-break scrolls for clearing the zone (M16c): one per SCROLL_STAGES stages, at least one.
+const SCROLL_STAGES := 2
 
 var general: General
 var advisor: Advisor
@@ -50,6 +52,10 @@ var log: Array[String] = []
 
 func is_over() -> bool:
 	return failed or stage >= stages
+
+
+static func scrolls_for(stage_count: int) -> int:
+	return maxi(1, ceili(stage_count / float(SCROLL_STAGES)))
 
 
 static func stages_for(castle_level: int) -> int:
@@ -198,8 +204,9 @@ func _apply_losses(state: KingdomState, record: BattleRecord, won: bool) -> Arra
 	return lost
 
 
-## Hands over the rewards (XP for every battle won, resources, items) and brings everyone home.
-## Returns {"resources", "items": Array[Item], "xp_officer", "xp_squad", "refund"}.
+## Hands over the rewards (XP for every battle won, resources, items, scrolls once every stage
+## is cleared) and brings everyone home.
+## Returns {"resources", "items": Array[Item], "xp_officer", "xp_squad", "refund", "scrolls"}.
 func finish(state: KingdomState) -> Dictionary:
 	var officer_xp := WIN_OFFICER_XP * wins
 	var squad_xp := WIN_SQUAD_XP * wins
@@ -211,13 +218,16 @@ func finish(state: KingdomState) -> Dictionary:
 		squad.away = false
 		state.army.add_xp(squad, squad_xp)
 	state.stockpile.add(resources)
+	var scrolls := 0 if failed else scrolls_for(stages)
+	state.scrolls += scrolls
 	var refund: Dictionary[StringName, int] = {}
 	for item in items:
 		Economy.add_into(refund, state.equipment.receive(item, state.stockpile).refund)
 	state.generals.changed.emit()
 	state.advisors.changed.emit()
 	state.army.changed.emit()
-	return {"resources": resources, "items": items, "xp_officer": officer_xp, "xp_squad": squad_xp, "refund": refund}
+	return {"resources": resources, "items": items, "xp_officer": officer_xp, "xp_squad": squad_xp, "refund": refund,
+			"scrolls": scrolls}
 
 
 # --- Save (GDD §10.1) ---------------------------------------------------------------------

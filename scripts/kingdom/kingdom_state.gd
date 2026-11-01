@@ -61,6 +61,8 @@ var clan_officers := ClanOfficers.new()
 var uprising := Uprising.new()
 var expedition: Expedition
 var rebels := Generals.new()
+## Bí kíp đột phá held (M16c, LimitBreak), won by clearing expeditions.
+var scrolls := 0
 ## Picked when the game starts (GDD §15 M14h): Difficulty.Level, the kingdom's name and color.
 var difficulty: int = Difficulty.Level.NORMAL
 var kingdom_name := DEFAULT_KINGDOM_NAME
@@ -165,7 +167,7 @@ func to_save() -> Dictionary:
 			"events": events.to_save(), "generals": generals.to_save(), "advisors": advisors.to_save(),
 			"equipment": equipment.to_save(), "agents": agents.to_save(), "clan_officers": clan_officers.to_save(),
 			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false),
-			"uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
+			"scrolls": scrolls, "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
 
 
 ## Restores everything but the board from to_save() data. Random rolls are not saved: they come
@@ -208,6 +210,8 @@ func load_save(data: Dictionary) -> void:
 	else:
 		agents.refresh_candidates(castle_level, turn)
 	clan_officers.load_save(data.get("clan_officers", {}))
+	# Saves from before M16c have no scrolls.
+	scrolls = int(data.get("scrolls", 0))
 	# Saves from before M14i have no uprising.
 	uprising.load_save(data.get("uprising", {}), board)
 	var saved_expedition: Dictionary = data.get("expedition", {})
@@ -961,6 +965,36 @@ func _advance_expedition() -> Dictionary:
 		result["general_name"] = general.name if general != null else ""
 		result["advisor_name"] = expedition.advisor.name if expedition.advisor != null else ""
 		expedition = null
+	return result
+
+
+## Whether `officer` can break through their limit now (LimitBreak, M16c).
+func check_limit_break(officer: Officer) -> LimitBreak.Result:
+	if officer.breaks >= LimitBreak.max_breaks(officer):
+		return LimitBreak.Result.NO_BREAKS_LEFT
+	if officer.level < officer.max_level():
+		return LimitBreak.Result.NOT_MAX_LEVEL
+	if officer.away:
+		return LimitBreak.Result.AWAY
+	if scrolls < LimitBreak.scrolls_needed(officer):
+		return LimitBreak.Result.NO_SCROLLS
+	if not stockpile.can_afford(LimitBreak.cost(officer)):
+		return LimitBreak.Result.NO_RESOURCES
+	return LimitBreak.Result.OK
+
+
+## Spends the scrolls and resources and raises the officer's caps; nothing changes unless OK.
+func limit_break(officer: Officer) -> LimitBreak.Result:
+	var result := check_limit_break(officer)
+	if result != LimitBreak.Result.OK:
+		return result
+	stockpile.spend(LimitBreak.cost(officer))
+	scrolls -= LimitBreak.scrolls_needed(officer)
+	officer.breaks += 1
+	if officer is General:
+		generals.changed.emit()
+	else:
+		advisors.changed.emit()
 	return result
 
 

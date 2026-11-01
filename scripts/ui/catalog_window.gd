@@ -21,6 +21,8 @@ var _selected: StringName = &""
 var _picture_box: CenterContainer
 var _name_label: Label
 var _details: Label
+## Requirements, cost and effects as icons (RequirementView, M16c), filled by _fill_requirements.
+var _requirements: RequirementView
 var _reason: Label
 var _action: Button
 
@@ -71,6 +73,8 @@ func build_catalog(title: String, categories: Array[String], action_text: String
 	detail.add_child(_name_label)
 	_details = _label("", 14)
 	detail.add_child(_details)
+	_requirements = RequirementView.new()
+	detail.add_child(_requirements)
 	_reason = _label("", 14)
 	_reason.add_theme_color_override("font_color", WARNING_COLOR)
 	detail.add_child(_reason)
@@ -129,6 +133,7 @@ func refresh() -> void:
 	if _selected == &"":
 		_name_label.text = ""
 		_details.text = ""
+		_requirements.clear()
 		_reason.text = ""
 		_action.disabled = true
 		return
@@ -136,9 +141,12 @@ func refresh() -> void:
 	_name_label.text = _entry_name(_selected)
 	_name_label.add_theme_color_override("font_color", _title_color(_selected))
 	_details.text = _entry_details(_selected)
+	_requirements.clear()
+	_fill_requirements(_selected, _requirements)
 	var reason := _block_reason(_selected)
 	_reason.text = reason
-	_reason.visible = not reason.is_empty()
+	# The ✓ / ✗ lines already say why when the subclass fills them.
+	_reason.visible = not reason.is_empty() and _requirements.get_child_count() == 0
 	_action.disabled = not reason.is_empty()
 
 
@@ -183,6 +191,11 @@ func _picture(_id: StringName) -> Control:
 
 func _entry_details(_id: StringName) -> String:
 	return ""
+
+
+## Requirements (✓ / ✗), cost chips and effects of the entry; empty by default.
+func _fill_requirements(_id: StringName, _view: RequirementView) -> void:
+	pass
 
 
 ## Why the action cannot be done right now; "" when it can.

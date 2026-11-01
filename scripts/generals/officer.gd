@@ -23,6 +23,8 @@ var level := 1
 var xp := 0
 ## Unspent level points.
 var points := 0
+## Limit breaks done (M16c, LimitBreak): each raises the stat caps and the max level.
+var breaks := 0
 ## Portrait and battle sprite (OfficerLook).
 var look := OfficerLook.new()
 ## Worn items by slot (Item.SLOTS), managed through Equipment.
@@ -58,7 +60,12 @@ func star_text() -> String:
 
 
 func max_level() -> int:
-	return Experience.general_max_level(stars)
+	return Experience.general_max_level(stars) + LimitBreak.LEVEL_STEP * breaks
+
+
+## A stat's cap after the limit breaks (`base`: Generals.STAT_MAX or Advisors.STAT_MAX).
+func stat_cap(base: int) -> int:
+	return base + LimitBreak.STAT_STEP * breaks
 
 
 func xp_to_next() -> int:
@@ -114,7 +121,7 @@ func _officer_save() -> Dictionary:
 	for slot in items:
 		worn[String(slot)] = items[slot].to_save()
 	return {"name": name, "stars": stars, "wounded_turns": wounded_turns, "level": level, "xp": xp, "points": points,
-			"look": look.to_save(), "items": worn, "away": away}
+			"look": look.to_save(), "items": worn, "away": away, "breaks": breaks}
 
 
 func _officer_load(data: Dictionary) -> void:
@@ -125,6 +132,8 @@ func _officer_load(data: Dictionary) -> void:
 	level = int(data.level)
 	xp = int(data.xp)
 	points = int(data.points)
+	# Saves from before M16c have no limit breaks.
+	breaks = int(data.get("breaks", 0))
 	# Saves from before M12c have no look: make one from the name.
 	look = OfficerLook.from_save(data.look) if data.has("look") else OfficerLook.from_seed(name)
 	# Saves from before M12e have no items.

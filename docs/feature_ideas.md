@@ -10,7 +10,7 @@ Bản mobile (M15) vẫn để cuối cùng. Các milestone dưới đây đặt
 |---|---|---|---|---|
 | M16a (xong, chờ chơi thử) | Cân bằng và ngoại giao: nerf hồi quân doanh trại, thảo phạt thành công cộng quan hệ, tìm lỗi liên minh 0% về late, cho lại hiệp định bất tương xâm, buff mưu sĩ Ngoại giao | C1, C2, C3 | Dễ | Chủ yếu sửa số và luật có sẵn; hiệp định từng có code ở M9b |
 | M16b (xong, chờ chơi thử) | Event không cần trận đánh: kho lương bị tấn công, cơ hội ám sát, tướng bất mãn, dân chúng cầu cứu, tù binh quan trọng, nhóm người khả nghi, đạo tặc cầu hòa, địch dụ hàng | B2, B5, B7 | Dễ | Dùng hệ event (M11b), đặc vụ (M14e) và tướng địch (M14h) đã có |
-| M16c | Limit break cho tướng / mưu sĩ | A2 | Dễ–vừa | Chỉ thêm luật và nút trong cửa sổ tướng sĩ |
+| M16c (xong, chờ chơi thử) | Limit break cho tướng / mưu sĩ (GDD §19) | A2 | Dễ–vừa | Chỉ thêm luật và nút trong cửa sổ tướng sĩ |
 | M16d | Chợ đen | B6 | Vừa | Cửa sổ mới (6 ô, làm mới), dùng lại hệ trang bị; cần 1 portrait |
 | M16e | Event có trận đánh / nhuệ khí tối đa: tướng bị phục kích, tin tuồn ra, tướng địch thách đấu tay đôi, đạo tặc bắt quan chức, mật thư bị đánh cắp, đặc vụ báo tin khẩn cấp | B1, B3, B4, B8 | Vừa | Cần trận đánh với quân rút gọn, địch còn 50%, trừ nhuệ khí tối đa, trận chỉ có 2 tướng |
 | M16f | Thêm loại lính mới | C4 | Vừa | Dữ liệu `.tres` + sprite vẽ bằng script; cần chốt danh sách lính |
@@ -32,7 +32,7 @@ Cần chuẩn bị trước:
 
 ### A2. Limit break (đột phá giới hạn)
 - Khi tướng / mưu sĩ đã max mọi chỉ số, cho phép đột phá để nâng tiếp chỉ số.
-- Cần chốt: điều kiện đột phá (vật phẩm, tài nguyên, cấp, lượt chờ?), mỗi lần tăng thêm bao nhiêu, giới hạn số lần.
+- Đã chốt ở M16c (GDD §19): +2 trần chỉ số và +2 cấp mỗi lần; 1/2/3 lần theo sao; tài nguyên × N và N Bí kíp (chỉ từ thảo phạt thắng; chợ đen M16d sẽ bán).
 
 ### A3. Cố vấn (nhân vật dẫn truyện)
 - Hai cố vấn để chọn ngay ở màn Ván mới: một nam, một nữ. Cố vấn gọi người chơi là "Chúa công".

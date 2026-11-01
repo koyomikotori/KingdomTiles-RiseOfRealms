@@ -168,6 +168,8 @@ func test_a_won_expedition_clears_the_zone_and_pays() -> void:
 	check_eq(last.rewards.items.size(), stages, "An item per stage")
 	check(state.uprising.next_allowed_turn > state.turn, "A pause before the next zone")
 	check_eq(last.relation, KingdomState.EXPEDITION_RELATION, "Every clan is grateful (M16a)")
+	check_eq(last.rewards.scrolls, 1, "Two stages: one scroll (M16c)")
+	check_eq(state.scrolls, 1, "Scroll kept")
 	check_eq(state.diplomacy.clans[&"north_wolves"].memories.get(Diplomacy.MEMORY_EXPEDITION),
 			KingdomState.EXPEDITION_RELATION, "+5 remembered as the expedition")
 
@@ -186,6 +188,7 @@ func test_a_lost_expedition_loses_its_squads_and_keeps_the_zone() -> void:
 	check(not report.won and report.finished, "Beaten")
 	check(not report.cleared, "The zone stays")
 	check(not report.has("relation"), "No thanks for a lost expedition")
+	check_eq(state.scrolls, 0, "No scroll for a lost expedition")
 	check(state.uprising.is_active(), "Still there")
 	check(not state.army.squads.has(team[0]), "The squad is lost")
 	check(state.expedition == null, "Can send another")

@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"magistrate"
 display_name = "Quan phủ"
-description = "Quan lại cai quản: mỗi cấp tăng 4% sản lượng mọi công trình khai thác. Chỉ có 1. Mở ở thành cấp 3, nâng cấp tới cấp thành. Xây trên ô cỏ."
+description = "Quan lại cai quản, tăng sản lượng mọi công trình khai thác."
 cost = Dictionary[StringName, int]({&"wood": 14, &"stone": 12, &"ore": 4})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1

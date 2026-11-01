@@ -79,13 +79,27 @@ func _entry_details(id: StringName) -> String:
 	var special := _special_rules(unit)
 	if special != "":
 		lines.append(special)
-	if not unit.required_buildings.is_empty():
-		lines.append("Cần: %s." % RecruitmentRules.describe_buildings(unit.required_buildings, _state.buildings))
-	lines.append("Giá: %s. Nuôi: %s mỗi lượt mỗi đơn vị." % [UiFormat.amounts(unit.recruit_cost, _resource_types),
-			UiFormat.amounts(unit.upkeep, _resource_types)])
-	lines.append("Đang có %d đơn vị · %d lính. Chỗ cho đơn vị: %d/%d." % [_state.army.count_squads(id),
-			_state.army.count_soldiers(id), _state.army.count_squads(), _state.get_squad_capacity()])
+	lines.append("Đang có %d đơn vị · %d lính." % [_state.army.count_squads(id), _state.army.count_soldiers(id)])
 	return "\n".join(lines)
+
+
+func _fill_requirements(id: StringName, view: RequirementView) -> void:
+	var unit := _state.units[id]
+	view.header("Yêu cầu")
+	for building_id in unit.required_buildings:
+		var needed: Dictionary[StringName, int] = {building_id: unit.required_buildings[building_id]}
+		view.requirement(RecruitmentRules.describe_buildings(needed, _state.buildings),
+				_state.board.highest_building_level(building_id) >= needed[building_id])
+	for terrain_id in unit.required_terrain:
+		var terrain: TerrainData = _state.terrains.get(terrain_id)
+		var owned := _state.board.count_owned_terrain(terrain_id)
+		view.requirement("%d ô %s (đang có %d)" % [unit.required_terrain[terrain_id],
+				terrain.display_name if terrain != null else String(terrain_id), owned], owned >= unit.required_terrain[terrain_id])
+	view.requirement("Còn chỗ cho đơn vị (%d/%d)" % [_state.army.count_squads(), _state.get_squad_capacity()],
+			_state.army.count_squads() < _state.get_squad_capacity())
+	view.header("Chi phí")
+	view.costs(unit.recruit_cost, _state.stockpile)
+	view.amounts("Nuôi mỗi lượt:", unit.upkeep)
 
 
 ## The unit's own battle rules (GDD §8, M13), or "".
