@@ -1035,3 +1035,18 @@ Mọi bảng thông tin / nâng cấp trình bày điều kiện bằng hình th
 - **NHẬN ĐƯỢC / TÁC DỤNG:** mũi tên vàng cho từng lợi ích; sản lượng và phí duy trì là ô icon.
 - Áp dụng ở: tab Thông tin và Nâng cấp của mọi công trình và thành chính, cửa sổ Xây dựng, Tuyển lính, tab Rèn, Chiêu hiền, Chiêu mộ đặc vụ, mục Đột phá và phí nuôi trong cửa sổ tướng sĩ.
 - **Gọn hơn (góp ý lần 2):** mô tả công trình chỉ còn công dụng (giới hạn, cấp thành, địa hình, phí duy trì đã có dòng riêng); mỗi tác dụng một dòng; tab Thông tin không liệt kê lính nữa (xem ở tab Quân đội); tab Nâng cấp chỉ hiện ô hình + tên các loại lính tuyển được ngay sau khi lên cấp, loại còn thiếu công trình khác gộp thành "+N loại lính khác…"; công trình không nâng cấp được thì không có tab Nâng cấp; hồi quân hiện "+1% → +1.5%".
+
+## 20. Chợ đen (M16d, đã chốt)
+
+- **Lịch ghé:** cố định mỗi 8 lượt (lượt 8, 16, 24…), gã đến lúc đầu lượt, sau báo cáo quan trọng và sự kiện, trước màn hình kết thúc. Chỉ ở lại lượt đó: đóng cửa sổ ("Rời đi") là gã đi; không đóng thì sang lượt sau gã cũng đi. Từ chối không có hậu quả. Lưu game giữ nguyên quầy hàng (tải lại sẽ thấy lại).
+- **Hàng:** 6 ô, xếp 3 trên 3 dưới. Mỗi ô có 20% là Bí kíp đột phá (150 lương, 30 khoáng sản, 30 gỗ cứng), còn lại là một trang bị ngẫu nhiên của tướng hoặc mưu sĩ, độ hiếm theo tỉ lệ 35 / 32 / 22 / 9,5 / 1,5% (Thường / Tốt / Hiếm / Sử thi / Huyền thoại). Món Huyền thoại bày bán chỉ tính là "đã tìm thấy" khi mua (làm mới hay gã đi thì nó vẫn có thể rơi ra ở nơi khác); hết món Huyền thoại thì thành Sử thi.
+- **Giá theo độ hiếm** (mỗi số dao động ±20%):
+  - Thường: 15 lương, 15 gỗ, 10 đá.
+  - Tốt: 30 lương, 30 gỗ, 20 đá, 5 khoáng sản.
+  - Hiếm: 50 lương, 50 gỗ, 50 đá, 15 khoáng sản, 15 gỗ cứng.
+  - Sử thi: 100 lương, 100 gỗ, 100 đá, 40 khoáng sản, 40 gỗ cứng.
+  - Huyền thoại: 250 lương, 250 gỗ, 250 đá, 100 khoáng sản, 100 gỗ cứng.
+- **Mua:** trang bị vào kho đồ (kho đầy thì không mua được; Bí kíp vẫn mua được). Món đã mua hiện "Đã bán".
+- **Làm mới:** tối đa 3 lần mỗi lần ghé, mỗi lần 10 khoáng sản + 10 gỗ cứng, thay cả 6 ô.
+- **Bán đồ (Hành trang):** nút dưới portrait chuyển sang trang hành trang: mọi món trong kho, rồi các món tướng / mưu sĩ đang mang (kèm mặt người mang, như tab Trang bị). Gã trả 1,5 lần giá phân rã (làm tròn lên, luôn hơn phân rã ít nhất 1). Bán món đang mang thì tháo ra luôn; người đang đi thảo phạt thì không bán được. Bấm Bán hai lần để chắc chắn.
+- **Giao diện:** bố cục cố định (thẻ hàng cùng cỡ 270×250, tác dụng dài thì cuộn trong thẻ; trang Mua và Hành trang cùng kích thước). Cột trái: portrait gã chợ đen (áo choàng đen, nón lá che mắt, cười gian với chiếc răng vàng, đèn lồng trong đêm; `tools/art/portrait_art.py`, có thể thay bằng `assets/portraits/custom/black_market.png`) và một câu chào, nút Làm mới với giá, số đồ trong kho và nút Hành trang; mỗi ô có icon, tên theo màu độ hiếm, tác dụng (mũi tên vàng) và giá bằng ô icon (xanh đủ / đỏ thiếu).

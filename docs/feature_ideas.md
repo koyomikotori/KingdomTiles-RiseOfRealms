@@ -11,7 +11,7 @@ Bản mobile (M15) vẫn để cuối cùng. Các milestone dưới đây đặt
 | M16a (xong, chờ chơi thử) | Cân bằng và ngoại giao: nerf hồi quân doanh trại, thảo phạt thành công cộng quan hệ, tìm lỗi liên minh 0% về late, cho lại hiệp định bất tương xâm, buff mưu sĩ Ngoại giao | C1, C2, C3 | Dễ | Chủ yếu sửa số và luật có sẵn; hiệp định từng có code ở M9b |
 | M16b (xong, chờ chơi thử) | Event không cần trận đánh: kho lương bị tấn công, cơ hội ám sát, tướng bất mãn, dân chúng cầu cứu, tù binh quan trọng, nhóm người khả nghi, đạo tặc cầu hòa, địch dụ hàng | B2, B5, B7 | Dễ | Dùng hệ event (M11b), đặc vụ (M14e) và tướng địch (M14h) đã có |
 | M16c (xong, chờ chơi thử) | Limit break cho tướng / mưu sĩ (GDD §19) | A2 | Dễ–vừa | Chỉ thêm luật và nút trong cửa sổ tướng sĩ |
-| M16d | Chợ đen | B6 | Vừa | Cửa sổ mới (6 ô, làm mới), dùng lại hệ trang bị; cần 1 portrait |
+| M16d (xong, chờ chơi thử) | Chợ đen (GDD §20) | B6 | Vừa | Cửa sổ mới (6 ô, làm mới), dùng lại hệ trang bị; portrait vẽ bằng script |
 | M16e | Event có trận đánh / nhuệ khí tối đa: tướng bị phục kích, tin tuồn ra, tướng địch thách đấu tay đôi, đạo tặc bắt quan chức, mật thư bị đánh cắp, đặc vụ báo tin khẩn cấp | B1, B3, B4, B8 | Vừa | Cần trận đánh với quân rút gọn, địch còn 50%, trừ nhuệ khí tối đa, trận chỉ có 2 tướng |
 | M16f | Thêm loại lính mới | C4 | Vừa | Dữ liệu `.tres` + sprite vẽ bằng script; cần chốt danh sách lính |
 | M16g | Sprite theo độ hiếm + tướng 4 khung hình trở lên, có hiệu ứng | A1 | Vừa–khó | Nhiều hình vẽ (mỗi mức sao, mỗi loại vũ khí, nam / nữ) |
@@ -92,6 +92,7 @@ Thêm nhiều event hơn, đặc biệt là event chỉ xuất hiện khi **đan
 - Làm mới (refresh) tối đa 3 lần, mỗi lần 10 khoáng sản + 10 gỗ cứng.
 - Portrait riêng: gã mặc áo choàng đen, mũ che nửa trên đầu, miệng cười gian.
 - Từ chối: không có chuyện gì xảy ra.
+- Đã chốt ở M16d (GDD §20): cố định mỗi 8 lượt, chỉ ở lại lượt đó; giá theo độ hiếm, có bán Bí kíp đột phá và Huyền thoại (~1,5%); bán lại trang bị trong kho hoặc đang mang với giá 1,5 lần phân rã; portrait vẽ bằng script.
 
 ## C. Ngoại giao và cân bằng
 

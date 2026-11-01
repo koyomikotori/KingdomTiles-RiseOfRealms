@@ -61,8 +61,10 @@ var clan_officers := ClanOfficers.new()
 var uprising := Uprising.new()
 var expedition: Expedition
 var rebels := Generals.new()
-## Bí kíp đột phá held (M16c, LimitBreak), won by clearing expeditions.
+## Bí kíp đột phá held (M16c, LimitBreak), won by clearing expeditions or bought (M16d).
 var scrolls := 0
+## The merchant who stops by every BlackMarket.INTERVAL turns (GDD §20, M16d).
+var black_market := BlackMarket.new()
 ## Picked when the game starts (GDD §15 M14h): Difficulty.Level, the kingdom's name and color.
 var difficulty: int = Difficulty.Level.NORMAL
 var kingdom_name := DEFAULT_KINGDOM_NAME
@@ -101,6 +103,7 @@ func _init(p_board: BoardData, p_hand: PieceHand, p_terrains: Dictionary[StringN
 	clan_officers.rng.seed = seed_value + 5
 	uprising.rng.seed = seed_value + 6
 	rebels.rng.seed = seed_value + 7
+	black_market.rng.seed = seed_value + 8
 	diplomacy.admin_effect = building_effect
 	wars.sabotage = agents.sabotage_on
 	generals.advisors = advisors
@@ -167,7 +170,7 @@ func to_save() -> Dictionary:
 			"events": events.to_save(), "generals": generals.to_save(), "advisors": advisors.to_save(),
 			"equipment": equipment.to_save(), "agents": agents.to_save(), "clan_officers": clan_officers.to_save(),
 			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false),
-			"scrolls": scrolls, "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
+			"scrolls": scrolls, "black_market": black_market.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
 
 
 ## Restores everything but the board from to_save() data. Random rolls are not saved: they come
@@ -212,6 +215,8 @@ func load_save(data: Dictionary) -> void:
 	clan_officers.load_save(data.get("clan_officers", {}))
 	# Saves from before M16c have no scrolls.
 	scrolls = int(data.get("scrolls", 0))
+	# Saves from before M16d have no black market.
+	black_market.load_save(data.get("black_market", {}))
 	# Saves from before M14i have no uprising.
 	uprising.load_save(data.get("uprising", {}), board)
 	var saved_expedition: Dictionary = data.get("expedition", {})
@@ -877,6 +882,12 @@ func end_turn() -> Dictionary:
 	# Rolled last so the invasion and raid rolls above stay as they were.
 	var no_events: Array[Dictionary] = []
 	report["events"] = events.roll(self, rng) if not victory.lost else no_events
+	# The merchant stays one turn only (GDD §20, M16d).
+	if black_market.open:
+		black_market.leave()
+	if BlackMarket.is_visit_turn(turn) and not victory.lost:
+		black_market.arrive(equipment)
+		report["black_market"] = true
 	turn_started.emit(turn)
 	return report
 

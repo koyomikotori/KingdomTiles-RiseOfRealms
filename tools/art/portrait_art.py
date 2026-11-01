@@ -364,6 +364,74 @@ def frame(tier: int) -> Canvas:
     return item_art.frame(F, colors, pattern, None, 3)
 
 
+def black_market_merchant() -> Canvas:
+    """The black market's merchant (M16d): a wide straw hat shading the eyes, a black hooded
+    cloak, a sly grin with a gold tooth and a coin, in a night alley lit by a lantern. 96×96,
+    background included (GameArt.npc_portrait)."""
+    night_top, night_bottom = hex_color("2a2238"), hex_color("4a3a4e")
+    bg = Canvas(F, F)
+    for y in range(F):
+        mix = y / (F - 1)
+        color = tuple(round(night_top[i] * (1 - mix) + night_bottom[i] * mix) for i in range(3)) + (255,)
+        bg.hline(0, F - 1, y, color)
+    glow = hex_color("7a4a3a")
+    bg.ellipse(18, 22, 16, 16, glow)
+    bg.ellipse(18, 22, 9, 9, hex_color("b8703e"))
+    bg.rect(14, 16, 9, 12, hex_color("e0913e"))  # lantern
+    bg.hline(14, 22, 16, hex_color("8e2a1e"))
+    bg.hline(14, 22, 27, hex_color("8e2a1e"))
+    bg.vline(18, 8, 15, hex_color("1a1420"))
+    c = Canvas(S, S)
+    cloak, cloak_light, cloak_dark = hex_color("221d29"), hex_color("3a3346"), hex_color("141018")
+    for y in range(30, S):  # shoulders and cloak
+        half = min(22, 9 + (y - 30) * 1.4)
+        c.hline(round(24 - half), round(23 + half), y, cloak)
+    for y in range(12, 36):  # hood around the face
+        half = 9 + (y - 12) * 0.25
+        c.hline(round(24 - half), round(23 + half), y, cloak)
+    for y in range(31, S):
+        c.px(round(24 - min(22, 9 + (y - 30) * 1.4)) + 1, y, cloak_light)
+        c.px(24, y, cloak_dark)
+    skin, skin_shade, skin_dark = hex_color("e2b48c"), hex_color("b98a66"), hex_color("7a5640")
+    for y in range(21, 33):  # face, narrowing to the chin
+        half = 6 if y < 29 else 6 - (y - 28) * 1.2
+        c.hline(round(24 - half), round(23 + half), y, skin)
+    for y in range(21, 25):  # the hat's shadow over the eyes
+        half = 6
+        c.hline(round(24 - half), round(23 + half), y, skin_dark if y < 23 else skin_shade)
+    c.px(20, 23, hex_color("f2d24a"))  # eyes glinting in the shade
+    c.px(27, 23, hex_color("f2d24a"))
+    c.px(24, 25, skin_shade)  # nose
+    c.px(24, 26, skin_shade)
+    line, teeth = hex_color("3a2418"), hex_color("fdfbf6")
+    c.hline(20, 27, 29, line)  # grin
+    c.px(19, 28, line)
+    c.px(28, 28, line)
+    c.hline(20, 27, 28, teeth)
+    c.px(25, 28, hex_color("f2c23c"))  # gold tooth
+    c.px(18, 27, line)
+    c.px(29, 27, line)
+    straw, straw_light, straw_dark = hex_color("8a6a3a"), hex_color("b08a50"), hex_color("5e4626")
+    for y in range(6, 20):  # conical hat
+        half = (y - 5) * 1.1
+        c.hline(round(24 - half), round(23 + half), y, straw)
+        c.px(round(24 - half), y, straw_light)
+    c.hline(5, 42, 20, straw)  # brim
+    c.hline(4, 43, 21, straw_dark)
+    c.hline(8, 39, 19, straw_light)
+    for x in range(10, 38, 4):
+        c.px(x, 20, straw_dark)
+    hand = hex_color("d8a880")
+    c.rect(33, 38, 4, 3, hand)  # hand with a coin
+    c.ellipse(36.5, 37, 2.6, 2.6, hex_color("f2c23c"))
+    c.px(36, 36, hex_color("fff0a0"))
+    c.outline(line)
+    full = Canvas(F, F)
+    full.paste(bg, 0, 0)
+    full.image.alpha_composite(c.image.resize((F, F), Image.NEAREST))
+    return full
+
+
 def save_part(part: Canvas, relative: str) -> None:
     """Saves a 48×48 part doubled onto the 96×96 portrait canvas."""
     full = Canvas(F, F)
@@ -383,6 +451,7 @@ def draw_all() -> None:
             save_part(eyes(style, female), f"portraits/eyes_{style}_{gender}.png")
             save_part(hair_front(style, female), f"portraits/hair_front_{gender}_{style}.png")
             save_part(hair_back(style, female), f"portraits/hair_back_{gender}_{style}.png")
+    black_market_merchant().save("portraits/npc/black_market.png")
     for style in range(2):
         save_part(brows(style), f"portraits/brows_{style}.png")
     for style in (1, 2):

@@ -621,7 +621,8 @@ func _on_battle_report_closed() -> void:
 
 ## After the turn's battle: the important report (once a turn, when there is news), then answer
 ## the pending events one by one (autosaving after each, so a reload cannot reroll an answer),
-## then the end screen if the game was won or lost.
+## then the black market on its visit turns (closing it sends the merchant away), then the end
+## screen if the game was won or lost.
 func _continue_turn_start() -> void:
 	if _news_pending:
 		_news_pending = false
@@ -634,6 +635,16 @@ func _continue_turn_start() -> void:
 			report_window.closed.connect(_continue_turn_start)
 			return
 	if state.events.current_event() == null:
+		if state.black_market.open and not state.victory.lost:
+			_clear_selection()
+			Sfx.play(&"coins")
+			var market := BlackMarketWindow.new()
+			$UI.add_child(market)
+			market.open(state)
+			market.closed.connect(func() -> void:
+				_autosave()
+				_continue_turn_start())
+			return
 		_show_end_game_if_any()
 		return
 	_clear_selection()
