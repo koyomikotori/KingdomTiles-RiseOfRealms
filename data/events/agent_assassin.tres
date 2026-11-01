@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Thích khách đã ra tay trong đêm!"
+assassinate = true
+weight = 1.0
+
+[sub_resource type="Resource" id="outcome_0_1"]
+script = ExtResource("3_outcome")
+text = "Ám sát thất bại, thích khách bị phát hiện!"
+agent_exposed = true
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+success_chance = 0.5
+chance_per_agent_star = 0.05
+hint = "Thành công: mục tiêu bị thương nặng hoặc chết (mỗi bên một nửa). Thất bại: đặc vụ bị lộ."
+text = "Ám sát tướng của họ"
+target_officer = &"general"
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Thích khách đã ra tay trong đêm!"
+assassinate = true
+weight = 1.0
+
+[sub_resource type="Resource" id="outcome_1_1"]
+script = ExtResource("3_outcome")
+text = "Ám sát thất bại, thích khách bị phát hiện!"
+agent_exposed = true
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+success_chance = 0.5
+chance_per_agent_star = 0.05
+hint = "Thành công: mục tiêu bị thương nặng hoặc chết (mỗi bên một nửa). Thất bại: đặc vụ bị lộ."
+text = "Ám sát mưu sĩ của họ"
+target_officer = &"advisor"
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1")])
+
+[sub_resource type="Resource" id="outcome_2_0"]
+script = ExtResource("3_outcome")
+text = "Đặc vụ tiếp tục nằm vùng chờ thời cơ."
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2_choice")
+text = "Chưa phải lúc"
+hint = "Đặc vụ tiếp tục nằm vùng."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_2_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"agent_assassin"
+title = "Cơ hội ám sát"
+text = "Đặc vụ của ta ở {clan} báo về: đã tìm được cách tiếp cận người cầm quân của họ. Chúa công có muốn ra tay?"
+category = 2
+weight = 2.0
+cooldown = 8
+min_turn = 1
+needs_clan = true
+clan_may_be_at_war = true
+clan_must_have_agent = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1"), SubResource("choice_2")])

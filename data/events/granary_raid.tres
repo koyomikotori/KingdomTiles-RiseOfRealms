@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Quân ta đuổi được chúng đi, chỉ mất ít lương."
+resource_loss = Dictionary[StringName, float]({&"food": 0.1})
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Xuất quân đánh trả"
+hint = "Giữ được phần lớn lương thực."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Chúng thong thả khuân đi rất nhiều lương thực."
+resource_loss = Dictionary[StringName, float]({&"food": 0.35})
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Mặc kệ, giữ quân trong thành"
+hint = "Chúng sẽ khuân đi rất nhiều lương."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"granary_raid"
+title = "Kho lương bị đánh úp"
+text = "Một toán quân của {clan} lẻn vào đánh úp kho lương của vương quốc."
+category = 2
+weight = 2.0
+cooldown = 10
+min_turn = 5
+needs_clan = true
+clan_must_be_at_war = true
+min_stock = Dictionary[StringName, int]({&"food": 40})
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

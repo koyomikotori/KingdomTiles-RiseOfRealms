@@ -32,3 +32,24 @@ extends Resource
 ## A random item of this rarity (Item.Rarity: 0 Thường … 4 Huyền thoại, a legendary not found yet,
 ## else an epic one); -1 = none (GDD §8 "Trang bị", M12e).
 @export var item_rarity: int = -1
+@export_group("M16b")
+## A random general at home leaves the kingdom (their items go back to storage).
+@export var general_leaves: bool = false
+## A random general or advisor at home may go over to the enemy (EventSystem.defect_chance).
+@export var defection: bool = false
+## Between disable_min and disable_max working production buildings stop for disable_turns turns.
+@export var disable_min: int = 0
+@export var disable_max: int = 0
+@export var disable_turns: int = 5
+## Bandits raid at the start of the next turn (if no invasion comes first).
+@export var force_raid: bool = false
+## Between peasant_min and peasant_max full peasant squads join (while there is room).
+@export var peasant_min: int = 0
+@export var peasant_max: int = 0
+## The captured officer joins: a general or an advisor (half and half), stars by the event clan's
+## strength (EventSystem.PRISONER_STARS).
+@export var prisoner_joins: bool = false
+## The choice's target_officer of the event clan is hit: wounded or killed, half and half.
+@export var assassinate: bool = false
+## The agent in the event clan is exposed: may be killed (Agents.kill_chance), else comes home.
+@export var agent_exposed: bool = false

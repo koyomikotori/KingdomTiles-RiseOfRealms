@@ -996,3 +996,22 @@ Sau khi chơi bản 0.1: về late game mọi gia tộc đều Thù địch và 
 **Hồi quân doanh trại giảm một nửa:** 5% + 0.5% × cấp mỗi doanh trại (xem §8).
 
 **Thảo phạt đạo tặc thành công:** mọi gia tộc chưa bị thôn tính **+5 quan hệ** (ký ức "Dẹp loạn đạo tặc", mờ dần như quà tặng). Thua thì không có.
+
+## 18. Sự kiện chiến tranh và đạo tặc (M16b, đã chốt)
+
+Thêm vào hệ sự kiện (§9c), cùng cách tung 0–3 sự kiện mỗi lượt. Sự kiện chiến tranh chỉ vào danh sách khi đang có chiến tranh; mỗi cái chờ 8–12 lượt mới lặp lại. Lựa chọn có tỉ lệ thì hiện "Khả năng thành công: X%" ngay dưới nút.
+
+| Sự kiện | Khi nào | Lựa chọn |
+|---|---|---|
+| **Kho lương bị đánh úp** | Đang chiến tranh với gia tộc đó, kho ≥ 40 lương | Đánh trả: mất 10% lương. Mặc kệ: mất 35% lương |
+| **Cơ hội ám sát** | Có đặc vụ đang làm nhiệm vụ ở một gia tộc có tướng hoặc mưu sĩ | Ám sát tướng / Ám sát mưu sĩ: thành công 50% + 5% × sao đặc vụ → mục tiêu bị thương nặng hoặc chết (mỗi bên một nửa; chết thì 5 lượt sau mới có người thay). Thất bại: đặc vụ bị lộ, quan hệ −10, có thể bị giết (như bị bắt), không thì phải trốn về. Chưa phải lúc: không có gì |
+| **Tướng bất mãn** | Có tướng ở nhà, từ lượt 10 | Ban thưởng: 40 lương + 10 khoáng sản. Phớt lờ: 40% một tướng bỏ đi (trả lại trang bị) |
+| **Dân chúng cầu cứu** | Đang chiến tranh, có công trình sản xuất | Cứu trợ: 30 lương + 15 gỗ + 15 đá. Bỏ qua: 60% có 1–3 công trình sản xuất (nông trại, xưởng gỗ, mỏ) bị bỏ hoang 5 lượt: không sản xuất, vẽ xám có số lượt còn lại |
+| **Tù binh quan trọng** | Đang chiến tranh với gia tộc đó | Đòi tiền chuộc: 50% + 5% × sao mưu sĩ Ngoại giao → 60 lương, 40 gỗ, 40 đá, 15 khoáng sản. Chiêu hàng (cần còn chỗ tướng hoặc mưu sĩ): cùng tỉ lệ → một tướng hoặc mưu sĩ (một nửa mỗi loại) gia nhập; sao theo sức gia tộc: yếu 1–2, trung bình 2–3, mạnh 3–4 |
+| **Nhóm người khả nghi** | Ván có đạo tặc | Điều tra: 40% + 10% × cấp Sở cảnh sát → dẹp ổ đạo tặc, nhận 30 lương, 30 gỗ, 20 đá, 10 khoáng sản; thất bại thì đạo tặc chắc chắn kéo đến lượt sau. Bỏ qua: 50% đạo tặc kéo đến lượt sau |
+| **Đạo tặc cầu hòa** | Có vùng nổi loạn, hoặc vừa đánh thắng cướp trong 3 lượt | Chấp nhận: 30 lương, 20 gỗ, 20 đá và 1–3 đơn vị lính nông dân đủ quân (nếu còn chỗ). Từ chối: không có gì |
+| **Địch dụ hàng** | Đang chiến tranh, có tướng hoặc mưu sĩ ở nhà | Tăng đãi ngộ: 50 lương + 10 khoáng sản + 10 gỗ cứng, giữ chân tất cả. Mặc kệ: một tướng hoặc mưu sĩ ngẫu nhiên bỏ theo địch với tỉ lệ 50% − 5% × sao của người đó |
+
+"Đạo tặc kéo đến lượt sau" chỉ thay cho lần tung tỉ lệ cướp; nếu lượt đó có gia tộc xâm lược thì trận cướp dời sang lượt kế. Tướng hoặc mưu sĩ đang đi thảo phạt không bị các sự kiện này ảnh hưởng.
+
+Để sang M16e (cần trận đánh hoặc nhuệ khí tối đa): Đạo tặc bắt quan chức, Mật thư bị đánh cắp, Đặc vụ báo tin khẩn cấp.

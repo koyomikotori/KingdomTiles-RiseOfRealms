@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "{clan} chấp nhận nộp tiền chuộc."
+resources = Dictionary[StringName, int]({&"food": 60, &"wood": 40, &"stone": 40, &"ore": 15})
+weight = 1.0
+
+[sub_resource type="Resource" id="outcome_0_1"]
+script = ExtResource("3_outcome")
+text = "{clan} từ chối chuộc người. Tù binh bị giải đi nơi khác."
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+success_chance = 0.5
+chance_per_envoy_star = 0.05
+text = "Đòi tiền chuộc"
+hint = "Mỗi sao của mưu sĩ Ngoại giao +5%."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Tù binh cảm phục, nguyện theo chúa công."
+prisoner_joins = true
+weight = 1.0
+
+[sub_resource type="Resource" id="outcome_1_1"]
+script = ExtResource("3_outcome")
+text = "Tù binh một mực trung thành với chủ cũ."
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+success_chance = 0.5
+chance_per_envoy_star = 0.05
+text = "Chiêu hàng"
+needs_officer_slot = true
+hint = "Có thể thu phục một tướng hoặc mưu sĩ; gia tộc càng mạnh, người càng giỏi. Mỗi sao của mưu sĩ Ngoại giao +5%."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"important_prisoner"
+title = "Tù binh quan trọng"
+text = "Quân ta bắt được một nhân vật có giá trị của {clan}."
+category = 2
+weight = 2.0
+cooldown = 10
+min_turn = 5
+needs_clan = true
+clan_must_be_at_war = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])
