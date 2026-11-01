@@ -22,7 +22,7 @@ static func get_raid_chance(state: KingdomState, raid: RaidData) -> float:
 		for building_id in state.buildings:
 			var building := state.buildings[building_id]
 			chance -= building.raid_chance_reduction * state.board.count_buildings(building_id)
-	return maxf(0.0, chance)
+	return state.raid_pressure.apply(maxf(0.0, chance))
 
 
 static func create_bandit_side(raid: RaidData, enemy_units: Dictionary[StringName, UnitData],

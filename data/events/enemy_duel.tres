@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Tổng tướng thúc ngựa ra khỏi cổng thành, hai bên quân sĩ reo hò vang trời."
+battle = &"duel"
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Ra nghênh chiến"
+needs_commander = true
+hint = "Tay đôi một chọi một. Thắng: tướng địch tử trận, quân địch −2 nhuệ khí tối đa ở trận kế tiếp. Thua: tổng tướng tử trận, quân ta −2."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Cổng thành đóng chặt. Quân địch cười nhạo, quân ta cúi đầu xấu hổ."
+morale_amount = -1
+morale_turns = 5
+morale_any_battle = true
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Đóng cổng không ra"
+hint = "Quân sĩ sẽ cho là ta hèn nhát: −1 nhuệ khí tối đa trong 5 lượt."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"enemy_duel"
+title = "Thách đấu trước cổng thành"
+text = "Tướng của {clan} cưỡi ngựa đến trước cổng thành, lớn tiếng thách tổng tướng của ta ra đấu tay đôi. Quân sĩ hai bên đều đang dõi theo."
+category = 2
+weight = 1.5
+cooldown = 12
+min_turn = 6
+needs_commander = true
+needs_clan = true
+clan_must_be_at_war = true
+clan_must_border = true
+clan_must_have_general = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

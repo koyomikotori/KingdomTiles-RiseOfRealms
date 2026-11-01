@@ -6,7 +6,10 @@ extends Control
 signal closed
 
 const SPEEDS: Array[float] = [1.0, 2.0, 4.0]
-const STATS_COLUMNS: Array[String] = ["Đơn vị", "Lính", "Mất", "Hạ", "Kết cục"]
+const STATS_COLUMNS: Array[String] = ["Đơn vị", "Còn", "Lính", "Mất", "Hạ"]
+const STATS_KEYS: Array[String] = ["name", "left", "start", "lost", "kills"]
+## The stats paper: what happened on the left (wrapped at this width), the team on the right.
+const SUMMARY_WIDTH := 420
 
 var _view: ExpeditionView
 var _report: Dictionary
@@ -96,17 +99,34 @@ func _show_stats() -> void:
 	var title := _paper_label("Ải %d: %s" % [_report.stage + 1, "vượt ải!" if won else "thất bại"], 22)
 	title.add_theme_color_override("font_color", UiPalette.GOOD if won else UiPalette.WARNING)
 	column.add_child(title)
-	for line in summary_lines(_report):
-		column.add_child(_paper_label(line, 15))
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 20)
+	column.add_child(columns)
+	var left := VBoxContainer.new()
+	left.custom_minimum_size = Vector2(SUMMARY_WIDTH, 0)
+	left.add_theme_constant_override("separation", 6)
+	columns.add_child(left)
+	for line in summary_lines(_report, false):
+		var label := _paper_label(line, 15)
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		left.add_child(label)
+	var rewards: Dictionary = _report.get("rewards", {})
+	if not rewards.is_empty():
+		left.add_child(_reward_view(rewards))
+	columns.add_child(VSeparator.new())
 	var grid := GridContainer.new()
 	grid.columns = STATS_COLUMNS.size()
-	grid.add_theme_constant_override("h_separation", 18)
+	grid.add_theme_constant_override("h_separation", 16)
+	grid.add_theme_constant_override("v_separation", 4)
 	for heading in STATS_COLUMNS:
 		grid.add_child(_paper_label(heading, 14, UiPalette.MUTED))
 	for row in unit_rows(_report):
-		for key in ["name", "start", "lost", "kills", "fate"]:
-			grid.add_child(_paper_label(str(row[key]), 14))
-	column.add_child(grid)
+		for key in STATS_KEYS:
+			var label := _paper_label(str(row[key]), 14)
+			if key == "left" and row.left_count < row.squads:
+				label.add_theme_color_override("font_color", UiPalette.WARNING)
+			grid.add_child(label)
+	columns.add_child(grid)
 	var close := _button("Đóng (Enter)", _close)
 	close.size_flags_horizontal = Control.SIZE_SHRINK_END
 	column.add_child(close)
@@ -119,15 +139,50 @@ func _close() -> void:
 	queue_free()
 
 
-## The stage's result in a few lines: battles, the rebel general, fates, and the rewards when the
-## expedition is over.
-static func summary_lines(report: Dictionary) -> Array[String]:
+## The rewards with icons: resources, items, scrolls, experience.
+func _reward_view(rewards: Dictionary) -> RequirementView:
+	var view := RequirementView.new()
+	view.header("Phần thưởng")
+	var amounts: Dictionary[StringName, int] = {}
+	amounts.assign(rewards.resources)
+	view.amounts("Thu được", amounts)
+	for item: Item in rewards.items:
+		view.gain("%s (%s)" % [item.display_name, Item.RARITY_NAMES[item.rarity]])
+	if rewards.get("scrolls", 0) > 0:
+		view.line(&"scroll", "Bí kíp đột phá +%d" % rewards.scrolls)
+	if rewards.xp_officer > 0:
+		view.gain("Kinh nghiệm: tướng sĩ +%d, lính +%d" % [rewards.xp_officer, rewards.xp_squad])
+	return view
+
+
+## The stage's result in a few lines: battles, the duel and the rebel general, fates, and (with
+## `with_rewards`) the rewards when the expedition is over.
+static func summary_lines(report: Dictionary, with_rewards: bool = true) -> Array[String]:
 	var lines: Array[String] = []
 	var battles: Array = report.battles
+	var duel: Dictionary = report.get("duel", {})
 	var won := 0
-	for record: BattleRecord in battles:
-		won += 1 if record.winner == BattleRecord.ATTACKER else 0
-	lines.append("Trận đã đánh: %d · thắng %d." % [battles.size(), won])
+	for b in battles.size():
+		if b != duel.get("index", -1):
+			won += 1 if battles[b].winner == BattleRecord.ATTACKER else 0
+	var fought := battles.size() - (1 if duel.get("index", -1) >= 0 else 0)
+	lines.append("Trận đã đánh: %d · thắng %d." % [fought, won])
+	var changes: Array[String] = []
+	if report.get("team_morale", 0) != 0:
+		changes.append("quân ta %+d" % report.team_morale)
+	if report.get("rebel_morale", 0) != 0:
+		changes.append("quân nổi loạn %+d" % report.rebel_morale)
+	if not changes.is_empty():
+		lines.append("Nhuệ khí tối đa trong ải này: %s." % ", ".join(changes))
+	if not duel.is_empty():
+		if not duel.accepted:
+			lines.append("Tướng nổi loạn %s ra thách đấu, ta không nhận lời." % duel.rebel)
+		elif duel.won:
+			lines.append("Tướng nổi loạn %s thách đấu và tử trận dưới tay tướng ta. Ải sau quân nổi loạn %+d nhuệ khí tối đa."
+					% [duel.rebel, -Expedition.DUEL_MORALE])
+		else:
+			lines.append("Tướng nổi loạn %s thách đấu và chém chết tướng ta. Ải sau quân ta %+d nhuệ khí tối đa."
+					% [duel.rebel, -Expedition.DUEL_MORALE])
 	if report.get("boss", "") != "":
 		lines.append("Tướng nổi loạn %s xuất hiện cuối ải%s." % [report.boss, " và đã bị đánh bại" if report.won else ""])
 	match report.get("general_fate", &"none"):
@@ -144,6 +199,7 @@ static func summary_lines(report: Dictionary) -> Array[String]:
 		lines.append("Đội thảo phạt trở về%s." % (": vùng nổi loạn đã được dẹp yên" if report.get("cleared", false) else ""))
 		if report.has("relation"):
 			lines.append("Các gia tộc cảm kích: quan hệ +%d với mọi gia tộc." % report.relation)
+	if not rewards.is_empty() and with_rewards:
 		var amounts: Dictionary[StringName, int] = {}
 		amounts.assign(rewards.resources)
 		var text := UiFormat.amounts(amounts, ResourceTypeData.load_all())
@@ -160,30 +216,47 @@ static func summary_lines(report: Dictionary) -> Array[String]:
 	return lines
 
 
-## One row per unit of the team over the stage's battles: {"name", "start", "lost", "kills", "fate"}.
+## One row per kind of unit in the team over the stage's battles (the duel left out):
+## {"name", "squads", "left_count", "left": "kept/squads", "start", "lost", "kills"}.
 static func unit_rows(report: Dictionary) -> Array[Dictionary]:
-	var rows := {}
+	var squads := {}
 	var order: Array = []
 	var battles: Array = report.battles
+	var duel_index: int = report.get("duel", {}).get("index", -1)
 	for b in battles.size():
+		if b == duel_index:
+			continue
 		var record: BattleRecord = battles[b]
 		var side := record.sides[BattleRecord.ATTACKER]
 		for unit in side.units:
 			var key: Variant = unit.squad if unit.squad != null else "guard"
-			if not rows.has(key):
+			if not squads.has(key):
 				order.append(key)
-				rows[key] = {"name": "Cận vệ của %s" % side.general_name if unit.is_general_guard else unit.data.display_name,
-						"start": unit.start_soldiers, "lost": 0, "kills": 0, "fate": "Còn"}
-			var row: Dictionary = rows[key]
-			row.lost += unit.lost()
-			row.kills += roundi(unit.kills)
-			if unit.alive() == 0:
-				row.fate = "Tử trận"
-			elif unit.broken or record.winner != BattleRecord.ATTACKER:
-				row.fate = "Bỏ chạy"
-	var result: Array[Dictionary] = []
+				squads[key] = {"name": "Cận vệ của %s" % side.general_name if unit.is_general_guard else unit.data.display_name,
+						"start": unit.start_soldiers, "lost": 0, "kills": 0, "kept": true}
+			var entry: Dictionary = squads[key]
+			entry.lost += unit.lost()
+			entry.kills += roundi(unit.kills)
+			if unit.alive() == 0 or unit.broken or record.winner != BattleRecord.ATTACKER:
+				entry.kept = false
+	var rows := {}
+	var names: Array = []
 	for key in order:
-		result.append(rows[key])
+		var entry: Dictionary = squads[key]
+		if not rows.has(entry.name):
+			names.append(entry.name)
+			rows[entry.name] = {"name": entry.name, "squads": 0, "left_count": 0, "start": 0, "lost": 0, "kills": 0}
+		var row: Dictionary = rows[entry.name]
+		row.squads += 1
+		row.left_count += 1 if entry.kept else 0
+		row.start += entry.start
+		row.lost += entry.lost
+		row.kills += entry.kills
+	var result: Array[Dictionary] = []
+	for name in names:
+		var row: Dictionary = rows[name]
+		row["left"] = "%d/%d" % [row.left_count, row.squads]
+		result.append(row)
 	return result
 
 

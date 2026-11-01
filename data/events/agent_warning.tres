@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Tin là thật! Quân ta đã sẵn sàng khi quân {clan} kéo đến."
+force_invasion = true
+morale_amount = 3
+weight = 1.0
+
+[sub_resource type="Resource" id="outcome_0_1"]
+script = ExtResource("3_outcome")
+text = "Tin giả! Quân ta thức trắng nhiều đêm canh phòng vô ích."
+morale_amount = -3
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Tin tưởng, chuẩn bị nghênh chiến"
+hint = "Tin thật (50%): lượt sau địch tấn công, quân ta +3 nhuệ khí tối đa. Tin giả: quân ta mỏi mệt vì phòng bị vô ích, −3 ở trận kế tiếp với họ."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Không có gì xảy ra. Có lẽ tin chỉ là đồn thổi."
+weight = 1.0
+
+[sub_resource type="Resource" id="outcome_1_1"]
+script = ExtResource("3_outcome")
+text = "Quân {clan} kéo đến thật, quân ta bị bất ngờ."
+force_invasion = true
+morale_amount = -1
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Mặc kệ"
+hint = "Có thể không sao, cũng có thể bị đánh bất ngờ."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"agent_warning"
+title = "Đặc vụ báo tin khẩn"
+text = "Đặc vụ của ta ở {clan} gửi tin khẩn: chúng sắp kéo quân sang đánh vương quốc. Nhưng tin này chưa chắc đã đúng."
+category = 2
+weight = 1.5
+cooldown = 12
+min_turn = 6
+needs_clan = true
+clan_must_be_at_war = true
+clan_must_border = true
+clan_must_host_agent = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

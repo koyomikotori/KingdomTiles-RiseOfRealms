@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Tin là thật! Quân ta ập vào doanh trại khi địch còn chưa kịp mặc giáp."
+battle = &"surprise"
+weight = 1.0
+
+[sub_resource type="Resource" id="outcome_0_1"]
+script = ExtResource("3_outcome")
+text = "Đó là bẫy! Quân phục của {clan} đổ ra từ hai bên sườn."
+commander_wounded = true
+detachment_loss = 0.5
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Cho quân đi đánh úp"
+min_squads_home = 1
+success_chance = 0.7
+hint = "Tin thật: đánh như một trận tấn công nhưng địch chỉ còn một nửa quân và −2 nhuệ khí tối đa. Bẫy: tổng tướng bị thương, 3–5 đơn vị mất một nửa quân."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Ta không mạo hiểm. Tên lính đào ngũ bị giữ lại tra hỏi."
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Bỏ qua"
+hint = "Không mạo hiểm."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"enemy_leak"
+title = "Tin tuồn ra"
+text = "Một tên lính đào ngũ của {clan} mang tin: doanh trại của chúng đang phòng vệ lơi lỏng. Nhưng đó cũng có thể là bẫy."
+category = 2
+weight = 1.5
+cooldown = 12
+min_turn = 6
+min_squads = 1
+needs_clan = true
+clan_must_be_at_war = true
+clan_must_border = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

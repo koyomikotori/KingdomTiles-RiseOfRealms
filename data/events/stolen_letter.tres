@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Các tướng soạn lại kế hoạch suốt đêm. Bức thư bị đánh cắp giờ chỉ là giấy vụn."
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Thay đổi kế hoạch"
+cost = Dictionary[StringName, int]({&"food": 60, &"wood": 40, &"ore": 15})
+hint = "Tốn thêm tài nguyên, nhưng bức thư thành vô dụng."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+weight = 4.0
+text = "Nhờ bức thư, quân {clan} biết trước đường đi nước bước của ta."
+morale_amount = 2
+morale_enemy = true
+
+[sub_resource type="Resource" id="outcome_1_1"]
+script = ExtResource("3_outcome")
+weight = 1.0
+text = "Tên gián điệp chết đuối khi qua sông, bức thư trôi mất."
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Bỏ qua"
+hint = "Nhiều khả năng địch biết trước kế hoạch: +2 nhuệ khí tối đa ở trận kế tiếp với ta."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"stolen_letter"
+title = "Mật thư bị đánh cắp"
+text = "Một mật thư chứa kế hoạch hành quân bị gián điệp của {clan} đánh cắp trên đường chuyển đi."
+category = 2
+weight = 1.5
+cooldown = 12
+min_turn = 6
+needs_clan = true
+clan_must_be_at_war = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

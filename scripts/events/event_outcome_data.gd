@@ -53,3 +53,23 @@ extends Resource
 @export var assassinate: bool = false
 ## The agent in the event clan is exposed: may be killed (Agents.kill_chance), else comes home.
 @export var agent_exposed: bool = false
+@export_group("M16e")
+## A battle follows (EventBattles.KINDS: &"duel", &"breakout", &"surprise", &"rescue").
+@export var battle: StringName = &""
+## Starting morale change ("nhuệ khí tối đa", MoraleEffects) for the kingdom's army or the
+## enemy's: in the next battle against the event's clan (any battle with `morale_any_battle`),
+## or in every such battle for `morale_turns` turns.
+@export var morale_amount: int = 0
+@export var morale_enemy: bool = false
+@export var morale_turns: int = 0
+@export var morale_any_battle: bool = false
+## The commander dies / is wounded for Generals.WOUND_TURNS turns.
+@export var commander_dies: bool = false
+@export var commander_wounded: bool = false
+## A random detachment (EventBattles.detachment) loses this share of its soldiers.
+@export var detachment_loss: float = 0.0
+## The event's clan invades at the start of the next turn.
+@export var force_invasion: bool = false
+## The chance of a bandit raid is multiplied by this for `raid_chance_turns` turns (RaidPressure).
+@export var raid_chance_factor: float = 1.0
+@export var raid_chance_turns: int = 0

@@ -24,3 +24,10 @@ extends Resource
 @export var needs_officer_slot: bool = false
 ## &"general" / &"advisor": the event clan must field this officer (the assassination target).
 @export var target_officer: StringName = &""
+@export_group("Requirements (M16e)")
+## The commander must be at home and able to fight.
+@export var needs_commander: bool = false
+## Squads at home (not on an expedition) needed.
+@export var min_squads_home: int = 0
+## The player picks one of the generals at home, ready to fight, for the battle (EventWindow).
+@export var pick_general: bool = false

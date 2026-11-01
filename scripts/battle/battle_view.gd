@@ -66,6 +66,19 @@ const EFFECT_TIME := 1.6
 const EFFECT_SCALE := 3.0
 ## Officer sprite kinds (GameArt.officer_sprite picks the variant from the officer's look): the
 ## commander rides at the head of the bodyguard, the strategist stands behind the army.
+## A duel (M16e, Generals.duel_side): the two generals alone, riding back and forth together
+## (DUEL_SWAY px each way, up and down by DUEL_LANE_SWAY) while closing in and pulling apart
+## (half the gap swings between (DUEL_GAP_MID ± DUEL_GAP_SWING) × CLASH_GAP); they strike when
+## close (DUEL_STRIKE_GAP). Speeds in radians per battle second.
+const DUEL_SWAY := 160.0
+const DUEL_SWAY_SPEED := 0.5
+const DUEL_LANE_SWAY := 60.0
+const DUEL_LANE_SPEED := 0.7
+const DUEL_GAP_MID := 4.2
+const DUEL_GAP_SWING := 2.1
+const DUEL_LUNGE_SPEED := 1.6
+const DUEL_STRIKE_GAP := 2.8
+const DUEL_MOVE_SPEED := 320.0
 const GENERAL_KIND: StringName = &"general"
 const ADVISOR_KIND: StringName = &"advisor"
 
@@ -150,7 +163,7 @@ func setup(simulator: BattleSimulator, left_side: int) -> void:
 			view.unit = unit
 			view.battle_side = s
 			view.screen_side = 0 if s == left_side else 1
-			for k in ceili(float(unit.start_soldiers) / SOLDIERS_PER_FIGURE):
+			for k in (1 if _is_duelist(unit) else ceili(float(unit.start_soldiers) / SOLDIERS_PER_FIGURE)):
 				var figure := Figure.new()
 				figure.offset = _figure_offset(k, view.screen_side)
 				figure.slot = figure.offset
@@ -246,6 +259,9 @@ func _assign_lanes() -> void:
 		for view: UnitView in _views[s]:
 			if not view.unit.is_active():
 				continue
+			if _is_duelist(view.unit):
+				view.lane_target = (top + bottom) * 0.5 + (sin(_clock * DUEL_LANE_SPEED) * DUEL_LANE_SWAY if _duelling() else 0.0)
+				continue
 			# The commander's guard leads from the middle, then rides into its target's lane.
 			if view.unit.is_general_guard:
 				view.lane_target = view.guard_target.lane_y if view.guard_target != null else (top + bottom) * 0.5
@@ -277,6 +293,9 @@ func _home_x(view: UnitView) -> float:
 func _target_x(view: UnitView) -> float:
 	if _simulator.time < BattleSimulator.CONTACT_TIME - CHARGE_LEAD:
 		return _home_x(view)
+	if _is_duelist(view.unit):
+		var center := size.x * 0.5 + (sin(_clock * DUEL_SWAY_SPEED) * DUEL_SWAY if _duelling() else 0.0)
+		return center - _facing(view.screen_side) * (_duel_gap() if _duelling() else CLASH_GAP)
 	if view.unit.is_general_guard and view.guard_target != null:
 		return view.guard_target.pos.x - _facing(view.screen_side) * CLASH_GAP * 2.0
 	var side := _simulator.record.sides[view.battle_side]
@@ -287,6 +306,20 @@ func _target_x(view: UnitView) -> float:
 	if view.unit.is_general_guard:
 		offset = maxf(0.0, offset - GENERAL_LEAD * 0.5)
 	return size.x * 0.5 - offset if view.screen_side == 0 else size.x * 0.5 + offset
+
+
+static func _is_duelist(unit: BattleSide.Unit) -> bool:
+	return unit.data.unit_id == Generals.DUELIST_ID
+
+
+## The duel is on: past the charge and not over.
+func _duelling() -> bool:
+	return _simulator.time >= BattleSimulator.CONTACT_TIME - CHARGE_LEAD and not _simulator.finished
+
+
+## Half the distance between the two duelists right now.
+func _duel_gap() -> float:
+	return CLASH_GAP * (DUEL_GAP_MID + DUEL_GAP_SWING * sin(_clock * DUEL_LUNGE_SPEED))
 
 
 ## Left side faces right (+1), right side faces left (-1).
@@ -305,7 +338,7 @@ func _figure_offset(index: int, screen_side: int) -> Vector2:
 # --- Animation ----------------------------------------------------------------------------
 
 func _move_unit(view: UnitView, delta: float) -> void:
-	view.pos.x = move_toward(view.pos.x, _target_x(view), MOVE_SPEED * delta)
+	view.pos.x = move_toward(view.pos.x, _target_x(view), (DUEL_MOVE_SPEED if _is_duelist(view.unit) else MOVE_SPEED) * delta)
 	var lane_speed := GUARD_LANE_SPEED if view.unit.is_general_guard else LANE_SPEED
 	view.lane_y = move_toward(view.lane_y, view.lane_target, lane_speed * delta)
 	view.pos.y = view.lane_y
@@ -334,6 +367,8 @@ func _update_guard_target(view: UnitView) -> void:
 
 
 func _figures_wanted(view: UnitView) -> int:
+	if _is_duelist(view.unit):
+		return 1 if view.unit.alive() > 0 else 0
 	return ceili(float(view.unit.alive()) / SOLDIERS_PER_FIGURE)
 
 
@@ -527,6 +562,10 @@ func _draw_unit(view: UnitView) -> void:
 	var fighting := _simulator.is_melee_started() and absf(view.pos.x - _target_x(view)) < 1.0 \
 			and not _is_in_side_zone(view.unit) and absf(view.lane_y - view.lane_target) < 2.0
 	var running := absf(view.pos.x - _target_x(view)) >= 1.0
+	if _is_duelist(view.unit) and _duelling():
+		# Riding all the time; striking whenever the two are close.
+		fighting = _duel_gap() < CLASH_GAP * DUEL_STRIKE_GAP
+		running = not fighting
 	var shooting := _simulator.time - view.last_volley < SHOT_POSE_TIME
 	var cheering := _simulator.finished and _simulator.record.winner == view.battle_side and view.unit.is_active()
 	# The commander rides at the head of the bodyguard on their own horse, until they fall.

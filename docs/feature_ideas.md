@@ -12,7 +12,7 @@ Bản mobile (M15) vẫn để cuối cùng. Các milestone dưới đây đặt
 | M16b (xong, chờ chơi thử) | Event không cần trận đánh: kho lương bị tấn công, cơ hội ám sát, tướng bất mãn, dân chúng cầu cứu, tù binh quan trọng, nhóm người khả nghi, đạo tặc cầu hòa, địch dụ hàng | B2, B5, B7 | Dễ | Dùng hệ event (M11b), đặc vụ (M14e) và tướng địch (M14h) đã có |
 | M16c (xong, chờ chơi thử) | Limit break cho tướng / mưu sĩ (GDD §19) | A2 | Dễ–vừa | Chỉ thêm luật và nút trong cửa sổ tướng sĩ |
 | M16d (xong, chờ chơi thử) | Chợ đen (GDD §20) | B6 | Vừa | Cửa sổ mới (6 ô, làm mới), dùng lại hệ trang bị; portrait vẽ bằng script |
-| M16e | Event có trận đánh / nhuệ khí tối đa: tướng bị phục kích, tin tuồn ra, tướng địch thách đấu tay đôi, đạo tặc bắt quan chức, mật thư bị đánh cắp, đặc vụ báo tin khẩn cấp | B1, B3, B4, B8 | Vừa | Cần trận đánh với quân rút gọn, địch còn 50%, trừ nhuệ khí tối đa, trận chỉ có 2 tướng |
+| M16e (xong, chờ chơi thử) | Event có trận đánh (GDD §21) / nhuệ khí tối đa: tướng bị phục kích, tin tuồn ra, tướng địch thách đấu tay đôi, đạo tặc bắt quan chức, mật thư bị đánh cắp, đặc vụ báo tin khẩn cấp | B1, B3, B4, B8 | Vừa | Cần trận đánh với quân rút gọn, địch còn 50%, trừ nhuệ khí tối đa, trận chỉ có 2 tướng |
 | M16f | Thêm loại lính mới | C4 | Vừa | Dữ liệu `.tres` + sprite vẽ bằng script; cần chốt danh sách lính |
 | M16g | Sprite theo độ hiếm + tướng 4 khung hình trở lên, có hiệu ứng | A1 | Vừa–khó | Nhiều hình vẽ (mỗi mức sao, mỗi loại vũ khí, nam / nữ) |
 | M16h | Chúa công: tùy chỉnh ở màn Ván mới (đầu / thân / giới tính / tên), sprite tướng đi bộ | A4, A5 | Vừa–khó | Vẽ sprite mới; là nền cho mini game tỉ thí |
@@ -130,3 +130,4 @@ Chung: chỉ cho tướng / mưu sĩ từ 3 sao trở lên, mỗi người 1 l�
   - Đạo tặc bắt giữ quan chức: Cứu viện (mở trận, có thưởng) / Chuộc người (mất tài nguyên) / Bỏ mặc (trừ quan hệ với mọi gia tộc).
   - Mật thư bị đánh cắp: Thay đổi kế hoạch (mất thêm tài nguyên) / Bỏ qua (80% trận tiếp theo địch +2 nhuệ khí tối đa).
   - Đặc vụ báo tin khẩn cấp (cần có đặc vụ): Tin tưởng (50% tin thật: địch tấn công lượt sau, ta +3 nhuệ khí tối đa; tin giả: ta giao tranh với −3) / Mặc kệ (50% không sao, 50% địch tấn công lượt sau, ta −1).
+  - Đã làm ở M16e (GDD §21). Thêm sau khi chơi thử: thủ lĩnh đạo tặc theo lượt, event thủ lĩnh thách đấu (cử tướng bất kỳ), thách đấu khi thảo phạt.

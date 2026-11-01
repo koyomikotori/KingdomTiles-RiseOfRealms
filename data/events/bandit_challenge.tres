@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Hai bên dàn quân. Vị tướng được cử thúc ngựa ra trước trận."
+battle = &"bandit_duel"
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Cử tướng ra đấu"
+pick_general = true
+hint = "Chọn một vị tướng ra đấu tay đôi, người thua tử trận. Thắng: 10 lượt tới đạo tặc −2 nhuệ khí tối đa và đến cướp ít hơn (×0,5). Thua: trận kế tiếp với đạo tặc quân ta −2."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Đạo tặc chửi bới ngoài cổng thành rồi kéo đi, hẹn sẽ còn quay lại."
+morale_amount = -1
+morale_turns = 5
+morale_any_battle = true
+raid_chance_factor = 2.0
+raid_chance_turns = 5
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Đóng cổng không ra"
+hint = "Quân ta −1 nhuệ khí tối đa trong 5 lượt, đạo tặc kéo đến cướp nhiều gấp đôi trong 5 lượt."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"bandit_challenge"
+title = "Thủ lĩnh đạo tặc thách đấu"
+text = "Thủ lĩnh đạo tặc dẫn đám lâu la đến trước cổng thành, lớn tiếng thách bất kỳ vị tướng nào của vương quốc ra đấu tay đôi."
+category = 2
+weight = 1.5
+cooldown = 12
+min_turn = 20
+needs_bandit_leader = true
+min_generals_home = 1
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])
