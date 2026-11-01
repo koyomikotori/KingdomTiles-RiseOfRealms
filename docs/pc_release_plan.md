@@ -8,8 +8,8 @@ Danh sách người chơi (chủ dự án) đưa ra sau M14e (2026-10-30). Làm 
 | M14g | Bảng báo cáo quan trọng + nút mũi tên xem tướng/mưu sĩ | Xong (đã merge) |
 | M14h | Chọn độ khó ván mới + tướng/mưu sĩ của gia tộc địch | Xong (đã merge) |
 | M14i | Thảo phạt đạo tặc (vùng đỏ, chuyến thảo phạt, màn phát lại kiểu Dungeon Village) | Xong (đã merge) |
-| M14j | Cutscene mờ sau menu chính (kiểu Kairosoft) + nhạc nền mới | Xong, chờ chơi thử |
-| M14c | Build Windows, phát hành bản máy tính | Cuối cùng |
+| M14j | Cutscene mờ sau menu chính (kiểu Kairosoft) + nhạc nền mới | Xong (đã merge) |
+| M14c | Build Windows bản 0.1 Early Access (gửi bạn bè) | Xong, chờ chơi thử |
 
 ---
 
@@ -100,6 +100,18 @@ Tham khảo mini game thảo phạt trong Dungeon Village (Kairosoft).
 - **Nhạc nền mới:** người chơi tự làm, thả vào `assets/audio/custom/` (cùng tên file sẽ thay nhạc cũ, xem GDD §14).
 
 Đã chốt: cảnh nền là **một trận đánh gia tộc và một ải thảo phạt chạy luân phiên** (gameplay cơ bản, như Kairosoft), làm mờ, camera lia chậm qua lại để không bị bảng menu che (GDD §10.1).
+
+---
+
+## M14c — Bản Windows 0.1 Early Access
+
+Đã chốt (2026-10-31):
+- **Chỉ build để chơi / gửi bạn bè**: một file zip chạy được trên Windows, chưa đăng lên itch.io / Steam.
+- **Phiên bản 0.1 (Early Access)**, ghi ở góc menu chính.
+- **Bảng Giới thiệu / Bản quyền** ở menu chính: tác giả, Godot Engine (giấy phép MIT, bắt buộc ghi), font, nguồn ảnh chân dung AI, nhạc.
+- **Hướng dẫn cơ bản**: bảng "Cách chơi" ngắn ở menu (đặt đất, xây, tuyển lính, ngoại giao, chiến tranh, thảo phạt). NPC trợ lý đầy đủ để sau.
+- **Ghi log khi lỗi**: log của game nằm trong thư mục dữ liệu game; bảng Giới thiệu chỉ chỗ đó để người chơi gửi lại khi gặp lỗi.
+- **Nhạc nền mới**: người chơi tự làm bằng AI làm nhạc theo prompt ở `docs/music_prompts.md`; có nhạc thì thay vào trước khi build, chưa có thì build với nhạc hiện tại.
 
 ---
 

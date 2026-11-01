@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="Kingdom Tiles : Rise Of Realms"
+config/version="0.1"
 run/main_scene="res://scenes/menu/main_menu.tscn"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://assets/ui/app_icon.png"
@@ -19,6 +20,10 @@ config/icon="res://assets/ui/app_icon.png"
 
 DragScroll="*res://scripts/ui/drag_scroll.gd"
 SoundPlayer="*res://scripts/audio/sound_player.gd"
+
+[debug]
+
+file_logging/enable_file_logging=true
 
 [display]
 
