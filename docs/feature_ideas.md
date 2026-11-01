@@ -9,10 +9,10 @@ Bản mobile (M15) vẫn để cuối cùng. Các milestone dưới đây đặt
 | Milestone | Nội dung | Mục | Độ khó | Lý do |
 |---|---|---|---|---|
 | M16a (xong, chờ chơi thử) | Cân bằng và ngoại giao: nerf hồi quân doanh trại, thảo phạt thành công cộng quan hệ, tìm lỗi liên minh 0% về late, cho lại hiệp định bất tương xâm, buff mưu sĩ Ngoại giao | C1, C2, C3 | Dễ | Chủ yếu sửa số và luật có sẵn; hiệp định từng có code ở M9b |
-| M16b | Event đơn giản: kho lương bị tấn công, đặc vụ ám sát tướng / mưu sĩ địch | B2, B5 | Dễ | Dùng hệ event (M11b), đặc vụ (M14e) và tướng địch (M14h) đã có |
+| M16b (xong, chờ chơi thử) | Event không cần trận đánh: kho lương bị tấn công, cơ hội ám sát, tướng bất mãn, dân chúng cầu cứu, tù binh quan trọng, nhóm người khả nghi, đạo tặc cầu hòa, địch dụ hàng | B2, B5, B7 | Dễ | Dùng hệ event (M11b), đặc vụ (M14e) và tướng địch (M14h) đã có |
 | M16c | Limit break cho tướng / mưu sĩ | A2 | Dễ–vừa | Chỉ thêm luật và nút trong cửa sổ tướng sĩ |
 | M16d | Chợ đen | B6 | Vừa | Cửa sổ mới (6 ô, làm mới), dùng lại hệ trang bị; cần 1 portrait |
-| M16e | Event có trận đánh: tướng bị phục kích, tin tuồn ra, tướng địch thách đấu tay đôi | B3, B4, B1 | Vừa | Cần trận đánh với quân rút gọn, địch còn 50%, trừ nhuệ khí tối đa, trận chỉ có 2 tướng |
+| M16e | Event có trận đánh / nhuệ khí tối đa: tướng bị phục kích, tin tuồn ra, tướng địch thách đấu tay đôi, đạo tặc bắt quan chức, mật thư bị đánh cắp, đặc vụ báo tin khẩn cấp | B1, B3, B4, B8 | Vừa | Cần trận đánh với quân rút gọn, địch còn 50%, trừ nhuệ khí tối đa, trận chỉ có 2 tướng |
 | M16f | Thêm loại lính mới | C4 | Vừa | Dữ liệu `.tres` + sprite vẽ bằng script; cần chốt danh sách lính |
 | M16g | Sprite theo độ hiếm + tướng 4 khung hình trở lên, có hiệu ứng | A1 | Vừa–khó | Nhiều hình vẽ (mỗi mức sao, mỗi loại vũ khí, nam / nữ) |
 | M16h | Chúa công: tùy chỉnh ở màn Ván mới (đầu / thân / giới tính / tên), sprite tướng đi bộ | A4, A5 | Vừa–khó | Vẽ sprite mới; là nền cho mini game tỉ thí |
@@ -121,3 +121,11 @@ Chung: chỉ cho tướng / mưu sĩ từ 3 sao trở lên, mỗi người 1 l�
 - Phòng thủ: bấm W / A / S / D đúng thời điểm để né đòn tướng đối phương tung ra.
 - Dùng sprite tướng đi bộ (A5) và sprite chúa công (A4).
 - Có thể dùng lại cho event đấu tay đôi (B1) nếu muốn trận solo do người chơi điều khiển.
+
+## B7–B8. Event bổ sung (người chơi gửi thêm sau M16a)
+
+- **B7 (làm ở M16b):** Tướng bất mãn, Dân chúng cầu cứu, Tù binh quan trọng, Nhóm người khả nghi, Đạo tặc cầu hòa, Tướng ta được địch chiêu hàng. Luật chi tiết ở GDD §18.
+- **B8 (để M16e, cần trận đánh hoặc nhuệ khí tối đa):**
+  - Đạo tặc bắt giữ quan chức: Cứu viện (mở trận, có thưởng) / Chuộc người (mất tài nguyên) / Bỏ mặc (trừ quan hệ với mọi gia tộc).
+  - Mật thư bị đánh cắp: Thay đổi kế hoạch (mất thêm tài nguyên) / Bỏ qua (80% trận tiếp theo địch +2 nhuệ khí tối đa).
+  - Đặc vụ báo tin khẩn cấp (cần có đặc vụ): Tin tưởng (50% tin thật: địch tấn công lượt sau, ta +3 nhuệ khí tối đa; tin giả: ta giao tranh với −3) / Mặc kệ (50% không sao, 50% địch tấn công lượt sau, ta −1).

@@ -33,17 +33,22 @@ func open(state: KingdomState, rng: RandomNumberGenerator) -> void:
 
 
 func _choice_row(choice: EventChoiceData, index: int) -> Control:
-	var affordable := _state.events.can_choose(_state, choice)
+	var clan_id := _state.events.current_clan()
+	var blocked := _state.events.block_reason(_state, choice, clan_id)
 	var text := choice.text
 	if not choice.cost.is_empty():
 		text += " (−%s)" % UiFormat.amounts(choice.cost, _resource_types)
 	var button := _button(text, _on_choice_pressed.bind(index))
-	button.disabled = not affordable
+	button.disabled = not blocked.is_empty()
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	var column := VBoxContainer.new()
 	column.add_child(button)
-	var hint := _label("Không đủ tài nguyên." if not affordable else choice.hint, 13)
-	hint.add_theme_color_override("font_color", WARNING_COLOR if not affordable else MUTED_COLOR)
+	var hint_text := choice.hint
+	var chance := _state.events.choice_chance(_state, choice, clan_id)
+	if chance >= 0.0:
+		hint_text += " Khả năng thành công: %d%%." % roundi(chance * 100)
+	var hint := _label(blocked if not blocked.is_empty() else hint_text.strip_edges(), 13)
+	hint.add_theme_color_override("font_color", WARNING_COLOR if not blocked.is_empty() else MUTED_COLOR)
 	column.add_child(hint)
 	return column
 

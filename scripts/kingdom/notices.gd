@@ -63,11 +63,23 @@ static func _building_items(state: KingdomState, report: Dictionary) -> Array[Di
 		forge.append("Vừa rèn xong %s (%s)" % [forged.display_name, Item.RARITY_NAMES[forged.rarity]])
 	if not state.equipment.forge_job.is_empty():
 		forge.append("Đang rèn: còn %d lượt" % state.equipment.forge_job.turns)
+	# Put out of work by a war event (M16b): turns left, and those back at work this turn.
+	var idle: Array[String] = []
+	for cell in state.board.get_all_cells():
+		if cell.disabled_turns > 0 and cell.has_building() and cell.coord == cell.building_origin:
+			var data: BuildingData = state.buildings.get(cell.building_id)
+			idle.append("%s bỏ hoang: còn %d lượt" % [data.display_name if data != null else String(cell.building_id),
+					cell.disabled_turns])
+	for origin: Vector2i in report.get("back_to_work", []):
+		var data: BuildingData = state.buildings.get(state.board.get_cell(origin).building_id)
+		if data != null:
+			idle.append("%s hoạt động trở lại" % data.display_name)
 	var unpaid: Array[String] = []
 	if not state.buildings_supplied:
 		unpaid.append("Không đủ phí duy trì: công trình tạm ngưng tác dụng lượt này")
 	return [_item(&"constructing", "Đang thi công", building), _item(&"completed", "Vừa hoàn thành", finished),
-			_item(&"forge", "Xưởng rèn", forge), _item(&"upkeep", "Thiếu phí duy trì", unpaid, true)]
+			_item(&"forge", "Xưởng rèn", forge), _item(&"idle", "Bỏ hoang vì chiến sự", idle, true),
+			_item(&"upkeep", "Thiếu phí duy trì", unpaid, true)]
 
 
 static func _diplomacy_items(state: KingdomState, report: Dictionary) -> Array[Dictionary]:

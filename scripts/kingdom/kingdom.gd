@@ -977,5 +977,7 @@ func _describe_cell(cell: CellData) -> String:
 		building = data.display_name if data != null else String(cell.building_id)
 		if cell.is_constructing():
 			building += " (%s, còn %d lượt)" % ["đang nâng cấp" if cell.building_upgrading else "đang xây", cell.building_turns]
+		elif cell.disabled_turns > 0:
+			building += " (bỏ hoang vì chiến sự, còn %d lượt)" % cell.disabled_turns
 	return "Ô (%d, %d)\nĐịa hình: %s\nSở hữu: %s\nSản lượng mỗi lượt: %s\nCông trình: %s" % [
 		cell.coord.x, cell.coord.y, terrain, "Có" if cell.owned else "Không", production, building]

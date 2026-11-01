@@ -281,6 +281,7 @@ func expand(direction: Vector2i, amount: int) -> void:
 		cell.building_turns = old.building_turns
 		cell.building_upgrading = old.building_upgrading
 		cell.occupied = old.occupied
+		cell.disabled_turns = old.disabled_turns
 	resized.emit(shift)
 
 
@@ -294,7 +295,7 @@ func to_save() -> Dictionary:
 			cells.append({"x": cell.coord.x, "y": cell.coord.y, "terrain": String(cell.terrain_id), "owned": cell.owned,
 					"key": cell.is_key, "building": String(cell.building_id),
 					"origin": [cell.building_origin.x, cell.building_origin.y], "level": cell.building_level,
-					"turns": cell.building_turns, "upgrading": cell.building_upgrading})
+					"turns": cell.building_turns, "upgrading": cell.building_upgrading, "disabled": cell.disabled_turns})
 	return {"width": width, "height": height, "cells": cells}
 
 
@@ -313,4 +314,24 @@ static func from_save(data: Dictionary) -> BoardData:
 		# Saves from before M12d have no construction: everything there is finished.
 		cell.building_turns = int(entry.get("turns", 0))
 		cell.building_upgrading = bool(entry.get("upgrading", false))
+		cell.disabled_turns = int(entry.get("disabled", 0))
 	return board
+
+
+## Puts every cell of the building at `origin` out of work for `turns` turns (M16b).
+func disable_building(origin: Vector2i, turns: int) -> void:
+	for cell in get_building_cells(origin):
+		cell.disabled_turns = maxi(cell.disabled_turns, turns)
+		cell_changed.emit(cell.coord)
+
+
+## One turn passes for idle buildings; returns the origins back at work.
+func tick_disabled() -> Array[Vector2i]:
+	var back: Array[Vector2i] = []
+	for cell in _cells:
+		if cell.disabled_turns > 0:
+			cell.disabled_turns -= 1
+			cell_changed.emit(cell.coord)
+			if cell.disabled_turns == 0 and cell.coord == cell.building_origin:
+				back.append(cell.coord)
+	return back

@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Viên tướng cảm kích, thề tận trung."
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Ban thưởng"
+hint = "Giữ được lòng tướng."
+cost = Dictionary[StringName, int]({&"food": 40, &"ore": 10})
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+weight = 0.4
+text = "Sáng hôm sau, viên tướng đã treo ấn bỏ đi."
+general_leaves = true
+
+[sub_resource type="Resource" id="outcome_1_1"]
+script = ExtResource("3_outcome")
+weight = 0.6
+text = "Viên tướng càu nhàu vài hôm rồi cũng thôi."
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Phớt lờ"
+hint = "Có thể mất một vị tướng."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"general_discontent"
+title = "Tướng bất mãn"
+text = "Một vị tướng cho rằng công lao của mình không được ghi nhận, tỏ ý muốn ra đi."
+category = 3
+weight = 1.5
+cooldown = 12
+min_turn = 10
+min_generals_home = 1
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

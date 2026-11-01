@@ -824,6 +824,7 @@ func end_turn() -> Dictionary:
 		Economy.add_into(upkeep, building_upkeep)
 	var agreements := diplomacy.run_agreements(stockpile)
 	var completed := _advance_construction()
+	var back_to_work := board.tick_disabled()
 	# An invasion may have taken the forge.
 	if board.count_buildings(FORGE_ID, true) == 0:
 		equipment.cancel_forge()
@@ -848,6 +849,7 @@ func end_turn() -> Dictionary:
 	var report := {"collected": collected, "upkeep": upkeep, "deserted": deserted,
 			"buildings_supplied": buildings_supplied, "replenished": replenished, "agreements": agreements}
 	report["completed"] = completed
+	report["back_to_work"] = back_to_work
 	report["forged"] = forged
 	report["treaties"] = treaties
 	report["war_declared"] = declared
@@ -864,7 +866,8 @@ func end_turn() -> Dictionary:
 		clan_officers.lead(invaders, invader, wars, difficulty)
 		report["pending_invasion"] = {"clan_id": invader,
 				"simulator": BattleSimulator.new(invaders, create_kingdom_side(invader), rng.randi())}
-	elif raid != null and rng.randf() < RaidSystem.get_raid_chance(self, raid):
+	elif raid != null and (events.raid_forced or rng.randf() < RaidSystem.get_raid_chance(self, raid)):
+		events.raid_forced = false
 		var bandits := RaidSystem.create_bandit_side(raid, enemy_units, turn, rng, wars.enemy_scale)
 		report["pending_raid"] = BattleSimulator.new(bandits, create_kingdom_side(&""), rng.randi())
 	# Rolled last so the invasion and raid rolls above stay as they were.

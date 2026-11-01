@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Lần ra ổ đạo tặc và dẹp gọn, thu được của cải chúng cất giấu."
+resources = Dictionary[StringName, int]({&"food": 30, &"wood": 30, &"stone": 20, &"ore": 10})
+weight = 1.0
+
+[sub_resource type="Resource" id="outcome_0_1"]
+script = ExtResource("3_outcome")
+text = "Bọn chúng phát hiện bị theo dõi và kéo quân đến trước!"
+force_raid = true
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Cho người điều tra"
+success_chance = 0.4
+chance_per_police_level = 0.1
+hint = "Thành công: dẹp ổ đạo tặc, thu của cải. Thất bại: đạo tặc kéo đến lượt sau. Mỗi cấp Sở cảnh sát +10%."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+weight = 0.5
+text = "Đêm sau, đạo tặc đã kéo đến."
+force_raid = true
+
+[sub_resource type="Resource" id="outcome_1_1"]
+script = ExtResource("3_outcome")
+weight = 0.5
+text = "Nhóm người lạ biến mất."
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Bỏ qua"
+hint = "Có thể đạo tặc sẽ kéo đến lượt sau."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"suspicious_group"
+title = "Nhóm người khả nghi"
+text = "Một nhóm người lạ mặt lảng vảng trong lãnh thổ. Có tin chúng là tai mắt của một ổ đạo tặc."
+category = 2
+weight = 2.0
+cooldown = 10
+min_turn = 5
+needs_raids = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

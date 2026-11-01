@@ -40,6 +40,8 @@ const GHOST_INVALID_COLOR := Color(1.0, 0.3, 0.3)
 
 ## A building being upgraded shows through its scaffolding this much.
 const UPGRADING_ALPHA := 0.6
+## Buildings put out of work by a war event (M16b) are drawn grayed, with their turns left.
+const DISABLED_TINT := Color(0.5, 0.5, 0.5)
 ## Turns left on the castle's upgrade (KingdomState.castle_turns), set by the kingdom scene.
 var castle_turns := 0:
 	set(value):
@@ -355,8 +357,10 @@ func _draw_buildings() -> void:
 		elif texture != null:
 			var rect := art_rect(cell.building_origin, cells, texture.get_size())
 			var tint := Color(1, 1, 1, UPGRADING_ALPHA) if turns > 0 else Color.WHITE
+			if cell.disabled_turns > 0:
+				tint = DISABLED_TINT
 			var anim: Texture2D = null
-			if animate and turns == 0:
+			if animate and turns == 0 and cell.disabled_turns == 0:
 				anim = GameArt.castle_anim(castle_level, team_color) if is_castle else GameArt.building_anim(cell.building_id)
 			if anim != null:
 				_draw_frame(anim, rect, _anim_frame, tint)
@@ -411,6 +415,8 @@ func _draw_level_badges() -> void:
 		if not cell.has_building() or cell.coord != cell.building_origin:
 			continue
 		var turns := castle_turns if cell.building_id == BoardData.CASTLE_ID else cell.building_turns
+		if turns == 0:
+			turns = cell.disabled_turns  # idle after a war event: turns until it works again
 		var plate := GameArt.turns_badge(turns) if turns > 0 else null
 		if plate != null:
 			_badges.draw_texture_rect(plate, Rect2(_cell_rect(cell.coord).position + Vector2(3, 3),

@@ -202,6 +202,18 @@ func end_turn(diplomacy: Diplomacy, police_level: int, max_stars: int, turn: int
 	return events
 
 
+## A failed assassination (M16b): the clan resents it, and the agent is killed (kill_chance) or
+## sent home. Returns true when killed.
+func expose(agent: Agent, diplomacy: Diplomacy, roll: float) -> bool:
+	diplomacy.change_relation(agent.target, CAUGHT_RELATION, Diplomacy.MEMORY_AGENT)
+	var killed := roll < kill_chance(agent.stars)
+	if killed:
+		agents.erase(agent)
+	_end_mission(agent)
+	changed.emit()
+	return killed
+
+
 func _end_mission(agent: Agent) -> void:
 	agent.mission = Agent.NO_MISSION
 	agent.target = &""

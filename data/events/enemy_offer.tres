@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Tướng sĩ đều được trọng thưởng, lòng người vững vàng."
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Tăng đãi ngộ"
+hint = "Giữ chân toàn bộ tướng và mưu sĩ."
+cost = Dictionary[StringName, int]({&"food": 50, &"ore": 10, &"hardwood": 10})
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Thư của địch đã đến tay một người trong triều."
+defection = true
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Mặc kệ"
+hint = "Một tướng hoặc mưu sĩ có thể bỏ theo địch (người nhiều sao ít lung lay)."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"enemy_offer"
+title = "Địch dụ hàng"
+text = "{clan} bí mật gửi thư mời chào tướng sĩ của ta, hứa hẹn vàng bạc và chức tước."
+category = 3
+weight = 2.0
+cooldown = 12
+min_turn = 8
+needs_clan = true
+clan_must_be_at_war = true
+min_officers_home = 1
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

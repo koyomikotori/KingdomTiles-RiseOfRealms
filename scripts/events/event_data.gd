@@ -35,6 +35,17 @@ const CATEGORY_NAMES: Array[String] = ["Kinh tế", "Ngoại giao", "Quân sự"
 @export var needs_annexed_last_turn: bool = false
 ## There is room for one more general.
 @export var needs_general_slot: bool = false
+## M16b: the kingdom is at war with some clan.
+@export var needs_war: bool = false
+## M16b: at least this many generals / officers (generals and advisors) at home, not away.
+@export var min_generals_home: int = 0
+@export var min_officers_home: int = 0
+## M16b: a finished, working production building (farm, lumber mill, mine).
+@export var needs_production: bool = false
+## M16b: bandits raid this game at all.
+@export var needs_raids: bool = false
+## M16b: bandits are about: an uprising zone, or a raid beaten in the last few turns.
+@export var needs_bandit_activity: bool = false
 
 @export_group("Clan")
 ## The event is about one clan, picked among those that match the filters below.
@@ -47,6 +58,11 @@ const CATEGORY_NAMES: Array[String] = ["Kinh tế", "Ngoại giao", "Quân sự"
 @export var clan_must_be_stronger: bool = false
 ## Clans at war with the kingdom are skipped unless this is set.
 @export var clan_may_be_at_war: bool = false
+## M16b: only clans at war with the kingdom.
+@export var clan_must_be_at_war: bool = false
+## M16b: only clans where one of the kingdom's agents is on a mission and that field a general or
+## an advisor (ClanOfficers).
+@export var clan_must_have_agent: bool = false
 
 @export_group("")
 @export var choices: Array[EventChoiceData] = []

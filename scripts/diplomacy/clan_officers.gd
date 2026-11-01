@@ -18,8 +18,10 @@ class Staff:
 	extends RefCounted
 	var general: General
 	var advisor: Advisor
-	## Turns before a new general replaces one killed in battle.
+	## Turns before a new general replaces one killed in battle (or assassinated, M16b).
 	var vacancy := 0
+	## Same for an assassinated advisor (M16b).
+	var advisor_vacancy := 0
 
 
 var staffs: Dictionary[StringName, Staff] = {}
@@ -64,7 +66,7 @@ func ensure(clan_id: StringName, wars: Wars, level: int) -> void:
 		s.general = _generals.generate(_roll_stars(tier, general_stars))
 		s.general.trait_id = &""
 	var advisor_stars := wanted_stars(clan_id, tier, &"advisor", level)
-	if advisor_stars > 0 and (s.advisor == null or s.advisor.stars < advisor_stars):
+	if advisor_stars > 0 and s.advisor_vacancy <= 0 and (s.advisor == null or s.advisor.stars < advisor_stars):
 		s.advisor = _advisors.generate(_roll_stars(tier, advisor_stars))
 
 
@@ -135,9 +137,28 @@ func end_turn(wars: Wars) -> void:
 			continue
 		var s := staffs[clan_id]
 		s.vacancy = maxi(0, s.vacancy - 1)
+		s.advisor_vacancy = maxi(0, s.advisor_vacancy - 1)
 		for officer: Officer in [s.general, s.advisor]:
 			if officer != null:
 				officer.wounded_turns = maxi(0, officer.wounded_turns - 1)
+
+
+## An agent strikes at the clan's general or advisor (M16b): wounded or, with `killed`, gone
+## for VACANCY_TURNS turns. Returns the officer's name ("" when the clan has none of that kind).
+func assassinate(clan_id: StringName, kind: StringName, killed: bool) -> String:
+	var s := staff(clan_id)
+	var officer: Officer = s.general if kind == &"general" else s.advisor
+	if officer == null:
+		return ""
+	if not killed:
+		officer.wounded_turns = Generals.WOUND_TURNS if kind == &"general" else Advisors.WOUND_TURNS
+	elif kind == &"general":
+		s.general = null
+		s.vacancy = VACANCY_TURNS
+	else:
+		s.advisor = null
+		s.advisor_vacancy = VACANCY_TURNS
+	return officer.name
 
 
 ## One line for the clan panel ("" when the clan fields nobody now).
