@@ -207,7 +207,8 @@ func _update_agreement(button: Button, reason: Label) -> void:
 	button.visible = not _wars.at_war_with(_clan_id)
 	button.disabled = false
 	if clan.agreement != null:
-		button.text = "Hợp đồng giao thương (đang chạy)"
+		var renewable := clan.agreement.turns_left <= Diplomacy.AGREEMENT_RENEW_TURNS
+		button.text = "Hợp đồng giao thương (%s)" % ("gia hạn được" if renewable else "đang chạy")
 		return
 	button.text = "Hợp đồng giao thương"
 	if _diplomacy.get_tier(_clan_id) < Diplomacy.MIN_TRADE_TIER:

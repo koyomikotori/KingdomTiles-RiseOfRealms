@@ -98,7 +98,7 @@ func test_candidates_mix_generals_and_advisors() -> void:
 func test_admin_post_helps_the_economy() -> void:
 	var state := _state()
 	_rich(state)
-	# A row of 10 farms: 40 food a turn (5 - 1 each), so +20% is visible.
+	# A row of 10 farms: 40 food a turn (5 - 1 each), so +15% is visible.
 	for x in 10:
 		state.board.set_land(Vector2i(1 + x, 1), &"farmland", false)
 		state.board.place_building(&"farm", Vector2i(1 + x, 1), Vector2i.ONE)
@@ -111,14 +111,14 @@ func test_admin_post_helps_the_economy() -> void:
 	var advisor_upkeep := state.advisors.get_upkeep()
 	var cost := state.building_cost(barracks)
 	for resource_id in barracks.cost:
-		check_eq(cost[resource_id], barracks.cost[resource_id] - roundi(barracks.cost[resource_id] * 0.2), "−20%% %s" % resource_id)
+		check_eq(cost[resource_id], barracks.cost[resource_id] - roundi(barracks.cost[resource_id] * 0.15), "−15%% %s" % resource_id)
 	var after_yield := state.get_turn_yield()
 	check_eq(before_yield.get(&"food", 0), 40, "10 farms")
-	check(after_yield.get(&"food", 0) > before_yield.get(&"food", 0), "+20% production")
-	check_eq(after_yield.get(&"food", 0) - before_yield.get(&"food", 0), roundi(before_yield.get(&"food", 0) * 0.2), "Exactly 20%")
+	check(after_yield.get(&"food", 0) > before_yield.get(&"food", 0), "+15% production")
+	check_eq(after_yield.get(&"food", 0) - before_yield.get(&"food", 0), roundi(before_yield.get(&"food", 0) * 0.15), "Exactly 15%")
 	# Upkeep: squads (and generals) get cheaper, the advisor adds their own.
 	var after_upkeep := state.get_army_upkeep()
-	check_eq(after_upkeep.get(&"food", 0), before_upkeep.get(&"food", 0) - roundi(before_upkeep.get(&"food", 0) * 0.2)
+	check_eq(after_upkeep.get(&"food", 0), before_upkeep.get(&"food", 0) - roundi(before_upkeep.get(&"food", 0) * 0.15)
 			+ advisor_upkeep.get(&"food", 0), "Upkeep: discount, then the advisor's pay")
 	check_eq(state.get_net_income(), _net_from_parts(state), "Income breakdown still adds up")
 	var food := state.stockpile.get_amount(&"food")
@@ -157,7 +157,7 @@ func test_diplomacy_post_helps_diplomacy() -> void:
 	state.advisors.add(envoy)
 	state.advisors.assign(envoy, &"diplomacy")
 	check_eq(state.diplomacy.envoy, 10, "Diplomacy knows the envoy's skill")
-	check(is_equal_approx(state.diplomacy.price_factor(clan, &"food", &"wood"), price * 1.2), "+20% trade price")
+	check(is_equal_approx(state.diplomacy.price_factor(clan, &"food", &"wood"), price * 1.15), "+15% trade price")
 	check(state.alliances.alliance_chance(clan) >= alliance, "Alliance at least as likely")
 	check(state.diplomacy.wariness_target(clan) < wariness, "Less wariness")
 	state.advisors.dismiss(envoy)
@@ -270,7 +270,7 @@ func test_military_advisor_joins_battles() -> void:
 	check_eq(side.advisor_name, strategist.name, "The advisor follows the army")
 	check_eq(side.stratagems.size(), strategist.stratagems.size(), "With their stratagems")
 	check(is_equal_approx(side.units[0].range_mult, 1.2), "+2% range attack per Mưu lược")
-	check(is_equal_approx(side.units[0].morale, _unit(&"archer").morale + 3.0), "+0.3 morale per Mưu lược")
+	check(is_equal_approx(side.units[0].morale, _unit(&"archer").morale + 2.5), "+0.25 morale per Mưu lược")
 	strategist.wounded_turns = 1
 	check_eq(state.create_kingdom_side(&"").advisor_name, "", "A wounded advisor stays home")
 

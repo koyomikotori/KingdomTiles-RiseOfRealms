@@ -13,7 +13,7 @@ Bản mobile (M15) vẫn để cuối cùng. Các milestone dưới đây đặt
 | M16c (xong, chờ chơi thử) | Limit break cho tướng / mưu sĩ (GDD §19) | A2 | Dễ–vừa | Chỉ thêm luật và nút trong cửa sổ tướng sĩ |
 | M16d (xong, chờ chơi thử) | Chợ đen (GDD §20) | B6 | Vừa | Cửa sổ mới (6 ô, làm mới), dùng lại hệ trang bị; portrait vẽ bằng script |
 | M16e (xong, chờ chơi thử) | Event có trận đánh (GDD §21) / nhuệ khí tối đa: tướng bị phục kích, tin tuồn ra, tướng địch thách đấu tay đôi, đạo tặc bắt quan chức, mật thư bị đánh cắp, đặc vụ báo tin khẩn cấp | B1, B3, B4, B8 | Vừa | Cần trận đánh với quân rút gọn, địch còn 50%, trừ nhuệ khí tối đa, trận chỉ có 2 tướng |
-| M16f | Thêm loại lính mới | C4 | Vừa | Dữ liệu `.tres` + sprite vẽ bằng script; cần chốt danh sách lính |
+| M16f (xong, chờ chơi thử) | Thêm loại lính mới (GDD §22): Kỵ cung, Võ tăng, Chùa, chợ nâng cấp, giảm sức mưu sĩ, gia hạn hợp đồng giao thương | C4 | Vừa | Dữ liệu `.tres` + sprite vẽ bằng script |
 | M16g | Sprite theo độ hiếm + tướng 4 khung hình trở lên, có hiệu ứng | A1 | Vừa–khó | Nhiều hình vẽ (mỗi mức sao, mỗi loại vũ khí, nam / nữ) |
 | M16h | Chúa công: tùy chỉnh ở màn Ván mới (đầu / thân / giới tính / tên), sprite tướng đi bộ | A4, A5 | Vừa–khó | Vẽ sprite mới; là nền cho mini game tỉ thí |
 | M16i | Cố vấn nam / nữ: chọn ở Ván mới, portrait 4+ biểu cảm, thoại riêng ở báo cáo / sự kiện / thắng thua | A3 | Khó | Phải viết lại lời thoại ở rất nhiều chỗ, thành hai giọng; cần portrait |

@@ -40,14 +40,14 @@ func test_data() -> void:
 		check_eq(building.allowed_terrains, [&"grass"] as Array[StringName], "%s on grass" % id)
 		check(GameArt.building(id) != null, "%s has art" % id)
 	for unit in unit_list:
-		check(not unit.required_buildings.is_empty() and unit.required_buildings.has(&"barracks"),
-				"%s needs a barracks" % unit.unit_id)
+		check(not unit.required_buildings.is_empty() and (unit.required_buildings.has(&"barracks")
+				or unit.tier_level > 0), "%s needs a barracks (or has its own tier)" % unit.unit_id)
 		check(unit.required_terrain.is_empty(), "%s needs no terrain" % unit.unit_id)
 		check(ResourceLoader.exists("res://assets/units/%s.png" % unit.unit_id), "%s has a sprite" % unit.unit_id)
 	var rows := {}
 	for unit in unit_list:
 		rows[unit.row] = rows.get(unit.row, 0) + 1
-	check_eq([rows.get(0), rows.get(1), rows.get(2)], [9, 3, 9], "9 front, 3 middle, 9 back")
+	check_eq([rows.get(0), rows.get(1), rows.get(2)], [12, 3, 12], "12 front, 3 middle, 12 back")
 	check_eq(UnitData.load_all().filter(func(u: UnitData) -> bool: return u.unit_id == &"spearman")[0].row,
 			UnitData.Row.FRONT, "Spearmen stand in the front row with the swordsmen")
 

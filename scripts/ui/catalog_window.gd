@@ -8,7 +8,7 @@ const ACCENT := UiPalette.ACCENT
 const LIST_WIDTH := 310
 const LIST_HEIGHT := 400
 ## Screen height the rest of the window needs (ModalWindow.fit_height).
-const LIST_RESERVED := 300
+const LIST_RESERVED := 350
 const LIST_ICON := 32
 ## Opacity of entries that are not available yet.
 const DIMMED_ALPHA := 0.55
@@ -61,10 +61,16 @@ func build_catalog(title: String, categories: Array[String], action_text: String
 	_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_list.add_theme_constant_override("separation", 4)
 	scroll.add_child(_list)
+	# Long details scroll beside the list instead of making the window taller than the screen
+	# (ScreenFit would shrink the whole window) or change its size between entries.
+	var detail_scroll := ScrollContainer.new()
+	detail_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	columns.add_child(detail_scroll)
 	var detail := VBoxContainer.new()
 	detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail.add_theme_constant_override("separation", 8)
-	columns.add_child(detail)
+	detail_scroll.add_child(detail)
 	_picture_box = CenterContainer.new()
 	_picture_box.custom_minimum_size = Vector2(0, 120)
 	detail.add_child(_picture_box)

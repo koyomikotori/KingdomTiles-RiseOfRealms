@@ -18,6 +18,10 @@ var _last_played: Dictionary[StringName, float] = {}
 var _cache: Dictionary[String, AudioStream] = {}
 var _music: Array[AudioStreamPlayer] = []
 var _active := 0
+## The fade running on each music player: a new piece kills the old fade first, or a fade-out
+## started a moment earlier would still stop the player that now plays the new piece (switching
+## music twice within FADE seconds left the expedition silent).
+var _fades: Array[Tween] = [null, null]
 var _current_music: StringName = &""
 var _sting: AudioStreamPlayer
 
@@ -78,10 +82,12 @@ func play_music(id: StringName) -> void:
 	_fade_out(_music[_active])
 	_active = 1 - _active
 	var player := _music[_active]
+	_kill_fade(_active)
 	player.stream = stream
 	player.volume_db = SILENT_DB
 	player.play()
-	create_tween().tween_property(player, "volume_db", 0.0, FADE)
+	_fades[_active] = create_tween()
+	_fades[_active].tween_property(player, "volume_db", 0.0, FADE)
 
 
 func play_sting(id: StringName) -> void:
@@ -99,9 +105,18 @@ func play_sting(id: StringName) -> void:
 func _fade_out(player: AudioStreamPlayer) -> void:
 	if not player.playing:
 		return
+	var index := _music.find(player)
+	_kill_fade(index)
 	var tween := create_tween()
 	tween.tween_property(player, "volume_db", SILENT_DB, FADE)
 	tween.tween_callback(player.stop)
+	_fades[index] = tween
+
+
+func _kill_fade(index: int) -> void:
+	if _fades[index] != null and _fades[index].is_valid():
+		_fades[index].kill()
+	_fades[index] = null
 
 
 ## Music loops: the piece starts again when it ends, unless something else took over.

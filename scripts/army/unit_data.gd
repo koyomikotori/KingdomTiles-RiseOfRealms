@@ -11,8 +11,9 @@ enum AttackKind { MELEE, BOW, GUN }
 
 const ROW_NAMES: Array[String] = ["Hàng trước", "Hàng giữa", "Hàng sau"]
 ## Kind of soldier, the recruit window's categories after "Tất cả" (M13b).
-enum Type { SWORD, SPEAR, SHIELD, CAVALRY, BOW, CROSSBOW, FIREARM }
-const TYPE_NAMES: Array[String] = ["Kiếm", "Thương", "Đao thuẫn", "Kỵ binh", "Cung", "Nỏ", "Hỏa khí"]
+enum Type { SWORD, SPEAR, SHIELD, CAVALRY, BOW, CROSSBOW, FIREARM, HORSE_ARCHER, MONK }
+const TYPE_NAMES: Array[String] = ["Kiếm", "Thương", "Đao thuẫn", "Kỵ binh", "Cung", "Nỏ", "Hỏa khí", "Kỵ cung",
+		"Võ tăng"]
 ## Name colors per tier (tier() − 1): peasant brown, elite silver, royal gold. On wooden buttons,
 ## and darker on paper (M13b).
 const TIER_COLORS_ON_WOOD: Array[Color] = [Color(0.9, 0.74, 0.54), Color(0.82, 0.9, 1.0), Color(1.0, 0.84, 0.3)]
@@ -62,6 +63,12 @@ const ATTACK_KIND_NAMES: Array[String] = ["Cận chiến", "Cung", "Súng"]
 @export var volley_all_rows: bool = false
 ## After its gun volley the unit marches to the front row and fights in melee (musketeers, M13).
 @export var melee_after_volley: bool = false
+## After this many arrow volleys the unit stops shooting, rides to the front row and charges
+## (horse archers, M16f); 0 = never.
+@export var charge_after_volleys: int = 0
+## "Tĩnh tâm" (monks, M16f): no morale lost when the commander falls, and enemy stratagems do not
+## touch its morale.
+@export var steadfast: bool = false
 
 @export_group("Recruitment")
 ## Paid per squad.
@@ -73,10 +80,14 @@ const ATTACK_KIND_NAMES: Array[String] = ["Cận chiến", "Cung", "Súng"]
 @export var required_buildings: Dictionary[StringName, int] = {}
 ## Minimum owned cells per terrain, e.g. {&"forest": 3} for archers.
 @export var required_terrain: Dictionary[StringName, int] = {}
+## 1–3 for units that need no barracks (monks, M16f); 0 = from the barracks level.
+@export var tier_level: int = 0
 
 
-## 1 peasant, 2 elite, 3 royal guard: from the barracks level it needs (1, 3, 6).
+## 1 peasant, 2 elite, 3 royal guard: tier_level, else from the barracks level it needs (1, 3, 6).
 func tier() -> int:
+	if tier_level > 0:
+		return tier_level
 	var barracks: int = required_buildings.get(&"barracks", 1)
 	return 3 if barracks >= 6 else (2 if barracks >= 3 else 1)
 
@@ -87,6 +98,11 @@ func tier_color(on_wood: bool) -> Color:
 
 func is_ranged() -> bool:
 	return attack_kind != AttackKind.MELEE
+
+
+## Ranged units that end up fighting in melee anyway (musketeers, horse archers).
+func fights_in_melee_later() -> bool:
+	return melee_after_volley or charge_after_volleys > 0
 
 
 ## Player unit types, sorted by sort_order.

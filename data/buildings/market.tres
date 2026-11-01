@@ -6,7 +6,7 @@
 script = ExtResource("1_building")
 building_id = &"market"
 display_name = "Chợ"
-description = "Buôn bán với các gia tộc: đổi được nhiều hàng hơn, giá lợi hơn."
+description = "Buôn bán với các gia tộc: đổi được nhiều hàng hơn, giá lợi hơn; chợ đông còn giúp các công trình sản xuất."
 cost = Dictionary[StringName, int]({&"wood": 10, &"stone": 6})
 allowed_terrains = Array[StringName]([&"grass"])
 max_count = 1
@@ -15,4 +15,6 @@ upkeep = Dictionary[StringName, int]({&"food": 1})
 required_castle_level = 2
 category = 2
 build_turns = 2
-effects = Dictionary[StringName, float]({&"trade_capacity": 10.0, &"trade_price": 0.03})
+upgrade_levels = 6
+effects = Dictionary[StringName, float]({&"trade_capacity": 8.0, &"trade_price": 0.03, &"production_bonus": 0.01})
+level_effects = Dictionary[StringName, float]({&"trade_capacity": 2.0})

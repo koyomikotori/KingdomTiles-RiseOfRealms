@@ -300,7 +300,7 @@ func _target_x(view: UnitView) -> float:
 		return view.guard_target.pos.x - _facing(view.screen_side) * CLASH_GAP * 2.0
 	var side := _simulator.record.sides[view.battle_side]
 	var rank := maxi(0, int(view.unit.row) - maxi(0, side.front_row()))
-	if view.unit.data.is_ranged() and rank > 0 and not view.unit.data.melee_after_volley:
+	if view.unit.data.is_ranged() and rank > 0 and not view.unit.data.fights_in_melee_later():
 		return _home_x(view)
 	var offset := CLASH_GAP + rank * RANK_GAP
 	if view.unit.is_general_guard:

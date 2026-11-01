@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/army/unit_data.gd" id="1_unit"]
+
+[resource]
+script = ExtResource("1_unit")
+unit_id = &"monk"
+display_name = "Tăng binh"
+sort_order = 24
+squad_size = 20
+row = 0
+attack_kind = 0
+melee_attack = 11
+melee_defense = 6
+armor = 2
+charge_attack = 5
+unit_type = 8
+morale = 11
+range_attack = 0
+reload_time = 5.0
+steadfast = true
+recruit_cost = Dictionary[StringName, int]({&"food": 3, &"wood": 1})
+upkeep = Dictionary[StringName, int]({&"food": 1})
+required_buildings = Dictionary[StringName, int]({&"martial_hall": 1, &"temple": 1})
+tier_level = 1

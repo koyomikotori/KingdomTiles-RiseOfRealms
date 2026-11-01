@@ -113,6 +113,10 @@ func _special_rules(unit: UnitData) -> String:
 		parts.append("Xuyên giáp %d%%" % roundi(unit.armor_pierce * 100))
 	if unit.melee_after_volley:
 		parts.append("Bắn xong tiến lên hàng trước cận chiến")
+	if unit.charge_after_volleys > 0:
+		parts.append("Bắn %d loạt rồi xông vào cận chiến" % unit.charge_after_volleys)
+	if unit.steadfast:
+		parts.append("Tĩnh tâm: không mất nhuệ khí khi tướng ngã, miễn nhiễm mưu kế hạ nhuệ khí")
 	return " · ".join(parts)
 
 

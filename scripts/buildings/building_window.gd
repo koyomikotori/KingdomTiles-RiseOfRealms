@@ -16,13 +16,14 @@ signal construction_started(text: String)
 signal agent_mission_requested(agent: Agent)
 
 const ACCENT := UiPalette.ACCENT
-## Height of the scrolling list in the castle's Chiêu hiền tab, on a tall enough screen.
-const TAB_LIST_HEIGHT := 440
-## Screen height the rest of the window needs (ModalWindow.fit_height).
-const TAB_LIST_RESERVED := 330
-## Room the confirm line and its two buttons take: the tab lists give it up while they show, so
-## the window does not grow past the screen and get shrunk by ScreenFit (M14b fix).
-const CONFIRM_HEIGHT := 100
+## Every tab page (and the confirm line under it) shares one fixed area: pages scroll instead of
+## growing, so the window keeps its size and place whatever tab or confirm is showing and never
+## gets taller than the screen (ScreenFit would shrink it). Preferred height on a tall screen.
+const AREA_HEIGHT := 470
+## Screen height the rest of the window needs (title, status, buttons; ModalWindow.fit_height).
+const AREA_RESERVED := 250
+## One width for every building window, wide enough for the cost and unit chips.
+const WIDTH_SHARE_BUILDING := 0.52
 const CANDIDATE_PORTRAIT_SCALE := 1
 
 enum Action { NONE, UPGRADE, MOVE, DEMOLISH, CUSTOM, CANCEL_UPGRADE }
@@ -49,8 +50,6 @@ var _pending := Action.NONE
 ## What CUSTOM does once confirmed (recruit, refresh, appoint, dismiss).
 var _custom: Callable
 var _recruit_box: VBoxContainer
-## The tab pages' scrolling lists (_tab_box), sized by _fit_tab_lists.
-var _tab_scrolls: Array[ScrollContainer] = []
 ## The forge's "Rèn" tab (GDD §8 "Trang bị", M12e) and what it is set to make.
 var _forge_box: VBoxContainer
 var _forge_kind: StringName = &"general"
@@ -67,7 +66,7 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 	var cell := state.board.get_cell(origin)
 	_is_castle = cell.building_id == BoardData.CASTLE_ID
 	_building = state.buildings.get(cell.building_id)
-	var body := build_frame(_title(), ACCENT, 0.42)
+	var body := build_frame(_title(), ACCENT, WIDTH_SHARE_BUILDING)
 	_confirm_box = VBoxContainer.new()
 	_confirm_box.visible = false
 	_confirm_text = _label("", 15)
@@ -81,9 +80,13 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 	if _turns_left() > 0:
 		_open_construction(body, cell)
 		return
+	var area := VBoxContainer.new()
+	area.custom_minimum_size = Vector2(0, fit_height(AREA_HEIGHT, AREA_RESERVED))
+	area.add_theme_constant_override("separation", 8)
+	body.add_child(area)
 	_tabs = TabContainer.new()
-	_tabs.custom_minimum_size = Vector2(0, 180)
-	body.add_child(_tabs)
+	_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	area.add_child(_tabs)
 	_info = _tab_label("Thông tin")
 	_info_view = _view_under(_info)
 	# Buildings that never level up get no Upgrade tab (M16c).
@@ -105,7 +108,7 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 	for i in _tabs.get_tab_count():
 		if _tabs.get_tab_title(i) == start_tab:
 			_tabs.current_tab = i
-	body.add_child(_confirm_box)
+	area.add_child(_confirm_box)
 	if _is_castle or (_building != null and _building.is_upgradable()):
 		_upgrade_button = add_action("Nâng cấp", _ask.bind(Action.UPGRADE))
 	if not _is_castle:
@@ -143,36 +146,27 @@ func _title() -> String:
 	return _building.display_name if _building != null else "Công trình"
 
 
-func _tab_box(title: String) -> VBoxContainer:
+## A tab page that scrolls inside the fixed area (long lists: three advisors with their stratagems).
+func _tab_box(title: String, separation: int = 8) -> VBoxContainer:
 	var margin := MarginContainer.new()
 	margin.name = title
 	for edge in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + edge, 10)
 	_tabs.add_child(margin)
-	# Long lists (three advisors with their stratagems) scroll instead of growing off screen.
 	var scroll := ScrollContainer.new()
-	_tab_scrolls.append(scroll)
-	_fit_tab_lists()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	margin.add_child(scroll)
 	var box := VBoxContainer.new()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	box.add_theme_constant_override("separation", 8)
+	box.add_theme_constant_override("separation", separation)
 	scroll.add_child(box)
 	return box
 
 
+## A scrolling tab page starting with a text label (Thông tin, Nâng cấp).
 func _tab_label(title: String) -> Label:
-	var margin := MarginContainer.new()
-	margin.name = title
-	for edge in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + edge, 10)
-	_tabs.add_child(margin)
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 6)
-	margin.add_child(column)
 	var label := _label("", 14)
-	column.add_child(label)
+	_tab_box(title, 6).add_child(label)
 	return label
 
 
@@ -387,16 +381,9 @@ func _cancel_action() -> void:
 	_show_confirm(false)
 
 
+## The confirm line takes its room from the tab page above it (same fixed area).
 func _show_confirm(shown: bool) -> void:
 	_confirm_box.visible = shown
-	_fit_tab_lists()
-
-
-## The tab lists' height: the screen's share, less the confirm box while it shows.
-func _fit_tab_lists() -> void:
-	var confirm := CONFIRM_HEIGHT if _confirm_box.visible else 0
-	for scroll in _tab_scrolls:
-		scroll.custom_minimum_size = Vector2(0, fit_height(TAB_LIST_HEIGHT - confirm, TAB_LIST_RESERVED + confirm))
 
 
 func _on_confirm_pressed() -> void:

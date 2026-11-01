@@ -21,15 +21,15 @@ const STAT_TOTAL_FACTOR := 1.5
 
 ## Nội chính, per point: production building yield, building and castle cost (less), army and
 ## generals upkeep (less).
-const ADMIN_YIELD := 0.02
-const ADMIN_COST := 0.02
-const ADMIN_UPKEEP := 0.02
+const ADMIN_YIELD := 0.015
+const ADMIN_COST := 0.015
+const ADMIN_UPKEEP := 0.015
 ## Quân sự, per point of Mưu lược: morale and range attack for the kingdom's own units.
-const MILITARY_MORALE := 0.3
+const MILITARY_MORALE := 0.25
 const MILITARY_RANGE := 0.02
 ## Each stratagem works with this chance at the start of a battle (+ per point of Mưu lược).
 const STRATAGEM_BASE_CHANCE := 0.25
-const STRATAGEM_CHANCE_PER_POINT := 0.03
+const STRATAGEM_CHANCE_PER_POINT := 0.025
 ## The military advisor may be wounded only when the battle is lost; never killed.
 const WOUND_CHANCE := 0.5
 const WOUND_TURNS := 3

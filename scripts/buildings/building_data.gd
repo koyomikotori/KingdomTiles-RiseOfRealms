@@ -36,9 +36,12 @@ const CATEGORY_NAMES: Array[String] = ["Sản xuất", "Quân sự", "Hành chí
 ## building whose upkeep is paid (KingdomState.building_effect): `effects` once per building,
 ## `level_effects` times its level. Ids: trade_capacity, trade_price, plunder_protection,
 ## food_upkeep_cut, production_bonus, officer_xp, wound_healing, commander_survival, retreat_keep,
-## agent_slots.
+## agent_slots, army_morale (M16f).
 @export var effects: Dictionary[StringName, float] = {}
 @export var level_effects: Dictionary[StringName, float] = {}
+## Effects that do not grow evenly (the temple, M16f): effect id -> one amount per level
+## (index 0 = level 1), added on top of `effects` and `level_effects`.
+@export var level_table_effects: Dictionary[StringName, Array] = {}
 ## Fields (GDD §8 M14d): the basic resource a production building also takes from every owned,
 ## empty neighbor cell of its allowed terrain (Economy.FIELD_YIELD each, doubled on a key cell);
 ## its own cell makes Economy.OWN_CELL_PENALTY less of it. Empty = no fields.
@@ -72,6 +75,7 @@ const EFFECT_TEXTS: Dictionary[StringName, String] = {
 	&"commander_survival": "tổng tướng gục ngã ít chết hơn %d%%",
 	&"retreat_keep": "thua trận quân còn sống giữ thêm %d%%",
 	&"agent_slots": "giữ được %d đặc vụ",
+	&"army_morale": "+%s nhuệ khí cho quân ta",
 }
 const PERCENT_EFFECTS: Array[StringName] = [&"trade_price", &"plunder_protection", &"food_upkeep_cut",
 		&"production_bonus", &"commander_survival", &"retreat_keep"]
@@ -98,14 +102,25 @@ func describe_effects(level: int) -> String:
 func effect_lines(level: int) -> Array[String]:
 	var parts: Array[String] = []
 	for effect_id in EFFECT_TEXTS:
-		var amount: float = effects.get(effect_id, 0.0) + level_effects.get(effect_id, 0.0) * level
+		var amount := effect_at(effect_id, level)
 		if amount == 0.0:
 			continue
 		var text := EFFECT_TEXTS[effect_id]
 		if text.contains("%d"):
 			text = text % roundi(amount * (100.0 if PERCENT_EFFECTS.has(effect_id) else 1.0))
+		elif text.contains("%s"):  # halves allowed (the temple's morale)
+			text = text % (str(roundi(amount)) if is_equal_approx(amount, roundf(amount)) else "%.1f" % amount)
 		parts.append(text)
 	return parts
+
+
+## One building's amount of an effect at `level` (GDD §8 M14e, tables M16f).
+func effect_at(effect_id: StringName, level: int) -> float:
+	var amount: float = effects.get(effect_id, 0.0) + level_effects.get(effect_id, 0.0) * level
+	var table: Array = level_table_effects.get(effect_id, [])
+	if not table.is_empty():
+		amount += float(table[clampi(level, 1, table.size()) - 1])
+	return amount
 
 
 ## Levels this building has (1 when it cannot be upgraded).

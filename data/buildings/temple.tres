@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/buildings/building_data.gd" id="1_building"]
+
+[resource]
+script = ExtResource("1_building")
+building_id = &"temple"
+display_name = "Chùa"
+description = "Nơi tu hành và cầu an: quân ta vững lòng hơn, dân làm việc chăm chỉ hơn. Có chùa mới đào tạo được võ tăng."
+cost = Dictionary[StringName, int]({&"wood": 12, &"stone": 10})
+allowed_terrains = Array[StringName]([&"grass"])
+max_count = 1
+fixed_count = true
+color = Color(0.8, 0.45, 0.2, 1)
+upkeep = Dictionary[StringName, int]({&"food": 2})
+required_castle_level = 2
+category = 2
+build_turns = 3
+upgrade_levels = 5
+level_table_effects = Dictionary[StringName, Array]({&"army_morale": [1.0, 1.5, 2.0, 2.5, 3.0], &"production_bonus": [0.05, 0.06, 0.07, 0.08, 0.1]})

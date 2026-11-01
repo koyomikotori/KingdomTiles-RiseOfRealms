@@ -515,6 +515,33 @@ def market(frame: int = 0) -> Canvas:
     return c
 
 
+def temple(frame: int = 0) -> Canvas:
+    """A two-tiered temple (Chùa, M16f): red pillars on a stone base, a lower roof, a small upper hall
+    under a golden roof with a finial, and a bronze incense burner smoking by the steps."""
+    c = Canvas(16, 16)
+    c.rect(1, 13, 14, 2, P["stone"])
+    c.hline(1, 14, 14, P["stone_dark"])
+    c.rect(3, 9, 10, 4, P["wall"])
+    for x in (3, 6, 9, 12):
+        c.vline(x, 9, 12, P["red"])  # pillars
+    c.rect(7, 10, 2, 3, P["door"])
+    curved_roof(c, 1, 6, 14, 3)
+    c.rect(5, 4, 6, 2, P["red_dark"])  # upper hall
+    c.px(7, 4, P["gold"])
+    for row, (x0, x1) in enumerate(((6, 9), (4, 11), (3, 12))):  # golden upper roof
+        c.hline(x0, x1, 1 + row, P["gold"] if row < 2 else P["gold_dark"])
+    c.px(2, 2, P["gold_dark"])
+    c.px(13, 2, P["gold_dark"])
+    c.vline(7, 0, 0, P["gold_light"])  # finial
+    c.px(8, 0, P["gold_light"])
+    c.rect(13, 12, 2, 1, P["ore_dark"])  # incense burner
+    c.hline(12, 15, 13, P["ore_dark"])
+    c.outline()
+    smoke_puffs(c, 13, 11, frame)
+    c.px(13, 11, P["red_light"] if frame % 2 == 0 else P["gold_light"])  # the glowing sticks
+    return c
+
+
 def granary(frame: int = 0) -> Canvas:
     """A raised storehouse on stilts with a thick thatched roof, a ladder and rice sacks."""
     c = Canvas(16, 16)
@@ -980,7 +1007,8 @@ def main() -> None:
                        ("lumber_mill", lumber_mill), ("mine", mine), ("war_stable", war_stable),
                        ("archery_range", archery_range), ("martial_hall", martial_hall),
                        ("military_academy", military_academy), ("market", market), ("granary", granary),
-                       ("academy", academy), ("infirmary", infirmary), ("magistrate", magistrate), ("police", police)):
+                       ("academy", academy), ("infirmary", infirmary), ("magistrate", magistrate), ("police", police),
+                       ("temple", temple)):
         anim_strip(draw).save(f"buildings/{name}_anim.png")
     barracks().save("buildings/barracks.png")
     watchtower().save("buildings/watchtower.png")
@@ -989,7 +1017,8 @@ def main() -> None:
     mine().save("buildings/mine.png")
     for name, draw in (("war_stable", war_stable), ("archery_range", archery_range), ("martial_hall", martial_hall),
                        ("military_academy", military_academy), ("market", market), ("granary", granary),
-                       ("academy", academy), ("infirmary", infirmary), ("magistrate", magistrate), ("police", police)):
+                       ("academy", academy), ("infirmary", infirmary), ("magistrate", magistrate), ("police", police),
+                       ("temple", temple)):
         draw().save(f"buildings/{name}.png")
     for name, draw in (("food", icon_food), ("wood", icon_wood), ("stone", icon_stone), ("ore", icon_ore),
                        ("hardwood", icon_hardwood), ("horses", icon_horses)):

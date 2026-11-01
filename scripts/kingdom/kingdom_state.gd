@@ -588,9 +588,19 @@ func building_effect(effect_id: StringName) -> float:
 	for cell in board.get_all_cells():
 		if cell.has_building() and cell.coord == cell.building_origin and not cell.is_idle() \
 				and buildings.has(cell.building_id):
-			var building := buildings[cell.building_id]
-			total += building.effects.get(effect_id, 0.0) + building.level_effects.get(effect_id, 0.0) * cell.building_level
+			total += buildings[cell.building_id].effect_at(effect_id, cell.building_level)
 	return total
+
+
+## The Chùa's morale (GDD §22, M16f) for the kingdom's own units of a battle side (lent units and
+## officers' bodyguards have no squad and get none).
+func bless_army(side: BattleSide) -> void:
+	var morale := building_effect(&"army_morale")
+	if morale == 0.0:
+		return
+	for unit in side.units:
+		if unit.squad != null:
+			unit.morale += morale
 
 
 ## The finished Sở cảnh sát's level, 0 without one (GDD §8 M14e).
