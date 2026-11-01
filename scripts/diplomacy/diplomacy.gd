@@ -34,15 +34,17 @@ const MEMORY_BATTLE: StringName = &"battle"
 const MEMORY_TREATY: StringName = &"treaty"
 const MEMORY_EVENT: StringName = &"event"
 const MEMORY_AGENT: StringName = &"agent"
+const MEMORY_EXPEDITION: StringName = &"expedition"
 const MEMORY_OTHER: StringName = &"other"
 ## Lasting factors in relation_factors(), in display order.
-const LASTING_FACTORS: Array[StringName] = [&"base", &"wariness", &"agreement_bonus", &"alliance_bonus"]
+const LASTING_FACTORS: Array[StringName] = [&"base", &"wariness", &"agreement_bonus", &"alliance_bonus", &"pact_bonus"]
 ## Display names of the lasting factors, the memory sources and the clamp ("limit").
 const FACTOR_NAMES: Dictionary[StringName, String] = {
 	&"base": "Thiện cảm gốc",
 	&"wariness": "E dè vương quốc lớn mạnh",
 	&"agreement_bonus": "Đang có hợp đồng giao thương",
 	&"alliance_bonus": "Đang liên minh",
+	&"pact_bonus": "Đang có hiệp định bất tương xâm",
 	&"limit": "Giới hạn −100 → 100",
 	&"first_impression": "Ấn tượng ban đầu",
 	&"gift": "Quà tặng",
@@ -51,9 +53,10 @@ const FACTOR_NAMES: Dictionary[StringName, String] = {
 	&"war": "Chiến tranh với vương quốc",
 	&"aggression": "Vương quốc gây chiến với gia tộc khác",
 	&"battle": "Trận đánh chung",
-	&"treaty": "Bị hủy liên minh",
+	&"treaty": "Bị hủy liên minh / hiệp định",
 	&"event": "Sự kiện",
 	&"agent": "Đặc vụ",
+	&"expedition": "Dẹp loạn đạo tặc",
 	&"other": "Khác",
 }
 ## Gift value per relation point before the personality multiplier.
@@ -90,20 +93,25 @@ const AGREEMENT_CANCEL_PENALTY := 20
 const AGREEMENT_BASE_BONUS := 15
 ## Added to the relation while allied with the kingdom (GDD §9.7).
 const ALLIANCE_BASE_BONUS := 30
+## Added to the relation while a non-aggression pact runs (M16a).
+const PACT_BASE_BONUS := 10
 ## Clans farther than this many steps from the kingdom's territory (GDD §15) cannot trade, take
 ## gifts, sign agreements or ally with it; only those 1 step away can go to war with it.
 const REACH := 2
 ## How strongly each personality reacts to the kingdom's threat (GDD §9.3):
 ## PEACEFUL, AGGRESSIVE, MERCHANT, ISOLATED.
 const WARINESS: Array[float] = [0.5, 1.0, 0.4, 0.8]
+## Most relation wariness can take away (M16a: late in the game the threat kept growing and pushed
+## every clan to Hostile whatever the player did).
+const MAX_WARINESS := 40
 const AGREEMENT_MAX_CHANCE := 0.95
 ## Added to the acceptance chance, by personality: PEACEFUL, AGGRESSIVE, MERCHANT, ISOLATED.
 const AGREEMENT_PERSONALITY: Array[float] = [0.05, -0.1, 0.15, -0.2]
 ## The Ngoại giao advisor (GDD §8, M11f), per point of `envoy`: better trade prices, likelier
 ## acceptance (agreements, alliances, peace), less wariness, bigger gift gains.
 const ENVOY_PRICE := 0.02
-const ENVOY_CHANCE := 0.02
-const ENVOY_WARINESS := 0.03
+const ENVOY_CHANCE := 0.03
+const ENVOY_WARINESS := 0.04
 const ENVOY_GIFT := 0.03
 
 
@@ -133,9 +141,15 @@ class ClanState:
 	var alliance_turns := 0
 	## Turns before the clan hears another alliance offer after refusing one.
 	var alliance_cooldown := 0
+	## Non-aggression pact (M16a): turns left, 0 = none; and turns before another offer.
+	var pact_turns := 0
+	var pact_cooldown := 0
 
 	func is_allied() -> bool:
 		return alliance_turns > 0
+
+	func has_pact() -> bool:
+		return pact_turns > 0
 
 	func _init(p_data: ClanData) -> void:
 		data = p_data
@@ -146,7 +160,8 @@ class ClanState:
 	func lasting_factors() -> Dictionary[StringName, int]:
 		return {&"base": data.base_relation, &"wariness": -wariness,
 				&"agreement_bonus": AGREEMENT_BASE_BONUS if agreement != null else 0,
-				&"alliance_bonus": ALLIANCE_BASE_BONUS if is_allied() else 0}
+				&"alliance_bonus": ALLIANCE_BASE_BONUS if is_allied() else 0,
+				&"pact_bonus": PACT_BASE_BONUS if has_pact() else 0}
 
 	func unclamped_relation() -> int:
 		var total := 0
@@ -283,7 +298,7 @@ func end_turn() -> void:
 		if clan.annexed:
 			continue
 		var step: int = DRIFT_PER_TURN[clan.data.personality]
-		clan.wariness = int(move_toward(clan.wariness, wariness_target(clan_id), step))
+		clan.wariness = int(move_toward(mini(clan.wariness, MAX_WARINESS), wariness_target(clan_id), step))
 		for source in clan.memories.keys():
 			var left := int(move_toward(clan.memories[source], 0, step))
 			if left == 0:
@@ -308,9 +323,13 @@ func target_relation(clan_id: StringName) -> int:
 	return clampi(target, MIN_RELATION, MAX_RELATION)
 
 
-## Wariness the clan's wariness grows (or shrinks) toward: threat x personality factor.
+## Wariness the clan's wariness grows (or shrinks) toward: threat x personality factor, at most
+## MAX_WARINESS, lowered by the diplomacy advisor; allies feel none.
 func wariness_target(clan_id: StringName) -> int:
-	return roundi(threat * WARINESS[clans[clan_id].data.personality] * maxf(0.0, 1.0 - envoy * ENVOY_WARINESS))
+	if clans[clan_id].is_allied():
+		return 0
+	var felt := minf(MAX_WARINESS, threat * WARINESS[clans[clan_id].data.personality])
+	return roundi(felt * maxf(0.0, 1.0 - envoy * ENVOY_WARINESS))
 
 
 ## Where the relation comes from: [{"id": factor id or MEMORY_*, "amount": signed int,
@@ -637,7 +656,7 @@ static func describe_proposal(result: ProposalResult) -> String:
 ## ClanState fields written as they are (ints and bools); add new plain fields here.
 const SAVED_CLAN_FIELDS: Array[StringName] = [&"wariness", &"gift_gain_this_turn", &"trade_gain_this_turn",
 		&"traded_value_this_turn", &"proposed_this_turn", &"annexed", &"alliance_turns",
-		&"alliance_cooldown"]
+		&"alliance_cooldown", &"pact_turns", &"pact_cooldown"]
 const SAVED_AGREEMENT_FIELDS: Array[StringName] = [&"give_amount", &"get_amount", &"total_turns", &"turns_left"]
 
 
@@ -672,6 +691,7 @@ func load_save(data: Dictionary) -> void:
 		for field in SAVED_CLAN_FIELDS:
 			if entry.has(String(field)):
 				clan.set(field, _plain(entry[String(field)], clan.get(field)))
+		clan.wariness = mini(clan.wariness, MAX_WARINESS)
 		clan.memories.clear()
 		for source: String in entry.memories:
 			clan.memories[StringName(source)] = int(entry.memories[source])

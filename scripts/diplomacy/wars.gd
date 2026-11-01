@@ -20,6 +20,7 @@ const DECLARE_OTHERS_PENALTY := -5
 const DECLARE_FRIEND_PENALTY := -15
 ## Added to every other clan's change when the player breaks a treaty by declaring war (GDD §9.7).
 const BETRAY_ALLY_PENALTY := -20
+const BREAK_PACT_PENALTY := -20
 ## Chance per turn that a hostile neighbour declares war, by personality:
 ## PEACEFUL, AGGRESSIVE, MERCHANT, ISOLATED.
 const AI_DECLARE_CHANCE: Array[float] = [0.02, 0.15, 0.05, 0.05]
@@ -157,7 +158,7 @@ func check_declare(clan_id: StringName) -> DeclareResult:
 
 
 ## The player declares war: the target turns hostile and every other clan trusts the kingdom less,
-## its friends most. Breaking an alliance costs extra with everyone.
+## its friends most. Breaking an alliance or a non-aggression pact costs extra with everyone.
 func declare_war(clan_id: StringName) -> DeclareResult:
 	var result := check_declare(clan_id)
 	if result != DeclareResult.OK:
@@ -178,6 +179,8 @@ func declare_penalty(clan_id: StringName, other: StringName) -> int:
 	var penalty := DECLARE_FRIEND_PENALTY if clan.data.friends.has(other) else DECLARE_OTHERS_PENALTY
 	if clan.is_allied():
 		penalty += BETRAY_ALLY_PENALTY
+	if clan.has_pact():
+		penalty += BREAK_PACT_PENALTY
 	return penalty
 
 
@@ -186,13 +189,15 @@ func _start_war(clan_id: StringName) -> void:
 	front.at_war = true
 	front.turns_since_invasion = 0
 	_diplomacy.clans[clan_id].alliance_turns = 0
+	_diplomacy.clans[clan_id].pact_turns = 0
 	_diplomacy.remove_agreement(clan_id)
 	changed.emit()
 
 
-## The clan declares war on the kingdom on its own (an event); false when it cannot right now.
+## The clan declares war on the kingdom on its own (an event); false when it cannot right now
+## (also never during a non-aggression pact).
 func clan_declares_war(clan_id: StringName) -> bool:
-	if check_declare(clan_id) != DeclareResult.OK:
+	if check_declare(clan_id) != DeclareResult.OK or _diplomacy.clans[clan_id].has_pact():
 		return false
 	_start_war(clan_id)
 	return true
@@ -230,8 +235,11 @@ func end_turn(rng: RandomNumberGenerator, turn: int = 1) -> Array[StringName]:
 	return declared
 
 
-## Chance this turn that the clan declares war on its own (0 unless Tense or Hostile).
+## Chance this turn that the clan declares war on its own (0 unless Tense or Hostile, and never
+## during a non-aggression pact).
 func _declare_chance(clan_id: StringName) -> float:
+	if _diplomacy.clans[clan_id].has_pact():
+		return 0.0
 	var personality := _diplomacy.clans[clan_id].data.personality
 	match _diplomacy.get_tier(clan_id):
 		Diplomacy.Tier.HOSTILE:

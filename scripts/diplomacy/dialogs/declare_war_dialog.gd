@@ -35,6 +35,9 @@ func _refresh() -> void:
 			"  • Quan hệ với %s xuống Thù địch (tối đa %d)." % [clan.data.display_name, Wars.DECLARE_RELATION]]
 	if clan.agreement != null:
 		lines.append("  • Hợp đồng giao thương với họ bị hủy (mất +%d)." % Diplomacy.AGREEMENT_BASE_BONUS)
+	if clan.has_pact():
+		lines.append("  • Phá hiệp định bất tương xâm (mất +%d; mọi gia tộc khác mất thêm %d)." % [Diplomacy.PACT_BASE_BONUS,
+				absi(Wars.BREAK_PACT_PENALTY)])
 	if clan.is_allied():
 		lines.append("  • Phản bội liên minh (mất +%d)." % Diplomacy.ALLIANCE_BASE_BONUS)
 	# 23 clans are too many to list: the friends by name, everyone else in one line.

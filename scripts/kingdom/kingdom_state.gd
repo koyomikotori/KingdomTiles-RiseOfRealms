@@ -29,7 +29,7 @@ const STARTING_RESOURCES: Dictionary[StringName, int] = {&"food": 80, &"wood": 8
 ## Each turn, squads below full strength regain this fraction of their full size (rounded up),
 ## plus each finished barracks' level × BuildingData.replenish_per_level (replenish_fraction);
 ## the new soldiers dilute the squad's XP (Army.add_soldiers).
-const REPLENISH_FRACTION := 0.1
+const REPLENISH_FRACTION := 0.05
 ## Granaries keep at most this share of the stockpile from plunder (GDD §8 M14e).
 const MAX_PLUNDER_PROTECTION := 0.5
 
@@ -953,10 +953,20 @@ func _advance_expedition() -> Dictionary:
 		result["cleared"] = not expedition.failed
 		if not expedition.failed:
 			uprising.clear(board, turn + 1)
+			_thank_for_expedition()
+			result["relation"] = EXPEDITION_RELATION
 		result["general_name"] = general.name if general != null else ""
 		result["advisor_name"] = expedition.advisor.name if expedition.advisor != null else ""
 		expedition = null
 	return result
+
+
+## Clearing the bandits pleases every clan still standing (M16a).
+func _thank_for_expedition() -> void:
+	for clan_id in diplomacy.clans:
+		if not diplomacy.clans[clan_id].annexed:
+			diplomacy.change_relation(clan_id, EXPEDITION_RELATION, Diplomacy.MEMORY_EXPEDITION)
+
 
 ## The kingdom's army led by its commander (with their bodyguard), plus the soldiers its allies
 ## send against `enemy_clan` (&"" for bandits). `defending`: a raid or invasion, not an attack.
@@ -1016,6 +1026,8 @@ func _replenish() -> Dictionary[StringName, int]:
 ## Starting territory: cells beyond this count make the clans wary.
 const START_TERRITORY := 16
 const THREAT_CELLS_PER_POINT := 4
+## Relation every clan gains (a fading memory) when an expedition clears the bandits (M16a).
+const EXPEDITION_RELATION := 5
 const THREAT_PER_ANNEXED_CLAN := 15
 const THREAT_SOLDIERS_PER_POINT := 20
 

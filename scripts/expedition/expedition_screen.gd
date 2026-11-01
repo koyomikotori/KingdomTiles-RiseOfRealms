@@ -142,6 +142,8 @@ static func summary_lines(report: Dictionary) -> Array[String]:
 	var rewards: Dictionary = report.get("rewards", {})
 	if not rewards.is_empty():
 		lines.append("Đội thảo phạt trở về%s." % (": vùng nổi loạn đã được dẹp yên" if report.get("cleared", false) else ""))
+		if report.has("relation"):
+			lines.append("Các gia tộc cảm kích: quan hệ +%d với mọi gia tộc." % report.relation)
 		var amounts: Dictionary[StringName, int] = {}
 		amounts.assign(rewards.resources)
 		var text := UiFormat.amounts(amounts, ResourceTypeData.load_all())

@@ -16,4 +16,4 @@ enables_replenishment = true
 category = 1
 build_turns = 2
 upgrade_levels = 6
-replenish_per_level = 0.01
+replenish_per_level = 0.005

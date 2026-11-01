@@ -325,7 +325,7 @@ Mục tiêu: ô đất trống bớt vô dụng; người chơi muốn đặt nh
 - **Trạm lính canh:** thành cấp 1 chỉ xây được **1 trạm**, **+1 mỗi cấp thành**, **tối đa 4**.
 - **Thành chính chứa quân:** thành cấp 1 chứa **3** đơn vị, mỗi cấp +1 (cấp 6: **8**); mỗi doanh trại vẫn thêm 4 chỗ.
 - **Ván mới có sẵn 3 đơn vị** đủ quân: Kiếm binh, Thương binh, Cung thủ nông dân.
-- **Doanh trại cấp N tăng tốc hồi quân thêm N%**, cộng thẳng vào mức gốc 10% (6 doanh trại cấp 5: 10% + 30% = **40%** mỗi lượt). Vẫn cần ít nhất 1 doanh trại thì mới hồi quân; doanh trại đang thi công không tính.
+- **Doanh trại cấp N tăng tốc hồi quân thêm N × 0.5%**, cộng thẳng vào mức gốc 5% (M16a, trước là 10% + N%; 6 doanh trại cấp 5: 5% + 15% = **20%** mỗi lượt). Vẫn cần ít nhất 1 doanh trại thì mới hồi quân; doanh trại đang thi công không tính.
 - Tiếp theo: các công trình hành chính (M14e, bên dưới).
 
 ### Công trình hành chính (M14e, đã chốt)
@@ -422,7 +422,7 @@ Giới hạn số lượng tính từ cấp thành mở khóa công trình: +1 m
 | Chức | Chỉ số | Mỗi điểm |
 |---|---|---|
 | **Nội chính** | Nội chính | +2% sản lượng công trình khai thác (Kinh tế v2); −2% giá xây công trình và nâng cấp thành; −2% phí nuôi quân và tướng |
-| **Ngoại giao** | Ngoại giao | Trao đổi tài nguyên có lợi hơn 2%; +2% khả năng gia tộc nhận hợp đồng, liên minh, bất tương xâm, nghị hòa; −3% mức cảnh giác của gia tộc; +3% quan hệ nhận được khi tặng quà |
+| **Ngoại giao** | Ngoại giao | Trao đổi tài nguyên có lợi hơn 2%; +3% khả năng gia tộc nhận hợp đồng, liên minh, bất tương xâm, nghị hòa; −4% mức cảnh giác của gia tộc (M16a, trước là 2% / 3%); +3% quan hệ nhận được khi tặng quà |
 | **Quân sự** | Mưu lược | Ra trận cùng quân: +0,3 sĩ khí và +2% tấn công tầm xa cho quân của vương quốc; dùng mưu kế đầu trận |
 
 Phần cộng và phần giảm của Nội chính làm tròn tới số nguyên gần nhất (ví dụ giảm 16% của 6 Gỗ = 1 Gỗ).
@@ -928,7 +928,7 @@ Mục tiêu: biến game thành chơi kiểu **chiến dịch**, mở rộng d�
 
 **Chiến thắng duy nhất: thống nhất** — mọi gia tộc trên bản đồ hoặc đã bị thôn tính, hoặc đang là đồng minh. Bỏ thắng hòa bình thịnh vượng, bỏ nút "Mục tiêu". Thua vẫn như cũ: thành chính thất thủ.
 
-**Bỏ hiệp ước bất tương xâm** (không còn coi trọng hòa bình).
+**Bỏ hiệp ước bất tương xâm** (không còn coi trọng hòa bình). *Có lại từ M16a, luật mới ở §17.*
 
 **Quân cướp** nhiều và mạnh dần theo lượt: cứ mỗi 10 lượt tỉ lệ cướp tăng (có trần), số đội cướp tăng như trước, về sau có thêm kỵ binh cướp.
 
@@ -972,3 +972,27 @@ Bảng thông tin ô đất chuyển xuống đáy cột này.
 - Build lại: `python tools/release/build_windows.py` (export preset "Windows Desktop" trong `export_presets.cfg`, ra `build/KingdomTiles_v<phiên bản>_Windows.zip`). Exe chưa có icon riêng (cần rcedit), cửa sổ game vẫn dùng icon của game.
 - Thư mục `assets/audio/custom/` chỉ có tác dụng khi chạy trong Godot editor; bản build dùng nhạc đã gói sẵn.
 - **Nhạc bản đồ vương quốc làm lại** (người chơi thấy bản cũ tone quá cao): nhẹ và chill hơn, 76 BPM, thấp hơn một quãng tám, giai điệu gảy mềm kiểu đàn tranh thưa nốt trên pad hợp âm ấm, arpeggio khẽ, trống rất nhẹ, có tiếng vang; khoảng 2 phút rồi lặp lại liền mạch. Các bài khác giữ nguyên.
+
+## 17. Cân bằng và ngoại giao (M16a, đã chốt)
+
+Sau khi chơi bản 0.1: về late game mọi gia tộc đều Thù địch và tỉ lệ liên minh luôn 0%, dù tặng quà hay có mưu sĩ Ngoại giao giỏi.
+
+**Nguyên nhân:** mức đe dọa của vương quốc tăng mãi theo đất, số gia tộc bị thôn tính (+15 mỗi gia tộc) và số lính. Ở save lượt 158 đe dọa là 267: cảnh giác trừ quan hệ từ 87 đến 211 điểm, và tỉ lệ liên minh bị trừ thêm 133%.
+
+**Cảnh giác có giới hạn:**
+- Cảnh giác trừ tối đa **40** điểm quan hệ (trước khi tính mưu sĩ Ngoại giao). Bản lưu cũ có cảnh giác cao hơn bị hạ ngay về 40 khi tải.
+- Phần đe dọa trừ vào tỉ lệ liên minh tối đa **25%**.
+- **Đồng minh không cảnh giác** với vương quốc.
+
+**Mưu sĩ Ngoại giao mạnh hơn:** mỗi điểm giảm **4%** cảnh giác (trước 3%) và **+3%** khả năng gia tộc đồng ý hợp đồng / liên minh / bất tương xâm / nghị hòa (trước 2%).
+
+**Hiệp định bất tương xâm trở lại:**
+- Ký được từ quan hệ **Trung lập (≥ −19)**, không chiến tranh, trong tầm 2 vùng, chưa liên minh.
+- Tỉ lệ đồng ý = 40% + 1% mỗi điểm quan hệ trên −19 + tính cách (như hợp đồng) + 3% mỗi điểm Ngoại giao, tối đa 95%. Từ chối thì chờ **3 lượt** mới đề nghị lại.
+- Kéo dài **10 lượt**, quan hệ **+10** trong thời gian đó; hết hạn có thông báo, ký lại được.
+- Gia tộc đang có hiệp định **không tuyên chiến** (kể cả qua sự kiện) và không gửi quân giúp bạn của họ khi vương quốc đánh bạn họ.
+- Người chơi tuyên chiến khi đang có hiệp định: hiệp định mất, mọi gia tộc khác mất thêm **20** quan hệ. Ký liên minh thì hiệp định không cần nữa (liên minh đã bao gồm).
+
+**Hồi quân doanh trại giảm một nửa:** 5% + 0.5% × cấp mỗi doanh trại (xem §8).
+
+**Thảo phạt đạo tặc thành công:** mọi gia tộc chưa bị thôn tính **+5 quan hệ** (ký ức "Dẹp loạn đạo tặc", mờ dần như quà tặng). Thua thì không có.
