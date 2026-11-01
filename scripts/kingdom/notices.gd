@@ -109,6 +109,8 @@ static func _diplomacy_items(state: KingdomState, report: Dictionary) -> Array[D
 		var clan_name: String = clans[entry.clan_id].data.display_name
 		if entry.event == &"alliance_broken":
 			treaty_news.append("%s rời bỏ liên minh vì quan hệ đi xuống" % clan_name)
+		elif entry.event == &"pact_expired":
+			treaty_news.append("Hiệp định bất tương xâm với %s đã hết hạn" % clan_name)
 		else:
 			treaty_news.append("Liên minh với %s đã hết hạn" % clan_name)
 	# Agents (GDD §8 M14e): who is where, then this turn's news.

@@ -264,3 +264,77 @@ func test_alliance_bonus_is_part_of_the_relation_at_once() -> void:
 	state.diplomacy.clans[&"south_farmers"].alliance_turns = 1
 	state.alliances.end_turn()
 	check_eq(state.diplomacy.clans[&"south_farmers"].relation, 60, "…and gone when it expires")
+
+
+# --- M16a: capped wariness, non-aggression pacts ------------------------------------------
+
+func test_late_threat_is_capped() -> void:
+	var state := _state()
+	state.diplomacy.threat = 300
+	check_eq(state.diplomacy.wariness_target(&"north_wolves"), Diplomacy.MAX_WARINESS, "Wariness stops at 40")
+	_set_relation(state, &"north_wolves", 100)
+	check(is_equal_approx(state.alliances.alliance_chance(&"north_wolves"), 0.3 + 0.5 - 0.1 - 0.25),
+			"Threat takes at most 25% off the alliance chance")
+	state.diplomacy.clans[&"north_wolves"].wariness = 200
+	state.diplomacy.end_turn()
+	check(state.diplomacy.clans[&"north_wolves"].wariness <= Diplomacy.MAX_WARINESS, "Old high wariness drops to the cap")
+
+
+func test_allies_feel_no_threat() -> void:
+	var state := _state()
+	state.diplomacy.threat = 100
+	_ally(state, &"east_merchants")
+	check_eq(state.diplomacy.wariness_target(&"east_merchants"), 0, "No wariness toward an ally")
+
+
+func test_pact_from_neutral_with_a_chance() -> void:
+	var state := _state()
+	_set_relation(state, &"north_wolves", -30)
+	check_eq(state.alliances.check_pact(&"north_wolves"), Alliances.PactResult.NOT_NEUTRAL, "Tense: no pact")
+	_set_relation(state, &"north_wolves", -19)
+	check_eq(state.alliances.check_pact(&"north_wolves"), Alliances.PactResult.OK, "Neutral: can ask")
+	check(is_equal_approx(state.alliances.pact_chance(&"north_wolves"), 0.4 - 0.1), "Aggressive, just Neutral: 0.4 - 0.1")
+	_set_relation(state, &"north_wolves", 31)
+	check(is_equal_approx(state.alliances.pact_chance(&"north_wolves"), 0.4 + 0.5 - 0.1), "+1% per relation point")
+	check_eq(state.alliances.propose_pact(_high_rng(), &"north_wolves"), Alliances.PactResult.DECLINED, "Refused")
+	check_eq(state.alliances.check_pact(&"north_wolves"), Alliances.PactResult.COOLDOWN, "Waits after a refusal")
+	for i in Alliances.PACT_RETRY_TURNS:
+		state.alliances.end_turn()
+	var before := state.diplomacy.clans[&"north_wolves"].relation
+	check_eq(state.alliances.propose_pact(_low_rng(), &"north_wolves"), Alliances.PactResult.OK, "Signed")
+	check_eq(state.diplomacy.clans[&"north_wolves"].relation, before + Diplomacy.PACT_BASE_BONUS, "+10 while it runs")
+	check_eq(state.alliances.check_pact(&"north_wolves"), Alliances.PactResult.ALREADY_HAS, "Only one at a time")
+
+
+func test_pact_stops_war_declarations_and_expires() -> void:
+	var state := _state()
+	_set_relation(state, &"north_wolves", 20)
+	state.alliances.propose_pact(_low_rng(), &"north_wolves")
+	_set_relation(state, &"north_wolves", -100)
+	check_eq(state.wars._declare_chance(&"north_wolves"), 0.0, "Hostile but bound by the pact")
+	check(not state.wars.clan_declares_war(&"north_wolves"), "No war from events either")
+	var events: Array[Dictionary] = []
+	for i in Alliances.PACT_TURNS:
+		events = state.alliances.end_turn()
+	check(not state.diplomacy.clans[&"north_wolves"].has_pact(), "Ran out")
+	check(events.any(func(e: Dictionary) -> bool: return e.event == &"pact_expired"), "Reported")
+	check(state.wars._declare_chance(&"north_wolves") > 0.0, "May declare war again")
+
+
+func test_breaking_a_pact_costs_everyone() -> void:
+	var state := _state()
+	_set_relation(state, &"north_wolves", 20)
+	state.alliances.propose_pact(_low_rng(), &"north_wolves")
+	check_eq(state.wars.declare_penalty(&"north_wolves", &"south_farmers"),
+			Wars.DECLARE_OTHERS_PENALTY + Wars.BREAK_PACT_PENALTY, "Breaking the pact: -20 more")
+	state.wars.declare_war(&"north_wolves")
+	check(not state.diplomacy.clans[&"north_wolves"].has_pact(), "The pact is gone")
+
+
+func test_pact_is_saved() -> void:
+	var state := _state()
+	_set_relation(state, &"north_wolves", 20)
+	state.alliances.propose_pact(_low_rng(), &"north_wolves")
+	var copy := _state()
+	copy.diplomacy.load_save(JSON.parse_string(JSON.stringify(state.diplomacy.to_save())))
+	check_eq(copy.diplomacy.clans[&"north_wolves"].pact_turns, Alliances.PACT_TURNS, "Turns left saved")

@@ -167,6 +167,9 @@ func test_a_won_expedition_clears_the_zone_and_pays() -> void:
 	check(state.stockpile.get_amount(&"food") > food_before - 200, "Resources paid (net of upkeep)")
 	check_eq(last.rewards.items.size(), stages, "An item per stage")
 	check(state.uprising.next_allowed_turn > state.turn, "A pause before the next zone")
+	check_eq(last.relation, KingdomState.EXPEDITION_RELATION, "Every clan is grateful (M16a)")
+	check_eq(state.diplomacy.clans[&"north_wolves"].memories.get(Diplomacy.MEMORY_EXPEDITION),
+			KingdomState.EXPEDITION_RELATION, "+5 remembered as the expedition")
 
 
 func test_a_lost_expedition_loses_its_squads_and_keeps_the_zone() -> void:
@@ -182,6 +185,7 @@ func test_a_lost_expedition_loses_its_squads_and_keeps_the_zone() -> void:
 	var report: Dictionary = state.end_turn().expedition
 	check(not report.won and report.finished, "Beaten")
 	check(not report.cleared, "The zone stays")
+	check(not report.has("relation"), "No thanks for a lost expedition")
 	check(state.uprising.is_active(), "Still there")
 	check(not state.army.squads.has(team[0]), "The squad is lost")
 	check(state.expedition == null, "Can send another")

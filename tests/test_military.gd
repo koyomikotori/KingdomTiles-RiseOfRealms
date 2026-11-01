@@ -247,5 +247,5 @@ func test_star_colors_follow_item_rarity() -> void:
 	check_eq(Officer.star_color(6), Item.RARITY_COLORS[4], "6 stars gold")
 
 
-func test_replenishment_is_ten_percent() -> void:
-	check_eq(KingdomState.REPLENISH_FRACTION, 0.1, "Squads regain 10% a turn (M13b)")
+func test_replenishment_is_five_percent() -> void:
+	check_eq(KingdomState.REPLENISH_FRACTION, 0.05, "Squads regain 5% a turn (M16a, was 10%)")

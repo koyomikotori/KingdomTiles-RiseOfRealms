@@ -147,6 +147,8 @@ func _standing_text() -> String:
 		parts.append("Hòa bình")
 	if clan.is_allied():
 		parts.append("Đồng minh (còn %d lượt)" % clan.alliance_turns)
+	if clan.has_pact():
+		parts.append("Bất tương xâm (còn %d lượt)" % clan.pact_turns)
 	var agreement := clan.agreement
 	if agreement != null:
 		parts.append("Hợp đồng (còn %d lượt)" % agreement.turns_left)
@@ -214,6 +216,18 @@ func _update_agreement(button: Button, reason: Label) -> void:
 	elif clan.proposed_this_turn:
 		button.disabled = true
 		reason.text = Diplomacy.describe_proposal(Diplomacy.ProposalResult.ASKED_THIS_TURN)
+
+
+func _update_pact(button: Button, reason: Label) -> void:
+	var clan := _diplomacy.clans[_clan_id]
+	button.visible = not _wars.at_war_with(_clan_id) and not clan.is_allied()
+	button.text = "Bất tương xâm (đang có)" if clan.has_pact() else "Bất tương xâm"
+	var result := _alliances.check_pact(_clan_id)
+	button.disabled = not clan.has_pact() and result != Alliances.PactResult.OK
+	if clan.has_pact():
+		reason.text = "Còn %d lượt." % clan.pact_turns
+	elif button.disabled:
+		reason.text = Alliances.describe_pact(result)
 
 
 func _update_alliance(button: Button, reason: Label) -> void:
@@ -301,6 +315,7 @@ func _build_details() -> void:
 	_add_command("Tặng quà", GiftDialog, _update_gift)
 	_add_command("Hợp đồng giao thương", AgreementDialog, _update_agreement)
 	_add_command("Liên minh", AllianceDialog, _update_alliance)
+	_add_command("Bất tương xâm", PactDialog, _update_pact)
 	_add_command("Tuyên chiến", DeclareWarDialog, _update_declare, true)
 	_add_command("Cử đặc vụ", AgentDialog, _update_agent)
 

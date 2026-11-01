@@ -163,8 +163,8 @@ func test_replenish_is_free_and_needs_barracks() -> void:
 	state.build(&"barracks", Vector2i(4, 4))
 	var food_before := state.stockpile.get_amount(&"food")
 	report = state.end_turn()
-	check_eq(report.replenished, {&"swordsman": 3, &"archer": 1}, "10% + 1% (level-1 barracks) of 20 = +3; archer only needs 1")
-	check_eq([state.army.squads[0].soldiers, state.army.squads[1].soldiers], [8, 15], "Squads grew, never past full size")
+	check_eq(report.replenished, {&"swordsman": 2, &"archer": 1}, "5% + 0.5% (level-1 barracks) of 20 = +2; archer only needs 1")
+	check_eq([state.army.squads[0].soldiers, state.army.squads[1].soldiers], [7, 15], "Squads grew, never past full size")
 	check_eq(state.stockpile.get_amount(&"food"), food_before - 2, "Only the usual upkeep was paid")
 	for i in 7:
 		state.stockpile.add({&"food": 2})
@@ -186,14 +186,14 @@ func test_barracks_levels_speed_up_replenishment() -> void:
 	var state := _rich_state()
 	check_eq(state.replenish_fraction(), 0.0, "No barracks: none")
 	state.build(&"barracks", Vector2i(4, 4))
-	check(is_equal_approx(state.replenish_fraction(), 0.11), "10% + 1% for a level-1 barracks")
+	check(is_equal_approx(state.replenish_fraction(), 0.055), "5% + 0.5% for a level-1 barracks (M16a)")
 	state.board.set_building_level(Vector2i(4, 4), 5)
-	check(is_equal_approx(state.replenish_fraction(), 0.15), "Level 5: +5%")
+	check(is_equal_approx(state.replenish_fraction(), 0.075), "Level 5: +2.5%")
 	state.build(&"barracks", Vector2i(7, 7))
 	state.board.set_building_level(Vector2i(7, 7), 5)
-	check(is_equal_approx(state.replenish_fraction(), 0.20), "Two level-5 barracks: +10%")
+	check(is_equal_approx(state.replenish_fraction(), 0.10), "Two level-5 barracks: +5%")
 	state.board.set_construction(Vector2i(7, 7), 3, true)
-	check(is_equal_approx(state.replenish_fraction(), 0.15), "One being upgraded does not count")
+	check(is_equal_approx(state.replenish_fraction(), 0.075), "One being upgraded does not count")
 
 
 func test_new_games_start_with_three_peasant_squads() -> void:

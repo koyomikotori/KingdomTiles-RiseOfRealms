@@ -49,7 +49,7 @@ const PAGES := [
 	]],
 	["Ngoại giao", [
 		"# Bản đồ chiến dịch",
-		"Nút Ngoại giao mở bản đồ 24 gia tộc. Gia tộc giáp ranh có thể tuyên chiến và tấn công nhau; gia tộc trong 2 bước có thể giao thương, tặng quà, ký hợp đồng và liên minh.",
+		"Nút Ngoại giao mở bản đồ 24 gia tộc. Gia tộc giáp ranh có thể tuyên chiến và tấn công nhau; gia tộc trong 2 bước có thể giao thương, tặng quà, ký hợp đồng, bất tương xâm và liên minh.",
 		"# Chiến tranh",
 		"Tuyên chiến với gia tộc giáp ranh (hoặc bị họ tuyên chiến), rồi tấn công họ từ bản đồ. Thắng thì được chiến lợi phẩm và làm gia tộc yếu đi; khi quân số của họ xuống thấp, họ đầu hàng và bị thôn tính.",
 		"Cứ thôn tính 2 gia tộc, bản đồ vương quốc rộng thêm. Thua trận xâm lược thì mất đất ở rìa.",
