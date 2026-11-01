@@ -225,6 +225,13 @@ static func custom_portrait(officer_name: String) -> Texture2D:
 	return _load(CUSTOM_PORTRAIT_DIR + officer_name + ".png")
 
 
+## A non-officer character's portrait (96×96 with its background, e.g. the black market's
+## merchant): a hand-drawn CUSTOM_PORTRAIT_DIR/<id>.png wins over the generated npc/<id>.png.
+static func npc_portrait(npc_id: StringName) -> Texture2D:
+	var custom := _load(CUSTOM_PORTRAIT_DIR + String(npc_id) + ".png")
+	return custom if custom != null else _load(PORTRAIT_DIR + "npc/" + String(npc_id) + ".png")
+
+
 ## "general_m", "advisor_f"…: which pool portraits fit this officer.
 static func portrait_group(officer: Officer) -> String:
 	return "%s_%s" % ["advisor" if officer is Advisor else "general", "f" if officer.look.is_female() else "m"]
