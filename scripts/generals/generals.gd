@@ -39,6 +39,12 @@ const WEAPON_DEFENSE: Dictionary[StringName, float] = {&"kiem": 0.04}
 const WEAPON_PIERCE: Dictionary[StringName, float] = {&"chuy": 0.03}
 const WOUND_TURNS := 3
 const GUARD_UNIT_PATH := "res://data/general_units/general_guard.tres"
+## The fighter of a duel (M16e): the bodyguard's stats. The general and their guard make one pool
+## of DUEL_SOLDIERS, the same for both, so the health bar runs down bit by bit while more stars
+## still win through Võ lực and Thống suất. Battle views draw only the general.
+const DUELIST_PATH := "res://data/general_units/general_duelist.tres"
+const DUELIST_ID := &"general_duelist"
+const DUEL_SOLDIERS := 10
 ## Male given names for generals (family, middle and female names are in Officer).
 const GIVEN_NAMES: Array[String] = ["Dũng", "Hùng", "Khải", "Bình", "Sơn", "Hải", "Long", "Thắng", "Kiên", "Phong",
 		"Vĩnh", "Trung", "Nghĩa", "Đạt", "Lâm", "Uy", "Hào", "Cường", "Hiển", "Tráng", "Bảo", "Chiến"]
@@ -243,6 +249,41 @@ func lead(side: BattleSide, board: BoardData, defending: bool) -> void:
 ## Puts `general` at the head of `side` (the kingdom's commander, or a clan's general, M14h).
 func lead_officer(side: BattleSide, general: General, trait_data: GeneralTraitData = null) -> void:
 	side.add_unit(guard_unit, ranks[general.stars].guards)
+	_arm_guard(side, general)
+	var might := general.total_might()
+	var command := general.total_command()
+	for unit in side.units:
+		if unit.ally != null:
+			continue
+		unit.attack_mult += might * MIGHT_ATTACK + general.item_effect(&"army_attack")
+		unit.charge_mult += might * MIGHT_ATTACK
+		unit.defense_mult += command * COMMAND_DEFENSE + general.item_effect(&"army_defense")
+		unit.morale += command * COMMAND_MORALE + general.item_effect(&"morale")
+		if trait_data == null or not _trait_applies(trait_data, unit):
+			continue
+		unit.attack_mult += trait_data.melee_attack_bonus
+		unit.charge_mult += trait_data.charge_bonus
+		unit.defense_mult += trait_data.defense_bonus
+		unit.range_mult += trait_data.range_bonus
+		unit.morale += trait_data.morale_bonus
+
+
+## A side of `general` alone, for a duel (M16e): one fighter with their bodyguard's bonuses
+## (Võ lực, Thống suất, items), no army. `luck` scales the fighter's attack.
+static func duel_side(general: General, side_name: String, color: Color, luck: float = 1.0,
+		soldiers: int = DUEL_SOLDIERS) -> BattleSide:
+	var side := BattleSide.new(side_name)
+	side.color = color
+	side.add_unit(load(DUELIST_PATH), soldiers)
+	var fighter := _arm_guard(side, general)
+	fighter.attack_mult *= luck
+	fighter.charge_mult *= luck
+	return side
+
+
+## Turns the side's last unit into `general`'s bodyguard: Võ lực, Thống suất and items raise it,
+## and the side shows the general.
+static func _arm_guard(side: BattleSide, general: General) -> BattleSide.Unit:
 	var guard: BattleSide.Unit = side.units.back()
 	guard.is_general_guard = true
 	var might := general.total_might()
@@ -260,20 +301,7 @@ func lead_officer(side: BattleSide, general: General, trait_data: GeneralTraitDa
 	side.general_name = general.name
 	side.general_look = general.look
 	side.general_weapon = general.weapon_type()
-	for unit in side.units:
-		if unit.ally != null:
-			continue
-		unit.attack_mult += might * MIGHT_ATTACK + general.item_effect(&"army_attack")
-		unit.charge_mult += might * MIGHT_ATTACK
-		unit.defense_mult += command * COMMAND_DEFENSE + general.item_effect(&"army_defense")
-		unit.morale += command * COMMAND_MORALE + general.item_effect(&"morale")
-		if trait_data == null or not _trait_applies(trait_data, unit):
-			continue
-		unit.attack_mult += trait_data.melee_attack_bonus
-		unit.charge_mult += trait_data.charge_bonus
-		unit.defense_mult += trait_data.defense_bonus
-		unit.range_mult += trait_data.range_bonus
-		unit.morale += trait_data.morale_bonus
+	return guard
 
 
 func _trait_applies(trait_data: GeneralTraitData, unit: BattleSide.Unit) -> bool:

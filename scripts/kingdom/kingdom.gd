@@ -393,10 +393,13 @@ func _on_end_turn_pressed() -> void:
 
 
 ## Plays a battle on the battle screen, then calls `on_finished` with its record.
-func _play_battle(simulator: BattleSimulator, player_side: int, title: String, on_finished: Callable) -> void:
+func _play_battle(simulator: BattleSimulator, player_side: int, title: String, on_finished: Callable,
+		can_retreat: bool = true) -> void:
 	_battle_screen = BattleScreen.new()
 	$UI.add_child(_battle_screen)
 	_battle_screen.start(simulator, player_side, title)
+	if not can_retreat:
+		_battle_screen.hide_retreat()
 	Sfx.music(&"battle")
 	_map_life.ambient = false
 	_battle_screen.finished.connect(func(record: BattleRecord) -> void:
@@ -413,7 +416,9 @@ func _play_raid(simulator: BattleSimulator) -> void:
 		_turn_battle = result
 		_autosave()
 		placement_status.text += " %s" % ("Đã đánh lui." if result.won else "Thất thủ.")
-		_show_battle_report(result, _ally_lines(result)))
+		var lines := _enemy_officer_lines(result, "Thủ lĩnh đạo tặc")
+		lines.append_array(_ally_lines(result))
+		_show_battle_report(result, lines))
 
 
 func _play_invasion(clan_id: StringName, simulator: BattleSimulator) -> void:
@@ -456,32 +461,68 @@ func _attack_clan(clan_id: StringName) -> void:
 		_world_map.close()
 	var title := "Tấn công %s!" % _clan_name(clan_id)
 	_play_battle(simulator, BattleRecord.ATTACKER, title, func(record: BattleRecord) -> void:
-		var result := state.finish_attack(clan_id, record)
-		_pending_victory = state.victory.check(state)
+		_show_attack_report(clan_id, state.finish_attack(clan_id, record)))
+
+
+## The report of an attack on a clan (from the world map, or the surprise attack event).
+func _show_attack_report(clan_id: StringName, result: Dictionary) -> void:
+	var record: BattleRecord = result.record
+	_pending_victory = state.victory.check(state)
+	var report := BattleReport.new()
+	$UI.add_child(report)
+	var lines := report.army_loss_lines(result, state.units)
+	lines.append("Quân %s mất %d lính, còn %d." % [_clan_name(clan_id), result.enemy_lost,
+			state.wars.fronts[clan_id].strength])
+	lines.append_array(_enemy_officer_lines(result))
+	lines.append_array(_ally_lines(result))
+	var loot := UiFormat.amounts(result.loot, _resource_types)
+	if not loot.is_empty():
+		lines.append("Chiến lợi phẩm: %s." % loot)
+	var compensation := UiFormat.amounts(result.compensation, _resource_types)
+	if not compensation.is_empty():
+		lines.append("Bồi thường chiến phí: %s." % compensation)
+	if result.annexed:
+		lines.append(_annex_line(clan_id, result.get("expanded", Vector2i.ZERO)))
+		for entry: Dictionary in result.get("agents_recalled", []):
+			lines.append("Đặc vụ %s ở %s đã an toàn trở về." % [entry.name, _clan_name(clan_id)])
+	var title_text := "Chiến thắng!" if result.won else "Thất bại!"
+	if result.annexed:
+		title_text = "%s đã bị sáp nhập!" % _clan_name(clan_id)
+	report.show_battle(title_text, result.won, "Vương quốc tấn công %s." % _clan_name(clan_id), record,
+			BattleRecord.ATTACKER, lines)
+	_battle_report = report
+	report.closed.connect(_on_battle_report_closed)
+
+
+## The battle an event answer led to (M16e, EventBattles): played on the battle screen, then
+## applied, autosaved and reported; the turn's start goes on after the report.
+func _play_event_battle() -> void:
+	var battle := state.events.pending_battle
+	state.events.pending_battle = {}
+	var simulator := EventBattles.start(state, battle, state.rng)
+	if simulator == null:
+		placement_status.text = "Trận đánh không thể diễn ra nữa."
+		_autosave()
+		_continue_turn_start()
+		return
+	var side := EventBattles.player_side(battle.kind)
+	_play_battle(simulator, side, EventBattles.title(state, battle), func(record: BattleRecord) -> void:
+		var result := EventBattles.finish(state, battle, record)
+		_turn_battle = result
+		_refresh_notices()
+		_autosave()
+		if battle.kind == EventBattles.SURPRISE:
+			_show_attack_report(battle.clan_id, result)
+			return
 		var report := BattleReport.new()
 		$UI.add_child(report)
 		var lines := report.army_loss_lines(result, state.units)
-		lines.append("Quân %s mất %d lính, còn %d." % [_clan_name(clan_id), result.enemy_lost,
-				state.wars.fronts[clan_id].strength])
-		lines.append_array(_enemy_officer_lines(result))
+		lines.append_array(result.lines)
 		lines.append_array(_ally_lines(result))
-		var loot := UiFormat.amounts(result.loot, _resource_types)
-		if not loot.is_empty():
-			lines.append("Chiến lợi phẩm: %s." % loot)
-		var compensation := UiFormat.amounts(result.compensation, _resource_types)
-		if not compensation.is_empty():
-			lines.append("Bồi thường chiến phí: %s." % compensation)
-		if result.annexed:
-			lines.append(_annex_line(clan_id, result.get("expanded", Vector2i.ZERO)))
-			for entry: Dictionary in result.get("agents_recalled", []):
-				lines.append("Đặc vụ %s ở %s đã an toàn trở về." % [entry.name, _clan_name(clan_id)])
-		var title_text := "Chiến thắng!" if result.won else "Thất bại!"
-		if result.annexed:
-			title_text = "%s đã bị sáp nhập!" % _clan_name(clan_id)
-		report.show_battle(title_text, result.won, "Vương quốc tấn công %s." % _clan_name(clan_id), record,
-				BattleRecord.ATTACKER, lines)
+		report.show_battle("Chiến thắng!" if result.won else "Thất bại!", result.won,
+				EventBattles.title(state, battle), record, side, lines)
 		_battle_report = report
-		report.closed.connect(_on_battle_report_closed))
+		report.closed.connect(_on_battle_report_closed), battle.kind != EventBattles.DUEL)
 
 
 ## Report lines for the soldiers other clans lent to this battle (Alliances.apply_battle) and for
@@ -496,11 +537,12 @@ func _ally_lines(result: Dictionary) -> Array[String]:
 		lines.append("Chiến lợi phẩm: %s (%s)%s." % [item.display_name, Item.RARITY_NAMES[item.rarity],
 				", kho đầy nên đã phân rã lấy %s" % UiFormat.amounts(refund, _resource_types) if not refund.is_empty()
 				else " — xem ở tab Trang bị của tướng sĩ"])
+	var rank: String = general.get("title", "Tổng tướng")
 	match general.get("fate", &"none"):
 		&"dead":
-			lines.append("Tổng tướng %s đã tử trận, mất luôn trang bị đang đeo!" % general.name)
+			lines.append("%s %s đã tử trận, mất luôn trang bị đang đeo!" % [rank, general.name])
 		&"wounded":
-			lines.append("Tổng tướng %s ngã ngựa, bị thương, nghỉ %d lượt." % [general.name, Generals.WOUND_TURNS])
+			lines.append("%s %s ngã ngựa, bị thương, nghỉ %d lượt." % [rank, general.name, Generals.WOUND_TURNS])
 	var advisor: Dictionary = result.get("advisor", {})
 	if advisor.get("fate", &"none") == &"wounded":
 		lines.append("Mưu sĩ %s bị thương khi rút chạy, nghỉ %d lượt." % [advisor.name, Advisors.WOUND_TURNS])
@@ -515,15 +557,15 @@ func _ally_lines(result: Dictionary) -> Array[String]:
 
 
 ## Report lines for the clan's general and advisor (ClanOfficers.after_battle, M14h).
-func _enemy_officer_lines(result: Dictionary) -> Array[String]:
+func _enemy_officer_lines(result: Dictionary, rank: String = "Tướng địch") -> Array[String]:
 	var lines: Array[String] = []
 	var officers: Dictionary = result.get("enemy_officers", {})
 	var general: Dictionary = officers.get("general", {})
 	match general.get("fate", &"none"):
 		&"dead":
-			lines.append("Tướng địch %s đã tử trận!" % general.name)
+			lines.append("%s %s đã tử trận!" % [rank, general.name])
 		&"wounded":
-			lines.append("Tướng địch %s ngã ngựa, bị thương %d lượt." % [general.name, Generals.WOUND_TURNS])
+			lines.append("%s %s ngã ngựa, bị thương %d lượt." % [rank, general.name, Generals.WOUND_TURNS])
 	var advisor: Dictionary = officers.get("advisor", {})
 	if advisor.get("fate", &"none") == &"wounded":
 		lines.append("Mưu sĩ địch %s bị thương %d lượt." % [advisor.name, Advisors.WOUND_TURNS])
@@ -634,6 +676,7 @@ func _continue_turn_start() -> void:
 			report_window.open(news)
 			report_window.closed.connect(_continue_turn_start)
 			return
+	state.events.drop_stale(state)
 	if state.events.current_event() == null:
 		if state.black_market.open and not state.victory.lost:
 			_clear_selection()
@@ -653,6 +696,10 @@ func _continue_turn_start() -> void:
 	$UI.add_child(window)
 	window.open(state, state.rng)
 	window.closed.connect(func() -> void:
+		_refresh_notices()
+		if not state.events.pending_battle.is_empty():
+			_play_event_battle()
+			return
 		_autosave()
 		_continue_turn_start())
 

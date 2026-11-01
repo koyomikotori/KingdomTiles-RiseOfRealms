@@ -9,6 +9,10 @@ extends RefCounted
 ## may be wounded. Rewards (XP per battle won, resources and an item per stage cleared) are handed
 ## over when the expedition ends, won or lost. While away, officers and squads take no part in the
 ## kingdom's battles, posts or replenishment (Officer.away, Army.Squad.away).
+## M16e: with a general along, each stage has DUEL_CHANCE that a rebel general challenges them
+## before the first ambush. With `accept_duels` (chosen when sending) they fight alone (the record
+## goes first in the stage's battles) and the loser dies: a win costs the rebels DUEL_MORALE in the
+## next stage, a loss costs the team as much. Refused, the team has DECLINE_MORALE in that stage.
 
 const MAX_SQUADS := 10
 const STAGES_BY_CASTLE: Array[int] = [1, 1, 2, 2, 3, 4]
@@ -31,6 +35,9 @@ const STAGE_ITEM_ODDS: Array = [[50, 35, 13, 2, 0], [35, 35, 22, 7, 1], [20, 35,
 const REBEL_NAME := "Quân nổi loạn"
 ## Limit-break scrolls for clearing the zone (M16c): one per SCROLL_STAGES stages, at least one.
 const SCROLL_STAGES := 2
+const DUEL_CHANCE := 0.25
+const DUEL_MORALE := 2
+const DECLINE_MORALE := -1
 
 var general: General
 var advisor: Advisor
@@ -48,6 +55,11 @@ var resources: Dictionary[StringName, int] = {}
 var items: Array[Item] = []
 ## One line per stage fought, for the progress window.
 var log: Array[String] = []
+## Whether the general takes up a rebel general's challenge (M16e).
+var accept_duels := true
+## Starting morale changes for the next stage, left by a duel.
+var team_morale_next := 0
+var rebel_morale_next := 0
 
 
 func is_over() -> bool:
@@ -96,11 +108,39 @@ func run_stage(state: KingdomState, rng: RandomNumberGenerator) -> Dictionary:
 	var lost: Array[StringName] = []
 	var boss_name := ""
 	var won := true
+	var team_morale := team_morale_next
+	var rebel_morale := rebel_morale_next
+	team_morale_next = 0
+	rebel_morale_next = 0
+	var duel := {}
+	var fallen: General = null
+	if general != null and rng.randf() < DUEL_CHANCE:
+		var rebel := state.rebels.generate(mini(MAX_BOSS_STARS, 1 + stage + cleared_before / 3))
+		rebel.trait_id = &""
+		duel = {"rebel": rebel.name, "accepted": accept_duels, "won": false, "index": -1}
+		if accept_duels:
+			var ours := Generals.duel_side(general, "Đạo thảo phạt", state.player_color, _luck(rng))
+			var theirs := Generals.duel_side(rebel, REBEL_NAME, RaidSystem.BANDIT_COLOR, _luck(rng))
+			var record := BattleSimulator.simulate(ours, theirs, rng.randi())
+			battles.append(record)
+			duel.index = 0
+			duel.won = record.winner == BattleRecord.ATTACKER
+			if duel.won:
+				rebel_morale_next = -DUEL_MORALE
+				general.gain_xp(Experience.general_battle_xp(1.0, true))
+			else:
+				team_morale_next = -DUEL_MORALE
+				fallen = general
+				general = null
+		else:
+			team_morale += DECLINE_MORALE
 	var fights := ambushes + (1 if rng.randf() < boss_chance(stage, cleared_before) else 0)
 	for i in fights:
 		var is_boss := i == ambushes
 		var team := _team_side(state)
 		var enemy := _enemy_side(state, rng, is_boss)
+		_change_morale(team, team_morale)
+		_change_morale(enemy, rebel_morale)
 		if is_boss:
 			boss_name = enemy.general_name
 		var record := BattleSimulator.simulate(team, enemy, rng.randi())
@@ -111,7 +151,11 @@ func run_stage(state: KingdomState, rng: RandomNumberGenerator) -> Dictionary:
 			break
 		wins += 1
 	var result := {"stage": stage, "stages": stages, "battles": battles, "boss": boss_name, "won": won,
-			"lost_squads": lost, "general_fate": &"none", "advisor_fate": &"none"}
+			"lost_squads": lost, "general_fate": &"none", "advisor_fate": &"none", "duel": duel,
+			"team_morale": team_morale, "rebel_morale": rebel_morale}
+	if fallen != null:
+		result.general_fate = &"dead"
+		result["fallen"] = fallen
 	if won:
 		for squad in squads:
 			squad.soldiers = state.units[squad.unit_id].squad_size
@@ -119,11 +163,13 @@ func run_stage(state: KingdomState, rng: RandomNumberGenerator) -> Dictionary:
 		var item := state.equipment.create_random(state.equipment.roll(STAGE_ITEM_ODDS[mini(stage, STAGE_ITEM_ODDS.size() - 1)]))
 		if item != null:
 			items.append(item)
-		log.append("Ải %d: thắng %d trận%s." % [stage + 1, battles.size(), ", hạ tướng nổi loạn %s" % boss_name if boss_name != "" else ""])
+		log.append("Ải %d: thắng %d trận%s%s." % [stage + 1, battles.size() - (1 if duel.get("index", -1) >= 0 else 0),
+				", hạ tướng nổi loạn %s" % boss_name if boss_name != "" else "", _duel_log(duel)])
 		stage += 1
 	else:
 		failed = true
-		log.append("Ải %d: thua ở trận %d." % [stage + 1, battles.size()])
+		log.append("Ải %d: thua ở trận %d%s." % [stage + 1, battles.size() - (1 if duel.get("index", -1) >= 0 else 0),
+				_duel_log(duel)])
 		if general != null and battles.back().sides[BattleRecord.ATTACKER].general_fallen:
 			if rng.randf() < Generals.death_chance(general, state.building_effect(&"commander_survival")):
 				result.general_fate = &"dead"
@@ -135,6 +181,26 @@ func run_stage(state: KingdomState, rng: RandomNumberGenerator) -> Dictionary:
 			result.advisor_fate = &"wounded"
 	result["finished"] = is_over()
 	return result
+
+
+static func _duel_log(duel: Dictionary) -> String:
+	if duel.is_empty():
+		return ""
+	if not duel.accepted:
+		return ", không nhận lời thách đấu của %s" % duel.rebel
+	return ", %s tay đôi với %s" % ["thắng" if duel.won else "thua", duel.rebel]
+
+
+static func _luck(rng: RandomNumberGenerator) -> float:
+	return rng.randf_range(1.0 - EventBattles.DUEL_LUCK, 1.0 + EventBattles.DUEL_LUCK)
+
+
+## Changes the starting morale of the side's units (a duel's after-effect, M16e).
+static func _change_morale(side: BattleSide, amount: int) -> void:
+	if amount == 0:
+		return
+	for unit in side.units:
+		unit.morale = maxf(MoraleEffects.MIN_MORALE, unit.morale + amount)
 
 
 ## The expedition's own army as the attacker: squads as they are, led by its general and advisor.
@@ -238,7 +304,8 @@ func to_save(state: KingdomState) -> Dictionary:
 			"squads": squads.map(func(s: Army.Squad) -> int: return state.army.squads.find(s)),
 			"stages": stages, "ambushes": ambushes, "stage": stage, "wins": wins, "failed": failed,
 			"cleared_before": cleared_before, "size_factor": size_factor, "resources": resources.duplicate(),
-			"items": item_saves, "log": log.duplicate()}
+			"items": item_saves, "log": log.duplicate(), "accept_duels": accept_duels,
+			"team_morale_next": team_morale_next, "rebel_morale_next": rebel_morale_next}
 
 
 static func from_save(data: Dictionary, state: KingdomState) -> Expedition:
@@ -264,4 +331,7 @@ static func from_save(data: Dictionary, state: KingdomState) -> Expedition:
 	for entry: Dictionary in data.get("items", []):
 		expedition.items.append(Item.from_save(entry))
 	expedition.log.assign(data.get("log", []))
+	expedition.accept_duels = bool(data.get("accept_duels", true))
+	expedition.team_morale_next = int(data.get("team_morale_next", 0))
+	expedition.rebel_morale_next = int(data.get("rebel_morale_next", 0))
 	return expedition

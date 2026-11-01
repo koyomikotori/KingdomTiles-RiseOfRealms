@@ -46,6 +46,10 @@ const CATEGORY_NAMES: Array[String] = ["Kinh tế", "Ngoại giao", "Quân sự"
 @export var needs_raids: bool = false
 ## M16b: bandits are about: an uprising zone, or a raid beaten in the last few turns.
 @export var needs_bandit_activity: bool = false
+## M16e: the commander is at home and able to fight.
+@export var needs_commander: bool = false
+## M16e: the bandits have a leader able to fight (ClanOfficers.bandit_leader, from turn 20).
+@export var needs_bandit_leader: bool = false
 
 @export_group("Clan")
 ## The event is about one clan, picked among those that match the filters below.
@@ -63,6 +67,12 @@ const CATEGORY_NAMES: Array[String] = ["Kinh tế", "Ngoại giao", "Quân sự"
 ## M16b: only clans where one of the kingdom's agents is on a mission and that field a general or
 ## an advisor (ClanOfficers).
 @export var clan_must_have_agent: bool = false
+## M16e: only clans that field a general now (ClanOfficers.fielded_general).
+@export var clan_must_have_general: bool = false
+## M16e: only clans bordering the kingdom (they can attack it and be attacked).
+@export var clan_must_border: bool = false
+## M16e: only clans where one of the kingdom's agents is on a mission.
+@export var clan_must_host_agent: bool = false
 
 @export_group("")
 @export var choices: Array[EventChoiceData] = []

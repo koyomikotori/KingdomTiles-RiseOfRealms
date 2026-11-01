@@ -57,6 +57,11 @@ func start(simulator: BattleSimulator, player_side: int, title: String) -> void:
 	Sfx.play(&"battle_start")
 
 
+## A duel cannot be fled (M16e): the retreat button goes away.
+func hide_retreat() -> void:
+	_retreat_button.visible = false
+
+
 func _process(delta: float) -> void:
 	if _playback == null:
 		return

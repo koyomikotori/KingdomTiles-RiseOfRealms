@@ -42,6 +42,12 @@ const BAR_BACK := Color(0, 0, 0, 0.45)
 const BAR_TEAM := Color(0.45, 0.85, 0.45)
 const BAR_ENEMY := Color(0.95, 0.45, 0.35)
 const BANNER_COLOR := Color(1.0, 0.88, 0.45)
+## A duel's fight phase: both riders sway together and lunge in and out (replay seconds).
+const DUEL_SWAY := 90.0
+const DUEL_SWAY_SPEED := 1.2
+const DUEL_GAP_MID := 2.6
+const DUEL_GAP_SWING := 1.2
+const DUEL_LUNGE_SPEED := 3.0
 
 ## One phase of the replay: {"kind": &"march" | &"approach" | &"fight" | &"after" | &"end",
 ## "battle": int, "start": float, "length": float}.
@@ -179,6 +185,10 @@ func _draw() -> void:
 	var team := record.sides[BattleRecord.ATTACKER]
 	var formation := _formation(team)
 	var gap := CLASH_GAP if phase.kind == &"fight" or phase.kind == &"after" else MARCH_GAP
+	if phase.kind == &"fight" and is_duel(record):
+		# The two generals ride back and forth, closing in to strike and pulling apart (M16e).
+		front += sin(_clock * DUEL_SWAY_SPEED) * DUEL_SWAY
+		gap = CLASH_GAP * (DUEL_GAP_MID + DUEL_GAP_SWING * sin(_clock * DUEL_LUNGE_SPEED))
 	if team.advisor_name != "":
 		_draw_officer(&"advisor", team, Vector2(front - gap - formation.length - SLOT_GAP * 0.5, ground), 1.0, &"stand")
 	for spot: Array in formation.spots:
@@ -195,6 +205,14 @@ func _draw() -> void:
 					phase, battle_time)
 	if not quiet:
 		_draw_banner(phase)
+
+
+## A duel of two generals (Expedition, M16e): one guard unit a side.
+static func is_duel(record: BattleRecord) -> bool:
+	for side in record.sides:
+		if side.units.size() != 1 or not side.units[0].is_general_guard:
+			return false
+	return true
 
 
 func _slot_width(unit: BattleSide.Unit) -> float:
@@ -337,8 +355,15 @@ func _draw_banner(phase: Dictionary) -> void:
 	elif phase.battle == 0 and phase.kind == &"march":
 		text = _stage_text
 	elif phase.kind == &"approach":
-		var boss := _battles[phase.battle].sides[BattleRecord.DEFENDER].general_name
-		text = "Tướng nổi loạn %s!" % boss if boss != "" else "Phục kích! (%d/%d)" % [phase.battle + 1, _battles.size()]
+		var record := _battles[phase.battle]
+		var boss := record.sides[BattleRecord.DEFENDER].general_name
+		var duels := 1 if is_duel(_battles[0]) else 0
+		if is_duel(record):
+			text = "Tướng nổi loạn %s thách đấu!" % boss
+		elif boss != "":
+			text = "Tướng nổi loạn %s!" % boss
+		else:
+			text = "Phục kích! (%d/%d)" % [phase.battle + 1 - duels, _battles.size() - duels]
 	if text.is_empty():
 		return
 	var font_size := 40

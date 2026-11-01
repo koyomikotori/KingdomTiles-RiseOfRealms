@@ -15,6 +15,7 @@ var _state: KingdomState
 var _general: General
 var _advisor: Advisor
 var _chosen: Array[Army.Squad] = []
+var _accept_duels := true
 var _pick_box: VBoxContainer
 var _count_label: Label
 var _send_button: Button
@@ -119,6 +120,14 @@ func _refresh_pick() -> void:
 		_pick_box.add_child(_muted("Mưu sĩ giữ chức %s: chức này tạm mất tác dụng tới khi họ về." % Advisors.POST_NAMES[_advisor.post]))
 	if _general != null and _general == _state.generals.commander:
 		_pick_box.add_child(_muted("Tổng tướng đi vắng: quân ở nhà đánh không có tướng cho tới khi về."))
+	if _general != null:
+		var duel := _check_box("Nhận lời thách đấu của tướng nổi loạn", _accept_duels)
+		duel.toggled.connect(func(on: bool) -> void: _accept_duels = on)
+		_pick_box.add_child(duel)
+		_pick_box.add_child(_muted(("Mỗi ải có %d%% tướng nổi loạn ra thách đấu tay đôi, người thua tử trận. Thắng: ải sau quân "
+				+ "nổi loạn %+d nhuệ khí tối đa; thua: ải sau quân ta %+d. Không nhận: quân ta %+d trong ải đó.") % [
+				roundi(Expedition.DUEL_CHANCE * 100), -Expedition.DUEL_MORALE, -Expedition.DUEL_MORALE,
+				Expedition.DECLINE_MORALE]))
 	_count_label = _label("", 15, false)
 	_pick_box.add_child(_count_label)
 	var squads := GridContainer.new()
@@ -126,14 +135,8 @@ func _refresh_pick() -> void:
 	_pick_box.add_child(squads)
 	for squad in _state.army.squads:
 		var unit := _state.units[squad.unit_id]
-		var box := CheckBox.new()
-		box.text = "%s (%d/%d lính)" % [unit.display_name, squad.soldiers, unit.squad_size]
-		box.button_pressed = _chosen.has(squad)
+		var box := _check_box("%s (%d/%d lính)" % [unit.display_name, squad.soldiers, unit.squad_size], _chosen.has(squad))
 		box.disabled = squad.away or (not _chosen.has(squad) and _chosen.size() >= Expedition.MAX_SQUADS)
-		box.focus_mode = Control.FOCUS_NONE
-		for color_name in ["font_color", "font_pressed_color", "font_hover_color", "font_hover_pressed_color"]:
-			box.add_theme_color_override(color_name, UiPalette.ON_WOOD)
-		box.add_theme_color_override("font_disabled_color", Color(UiPalette.ON_WOOD, 0.45))
 		box.toggled.connect(func(on: bool) -> void:
 			if on:
 				_chosen.append(squad)
@@ -148,8 +151,19 @@ func _refresh_pick() -> void:
 	set_status("" if result == KingdomState.ExpeditionResult.OK else KingdomState.describe_expedition(result), true)
 
 
+func _check_box(text: String, pressed: bool) -> CheckBox:
+	var box := CheckBox.new()
+	box.text = text
+	box.button_pressed = pressed
+	box.focus_mode = Control.FOCUS_NONE
+	for color_name in ["font_color", "font_pressed_color", "font_hover_color", "font_hover_pressed_color"]:
+		box.add_theme_color_override(color_name, UiPalette.ON_WOOD)
+	box.add_theme_color_override("font_disabled_color", Color(UiPalette.ON_WOOD, 0.45))
+	return box
+
+
 func _send() -> void:
-	var result := _state.start_expedition(_general, _advisor, _chosen)
+	var result := _state.start_expedition(_general, _advisor, _chosen, _accept_duels)
 	if result != KingdomState.ExpeditionResult.OK:
 		set_status(KingdomState.describe_expedition(result), false)
 		return
@@ -164,6 +178,8 @@ func _team_text(expedition: Expedition) -> String:
 	if expedition.advisor != null:
 		parts.append("Mưu sĩ %s" % expedition.advisor.name)
 	parts.append("%d đơn vị lính" % expedition.squads.size())
+	if expedition.general != null:
+		parts.append("%s thách đấu" % ("nhận" if expedition.accept_duels else "không nhận"))
 	return "Đội thảo phạt: %s. Đã thắng %d trận." % [", ".join(parts), expedition.wins]
 
 

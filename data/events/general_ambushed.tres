@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Không có viện binh. Tổng tướng chiến đấu đến hơi thở cuối cùng."
+commander_dies = true
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Mặc kệ, không cứu"
+hint = "Tổng tướng chắc chắn tử trận, nhưng không mất thêm lính."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Tổng tướng hô quân lập trận, quyết mở một đường máu!"
+battle = &"breakout"
+weight = 1.0
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Phá vòng vây"
+needs_commander = true
+min_squads_home = 1
+hint = "Tổng tướng dẫn 3–5 đơn vị ngẫu nhiên vào trận. Thua: mất các đơn vị đó, tổng tướng ngã ngựa (chết hoặc bị thương)."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"general_ambushed"
+title = "Tổng tướng bị phục kích"
+text = "Trên đường tuần tra biên giới, tổng tướng cùng một toán quân bị quân {clan} phục kích. Vòng vây đang siết lại."
+category = 2
+weight = 1.5
+cooldown = 12
+min_turn = 6
+needs_commander = true
+min_squads = 1
+needs_clan = true
+clan_must_be_at_war = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

@@ -180,11 +180,23 @@ static func _army_items(state: KingdomState, report: Dictionary) -> Array[Dictio
 			uprising.append("Ải %d vừa đánh xong: bấm vùng đỏ để xem lại trận" % (stage.stage + 1))
 	elif state.uprising.is_active():
 		uprising.append("Quân nổi loạn chiếm %d ô đất: bấm vùng đỏ để thảo phạt" % state.uprising.cells.size())
+	# Lasting morale changes left by events, and a warned invasion (GDD §21 M16e).
+	var morale: Array[String] = []
+	for entry in state.morale_effects.entries:
+		morale.append(state.events.morale_line(state, entry.amount, entry.side == MoraleEffects.ENEMY, entry.clan_id,
+				maxi(0, entry.turns)))
+	if state.events.invasion_forced != &"":
+		morale.append("%s sẽ kéo quân tấn công ở đầu lượt sau" % state.diplomacy.clans[state.events.invasion_forced].data.display_name)
+	# The raid chance changes (M16e).
+	var bandits: Array[String] = []
+	for entry in state.raid_pressure.entries:
+		bandits.append(RaidPressure.describe(entry.factor, entry.turns))
 	var danger: Array[String] = []
 	if report.get("castle_in_danger", false):
 		danger.append("Chỉ còn %d ô đất ngoài thành!" % state.board.count_land_outside_castle())
 	return [_item(&"danger", "Thành chính nguy hiểm", danger, true), _item(&"uprising", "Thảo phạt", uprising, true),
-			_item(&"deserted", "Lính bỏ trốn", deserted, true),
+			_item(&"deserted", "Lính bỏ trốn", deserted, true), _item(&"morale", "Nhuệ khí tối đa", morale),
+			_item(&"bandits", "Đạo tặc", bandits),
 			_item(&"replenished", "Bổ sung quân", replenished), _item(&"wounded", "Tướng sĩ bị thương", wounded),
 			_item(&"healed", "Vừa lành vết thương", healed), _item(&"candidates", "Ứng viên mới", candidates)]
 

@@ -65,6 +65,11 @@ var rebels := Generals.new()
 var scrolls := 0
 ## The merchant who stops by every BlackMarket.INTERVAL turns (GDD §20, M16d).
 var black_market := BlackMarket.new()
+## Events' lasting changes to starting morale (GDD §21, M16e), applied to every battle but
+## expeditions.
+var morale_effects := MoraleEffects.new()
+## Timed changes to the raid chance left by the bandit leader's challenge (M16e).
+var raid_pressure := RaidPressure.new()
 ## Picked when the game starts (GDD §15 M14h): Difficulty.Level, the kingdom's name and color.
 var difficulty: int = Difficulty.Level.NORMAL
 var kingdom_name := DEFAULT_KINGDOM_NAME
@@ -170,7 +175,7 @@ func to_save() -> Dictionary:
 			"events": events.to_save(), "generals": generals.to_save(), "advisors": advisors.to_save(),
 			"equipment": equipment.to_save(), "agents": agents.to_save(), "clan_officers": clan_officers.to_save(),
 			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false),
-			"scrolls": scrolls, "black_market": black_market.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
+			"scrolls": scrolls, "black_market": black_market.to_save(), "morale_effects": morale_effects.to_save(), "raid_pressure": raid_pressure.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
 
 
 ## Restores everything but the board from to_save() data. Random rolls are not saved: they come
@@ -217,6 +222,9 @@ func load_save(data: Dictionary) -> void:
 	scrolls = int(data.get("scrolls", 0))
 	# Saves from before M16d have no black market.
 	black_market.load_save(data.get("black_market", {}))
+	# Saves from before M16e have no morale effects.
+	morale_effects.load_save(data.get("morale_effects", []))
+	raid_pressure.load_save(data.get("raid_pressure", []))
 	# Saves from before M14i have no uprising.
 	uprising.load_save(data.get("uprising", {}), board)
 	var saved_expedition: Dictionary = data.get("expedition", {})
@@ -849,6 +857,8 @@ func end_turn() -> Dictionary:
 	var expedition_report := _advance_expedition()
 	var uprising_news := uprising.end_turn(board, turn + 1, expedition != null)
 	clan_officers.end_turn(wars)
+	morale_effects.end_turn()
+	raid_pressure.end_turn()
 	turn += 1
 	var healing := roundi(building_effect(&"wound_healing"))
 	var healed := generals.end_turn(castle_level, turn, healing)
@@ -869,16 +879,24 @@ func end_turn() -> Dictionary:
 	report["advisors_healed"] = advisors_healed
 	report["victory"] = victory.end_turn(self)
 	report["castle_in_danger"] = victory.castle_in_danger(self)
-	var invader := wars.pick_invader(rng)
+	# An event may have warned of this invasion (M16e); otherwise the clans roll as usual.
+	var invader := events.take_forced_invasion(wars)
+	if invader == &"":
+		invader = wars.pick_invader(rng)
 	if invader != &"":
 		var invaders := wars.create_clan_side(invader, wars.invasion_size(invader), units)
 		clan_officers.lead(invaders, invader, wars, difficulty)
+		var defenders := create_kingdom_side(invader)
+		morale_effects.apply(defenders, invaders, invader)
 		report["pending_invasion"] = {"clan_id": invader,
-				"simulator": BattleSimulator.new(invaders, create_kingdom_side(invader), rng.randi())}
+				"simulator": BattleSimulator.new(invaders, defenders, rng.randi())}
 	elif raid != null and (events.raid_forced or rng.randf() < RaidSystem.get_raid_chance(self, raid)):
 		events.raid_forced = false
 		var bandits := RaidSystem.create_bandit_side(raid, enemy_units, turn, rng, wars.enemy_scale)
-		report["pending_raid"] = BattleSimulator.new(bandits, create_kingdom_side(&""), rng.randi())
+		clan_officers.lead_bandits(bandits, turn)
+		var defenders := create_kingdom_side(&"")
+		morale_effects.apply(defenders, bandits, ClanOfficers.BANDITS)
+		report["pending_raid"] = BattleSimulator.new(bandits, defenders, rng.randi())
 	# Rolled last so the invasion and raid rolls above stay as they were.
 	var no_events: Array[Dictionary] = []
 	report["events"] = events.roll(self, rng) if not victory.lost else no_events
@@ -917,11 +935,13 @@ func check_expedition(general: General, advisor: Advisor, squads: Array[Army.Squ
 
 
 ## Sends the expedition: the first stage is fought at the end of this turn.
-func start_expedition(general: General, advisor: Advisor, squads: Array[Army.Squad]) -> ExpeditionResult:
+func start_expedition(general: General, advisor: Advisor, squads: Array[Army.Squad],
+		accept_duels: bool = true) -> ExpeditionResult:
 	var result := check_expedition(general, advisor, squads)
 	if result != ExpeditionResult.OK:
 		return result
 	expedition = Expedition.new()
+	expedition.accept_duels = accept_duels
 	expedition.general = general
 	expedition.advisor = advisor
 	expedition.squads.assign(squads)
@@ -961,7 +981,8 @@ func _advance_expedition() -> Dictionary:
 	if expedition == null:
 		return {}
 	var result := expedition.run_stage(self, rng)
-	var general := expedition.general
+	# A general who lost a duel (M16e) has already left the expedition.
+	var general: General = result.get("fallen", expedition.general)
 	if result.general_fate == &"dead" and general != null:
 		general.away = false
 		generals.dismiss(general)
@@ -1031,6 +1052,8 @@ func create_kingdom_side(enemy_clan: StringName, defending: bool = true) -> Batt
 func finish_raid(record: BattleRecord) -> Dictionary:
 	var result := RaidSystem.apply_outcome(self, raid, record)
 	_record_battle(result.won)
+	morale_effects.after_battle(ClanOfficers.BANDITS)
+	result["enemy_officers"] = clan_officers.after_battle(record, BattleRecord.ATTACKER, ClanOfficers.BANDITS)
 	generals.survival = building_effect(&"commander_survival")
 	result["general"] = generals.after_battle(record, BattleRecord.DEFENDER)
 	result["advisor"] = advisors.after_battle(record, BattleRecord.DEFENDER)
@@ -1100,6 +1123,7 @@ func get_threat() -> int:
 func finish_invasion(clan_id: StringName, record: BattleRecord) -> Dictionary:
 	var won := record.winner == BattleRecord.DEFENDER
 	_record_battle(won)
+	morale_effects.after_battle(clan_id)
 	generals.survival = building_effect(&"commander_survival")
 	var general := generals.after_battle(record, BattleRecord.DEFENDER)
 	var advisor := advisors.after_battle(record, BattleRecord.DEFENDER)
@@ -1134,10 +1158,22 @@ func start_attack(clan_id: StringName) -> BattleSimulator:
 	if wars.check_attack(clan_id, army.count_squads() > 0) != Wars.AttackResult.OK:
 		return null
 	wars.mark_attacked(clan_id)
-	var defenders := wars.create_clan_side(clan_id, wars.fronts[clan_id].strength, units)
+	return create_attack(clan_id, wars.fronts[clan_id].strength)
+
+
+## The kingdom's whole army against `soldiers` of the clan (plus its officers and the friends who
+## help it), with the morale effects applied. Used by start_attack and the surprise attack event
+## (M16e, EventBattles), where the caught-out clan also gets `enemy_morale`.
+func create_attack(clan_id: StringName, soldiers: int, enemy_morale: int = 0) -> BattleSimulator:
+	var defenders := wars.create_clan_side(clan_id, soldiers, units)
 	clan_officers.lead(defenders, clan_id, wars, difficulty)
 	alliances.add_friends(defenders, clan_id, units)
-	return BattleSimulator.new(create_kingdom_side(clan_id, false), defenders, rng.randi())
+	var attackers := create_kingdom_side(clan_id, false)
+	morale_effects.apply(attackers, defenders, clan_id)
+	for unit in defenders.units:
+		if unit.ally == null:
+			unit.morale = maxf(MoraleEffects.MIN_MORALE, unit.morale + enemy_morale)
+	return BattleSimulator.new(attackers, defenders, rng.randi())
 
 
 ## Applies a finished attack. Winning loots resources and may make the clan surrender: it is
@@ -1149,6 +1185,7 @@ func start_attack(clan_id: StringName) -> BattleSimulator:
 func finish_attack(clan_id: StringName, record: BattleRecord) -> Dictionary:
 	var won := record.winner == BattleRecord.ATTACKER
 	_record_battle(won)
+	morale_effects.after_battle(clan_id)
 	generals.survival = building_effect(&"commander_survival")
 	var general := generals.after_battle(record, BattleRecord.ATTACKER)
 	var advisor := advisors.after_battle(record, BattleRecord.ATTACKER)

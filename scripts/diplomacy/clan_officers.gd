@@ -12,6 +12,10 @@ extends RefCounted
 const MEDIUM_STARS := Vector2i(1, 2)
 const STRONG_STARS := 3
 const VACANCY_TURNS := 5
+## The bandits' leader (M16e) is kept under this key: [first turn, lowest stars, highest stars],
+## a weak leader from turn 20, a medium one from 40, a strong one from 60.
+const BANDITS := &"bandits"
+const BANDIT_STARS: Array[Vector3i] = [Vector3i(20, 1, 2), Vector3i(40, 3, 4), Vector3i(60, 5, 6)]
 
 
 class Staff:
@@ -68,6 +72,38 @@ func ensure(clan_id: StringName, wars: Wars, level: int) -> void:
 	var advisor_stars := wanted_stars(clan_id, tier, &"advisor", level)
 	if advisor_stars > 0 and s.advisor_vacancy <= 0 and (s.advisor == null or s.advisor.stars < advisor_stars):
 		s.advisor = _advisors.generate(_roll_stars(tier, advisor_stars))
+
+
+## The stars the bandits' leader has on `turn`: (lowest, highest), ZERO before the first one.
+static func bandit_stars(turn: int) -> Vector2i:
+	var result := Vector2i.ZERO
+	for entry in BANDIT_STARS:
+		if turn >= entry.x:
+			result = Vector2i(entry.y, entry.z)
+	return result
+
+
+## Makes the bandits' leader, or a stronger one when the bandits have grown (M16e).
+func ensure_bandits(turn: int) -> void:
+	var stars := bandit_stars(turn)
+	var s := staff(BANDITS)
+	if stars.x > 0 and s.vacancy <= 0 and (s.general == null or s.general.stars < stars.x):
+		s.general = _generals.generate(rng.randi_range(stars.x, stars.y))
+		s.general.trait_id = &""
+
+
+## The bandits' leader able to fight on `turn`, or null (none yet, killed lately, or wounded).
+func bandit_leader(turn: int) -> General:
+	ensure_bandits(turn)
+	var general := staff(BANDITS).general
+	return general if general != null and general.wounded_turns <= 0 else null
+
+
+## Puts the bandits' leader at the head of a raid.
+func lead_bandits(side: BattleSide, turn: int) -> void:
+	var general := bandit_leader(turn)
+	if general != null:
+		_generals.lead_officer(side, general)
 
 
 func _roll_stars(tier: int, lowest: int) -> int:

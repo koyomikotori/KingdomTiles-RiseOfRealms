@@ -215,3 +215,79 @@ func test_tables_and_save() -> void:
 	check(copy.expedition.general == copy.generals.generals[0] and copy.generals.generals[0].away, "And its general, away")
 	check_eq(copy.uprising.cells.size(), state.uprising.cells.size(), "Zone saved")
 	check(copy.board.get_cell(copy.uprising.cells[0]).occupied, "Cells marked again on load")
+
+
+# --- M16e: a rebel general's challenge -------------------------------------------------------
+
+## An expedition with a general, sent with `accept`; the RNG makes the challenge happen.
+func _duel_expedition(accept: bool) -> Array:
+	var state := _state()
+	state.castle_level = 3
+	state.uprising.start(state.board)
+	var general := state.generals.generate(3)
+	state.generals.add(general)
+	state.start_expedition(general, null, _squads(state, &"royal_swordguard", 4), accept)
+	var rng := RandomNumberGenerator.new()
+	for seed_value in 1000:
+		rng.seed = seed_value
+		if rng.randf() < Expedition.DUEL_CHANCE:
+			rng.seed = seed_value
+			break
+	return [state, general, state.expedition.run_stage(state, rng)]
+
+
+func test_a_rebel_challenge_accepted() -> void:
+	var picked := _duel_expedition(true)
+	var state: KingdomState = picked[0]
+	var general: General = picked[1]
+	var report: Dictionary = picked[2]
+	check(not report.duel.is_empty() and report.duel.accepted, "A challenge, accepted")
+	check_eq(report.duel.index, 0, "The duel comes first")
+	check(ExpeditionView.is_duel(report.battles[0]), "Two generals alone")
+	if report.duel.won:
+		check_eq(state.expedition.rebel_morale_next, -Expedition.DUEL_MORALE, "Rebels disheartened next stage")
+		check(general.xp > 0, "The general learns")
+	else:
+		check_eq(report.general_fate, &"dead", "The general died")
+		check(report.fallen == general and state.expedition.general == null, "Out of the expedition")
+		check_eq(state.expedition.team_morale_next if state.expedition != null else -Expedition.DUEL_MORALE,
+				-Expedition.DUEL_MORALE, "Team disheartened next stage")
+	for row in ExpeditionScreen.unit_rows(report):
+		check(not row.name.begins_with("Cận vệ") or report.battles.size() > 1, "The duel is not a unit row")
+	check_eq(ExpeditionScreen.summary_lines(report)[0], "Trận đã đánh: %d · thắng %d." % [report.battles.size() - 1,
+			report.battles.slice(1).filter(func(r: BattleRecord) -> bool: return r.winner == BattleRecord.ATTACKER).size()],
+			"The duel is not counted as a battle")
+
+
+func test_a_rebel_challenge_refused() -> void:
+	var picked := _duel_expedition(false)
+	var report: Dictionary = picked[2]
+	check(not report.duel.accepted and report.duel.index == -1, "Refused, no duel fought")
+	check_eq(report.team_morale, Expedition.DECLINE_MORALE, "−1 in this stage")
+	check(not ExpeditionView.is_duel(report.battles[0]), "Ambushes only")
+
+
+func test_morale_left_by_a_duel_is_used_next_stage() -> void:
+	var state := _state()
+	state.castle_level = 3
+	state.uprising.start(state.board)
+	state.start_expedition(null, null, _squads(state, &"royal_swordguard", 4))
+	state.expedition.rebel_morale_next = -2
+	var report := state.expedition.run_stage(state, RandomNumberGenerator.new())
+	check_eq(report.rebel_morale, -2, "Applied in this stage")
+	check_eq(state.expedition.rebel_morale_next, 0, "Then spent")
+
+
+func test_unit_rows_group_by_unit() -> void:
+	var state := _state()
+	state.castle_level = 3
+	state.uprising.start(state.board)
+	state.start_expedition(null, null, _squads(state, &"royal_swordguard", 4))
+	var report := state.expedition.run_stage(state, RandomNumberGenerator.new())
+	var rows := ExpeditionScreen.unit_rows(report)
+	check_eq(rows.size(), 1, "Four squads of one kind: one row")
+	check_eq(rows[0].squads, 4, "Counted")
+	check_eq(rows[0].left, "%d/4" % rows[0].left_count, "Kept / sent")
+	var saved := state.expedition.to_save(state)
+	state.expedition.accept_duels = false
+	check(bool(saved.accept_duels), "Duel choice saved")

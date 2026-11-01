@@ -29,6 +29,11 @@ var raid_won_turn := -100
 var annexed_turn := -100
 ## An event's outcome (force_raid): bandits come at the start of the next turn (M16b).
 var raid_forced := false
+## M16e: this clan invades at the start of the next turn (an agent's warning), or &"".
+var invasion_forced: StringName = &""
+## M16e: the battle an answer led to, waiting to be fought ({"kind", "clan_id", "event_id"};
+## EventBattles), or {}. Not saved: the autosave comes after the battle.
+var pending_battle: Dictionary = {}
 var _resource_types: Array[ResourceTypeData] = ResourceTypeData.load_all()
 
 
@@ -50,6 +55,9 @@ func roll(state: KingdomState, rng: RandomNumberGenerator) -> Array[Dictionary]:
 		var clan_id := pick_clan(state, event, rng)
 		if event.needs_clan and clan_id == &"":
 			continue
+		if uses_battle(event):
+			# One commander / battle event a turn: an earlier one could kill or wound the commander.
+			candidates = candidates.filter(func(other: EventData) -> bool: return not uses_battle(other))
 		last_turn[event.event_id] = state.turn
 		var entry := {"event_id": event.event_id, "clan_id": clan_id}
 		pending.append(entry)
@@ -61,6 +69,37 @@ func roll(state: KingdomState, rng: RandomNumberGenerator) -> Array[Dictionary]:
 func can_happen(state: KingdomState, event: EventData) -> bool:
 	if state.turn < event.min_turn or state.turn - last_turn.get(event.event_id, -1000) < event.cooldown:
 		return false
+	return _conditions_hold(state, event)
+
+
+## M16e: the event needs the commander or may lead to a battle or cost the commander.
+static func uses_battle(event: EventData) -> bool:
+	if event.needs_commander:
+		return true
+	for choice in event.choices:
+		for outcome in choice.outcomes:
+			if outcome.battle != &"" or outcome.commander_dies or outcome.commander_wounded:
+				return true
+	return false
+
+
+## Before an event is shown: drops pending commander / battle events whose conditions no longer
+## hold (the turn's battle or an earlier answer took the commander, the rival general died, the
+## clan was annexed...). They are forgotten, as if never rolled, so they may come again next turn.
+func drop_stale(state: KingdomState) -> void:
+	while not pending.is_empty():
+		var event: EventData = events.get(pending[0].event_id)
+		if event == null or not uses_battle(event) or _still_holds(state, event, pending[0].clan_id):
+			return
+		last_turn.erase(event.event_id)
+		pending.pop_front()
+
+
+func _still_holds(state: KingdomState, event: EventData, clan_id: StringName) -> bool:
+	return _conditions_hold(state, event) and (not event.needs_clan or clan_id in _matching_clans(state, event))
+
+
+func _conditions_hold(state: KingdomState, event: EventData) -> bool:
 	for resource_id in event.min_stock:
 		if state.stockpile.get_amount(resource_id) < event.min_stock[resource_id]:
 			return false
@@ -92,6 +131,10 @@ func can_happen(state: KingdomState, event: EventData) -> bool:
 	if event.needs_bandit_activity and not state.uprising.is_active() \
 			and state.turn - raid_won_turn > BANDIT_RECENT_TURNS:
 		return false
+	if event.needs_commander and state.generals.active_commander() == null:
+		return false
+	if event.needs_bandit_leader and state.clan_officers.bandit_leader(state.turn) == null:
+		return false
 	return not event.needs_clan or not _matching_clans(state, event).is_empty()
 
 
@@ -121,6 +164,12 @@ func _matching_clans(state: KingdomState, event: EventData) -> Array[StringName]
 			continue
 		if event.clan_must_have_agent and not _agent_can_strike(state, clan_id):
 			continue
+		if event.clan_must_host_agent and state.agents.agent_on(clan_id) == null:
+			continue
+		if event.clan_must_border and not state.wars.is_neighbor(clan_id):
+			continue
+		if event.clan_must_have_general and not _fields_general(state, clan_id):
+			continue
 		if event.clan_must_be_stronger and state.wars.fronts[clan_id].strength <= state.army.count_soldiers():
 			continue
 		result.append(clan_id)
@@ -134,6 +183,11 @@ func _agent_can_strike(state: KingdomState, clan_id: StringName) -> bool:
 	state.clan_officers.ensure(clan_id, state.wars, state.difficulty)
 	var staff := state.clan_officers.staff(clan_id)
 	return staff.general != null or staff.advisor != null
+
+
+func _fields_general(state: KingdomState, clan_id: StringName) -> bool:
+	state.clan_officers.ensure(clan_id, state.wars, state.difficulty)
+	return state.clan_officers.fielded_general(clan_id, state.wars, state.difficulty) != null
 
 
 static func home_generals(state: KingdomState) -> Array[Officer]:
@@ -204,7 +258,26 @@ func block_reason(state: KingdomState, choice: EventChoiceData, clan_id: StringN
 		var staff := state.clan_officers.staff(clan_id)
 		if (staff.general if choice.target_officer == &"general" else staff.advisor) == null:
 			return "Họ không có %s." % ("tướng" if choice.target_officer == &"general" else "mưu sĩ")
+	if choice.needs_commander and state.generals.active_commander() == null:
+		return "Không có tổng tướng ở nhà sẵn sàng ra trận."
+	if choice.min_squads_home > 0 and _squads_home(state) < choice.min_squads_home:
+		return "Cần ít nhất %d đơn vị ở nhà." % choice.min_squads_home
+	if choice.pick_general and ready_generals(state).is_empty():
+		return "Không có tướng nào ở nhà sẵn sàng ra trận."
 	return ""
+
+
+## Generals at home and able to fight (for EventChoiceData.pick_general).
+static func ready_generals(state: KingdomState) -> Array[General]:
+	var result: Array[General] = []
+	for general in state.generals.generals:
+		if general.is_ready():
+			result.append(general)
+	return result
+
+
+static func _squads_home(state: KingdomState) -> int:
+	return state.army.squads.filter(func(squad: Army.Squad) -> bool: return not squad.away).size()
 
 
 ## The choice's chance of its first outcome (M16b), or -1 when its outcomes go by weight.
@@ -223,8 +296,9 @@ func choice_chance(state: KingdomState, choice: EventChoiceData, clan_id: String
 
 ## Answers the oldest pending event with choice `index`: pays its cost, rolls one outcome and
 ## applies it. Returns {"text": what happened, "changes": Array[String]} or {} when the choice
-## cannot be afforded (nothing changes then).
-func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int) -> Dictionary:
+## cannot be afforded (nothing changes then). `general`: the one picked for a `pick_general`
+## choice (the first one ready when null).
+func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int, general: General = null) -> Dictionary:
 	var event := current_event()
 	var clan_id := current_clan()
 	var choice := event.choices[index]
@@ -248,7 +322,15 @@ func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int) -> Dic
 		outcome = choice.outcomes[rng.rand_weighted(weights)]
 	_apply(state, outcome, clan_id, changes)
 	_apply_war(state, rng, outcome, choice, clan_id, changes)
-	return {"text": fill(state, outcome.text, clan_id), "changes": changes}
+	_apply_battle_effects(state, rng, outcome, clan_id, changes)
+	var result := {"text": fill(state, outcome.text, clan_id), "changes": changes}
+	if outcome.battle != &"":
+		pending_battle = {"kind": outcome.battle, "clan_id": clan_id, "event_id": event.event_id}
+		if choice.pick_general:
+			var ready := ready_generals(state)
+			pending_battle["general"] = general if general in ready else ready[0]
+		result["battle"] = outcome.battle
+	return result
 
 
 func _apply(state: KingdomState, outcome: EventOutcomeData, clan_id: StringName, changes: Array[String]) -> void:
@@ -388,11 +470,57 @@ func _apply_war(state: KingdomState, rng: RandomNumberGenerator, outcome: EventO
 			changes.append("Quan hệ với %s %+d" % [_clan_name(state, clan_id), Agents.CAUGHT_RELATION])
 
 
+## The M16e effects: morale changes, the commander's fate, a detachment's losses, a warned invasion.
+func _apply_battle_effects(state: KingdomState, rng: RandomNumberGenerator, outcome: EventOutcomeData,
+		clan_id: StringName, changes: Array[String]) -> void:
+	if outcome.morale_amount != 0:
+		var target := clan_id if not outcome.morale_any_battle else &""
+		state.morale_effects.add(MoraleEffects.ENEMY if outcome.morale_enemy else MoraleEffects.KINGDOM,
+				outcome.morale_amount, target, outcome.morale_turns)
+		changes.append(morale_line(state, outcome.morale_amount, outcome.morale_enemy, target, outcome.morale_turns))
+	var commander := state.generals.active_commander()
+	if outcome.commander_dies and commander != null:
+		state.generals.dismiss(commander)
+		changes.append("Tổng tướng %s đã tử trận, mất luôn trang bị đang đeo" % commander.name)
+	elif outcome.commander_wounded and commander != null:
+		commander.wounded_turns = Generals.WOUND_TURNS
+		state.generals.changed.emit()
+		changes.append("Tổng tướng %s bị thương, nghỉ %d lượt" % [commander.name, Generals.WOUND_TURNS])
+	if outcome.detachment_loss > 0.0:
+		var lost := 0
+		var squads := EventBattles.detachment(state, rng)
+		for squad in squads:
+			var before := squad.soldiers
+			state.army.set_soldiers(squad, floori(squad.soldiers * (1.0 - outcome.detachment_loss)))
+			lost += before - squad.soldiers
+		if not squads.is_empty():
+			changes.append("%d đơn vị trúng phục kích, mất %d lính" % [squads.size(), lost])
+	if outcome.raid_chance_turns > 0 and outcome.raid_chance_factor != 1.0:
+		state.raid_pressure.add(outcome.raid_chance_factor, outcome.raid_chance_turns)
+		changes.append(RaidPressure.describe(outcome.raid_chance_factor, outcome.raid_chance_turns))
+	if outcome.force_invasion and clan_id != &"":
+		invasion_forced = clan_id
+		changes.append("%s sẽ kéo quân tấn công ở đầu lượt sau" % _clan_name(state, clan_id))
+
+
+## "Trận kế tiếp với X: quân ta −2 nhuệ khí tối đa" and the like.
+func morale_line(state: KingdomState, amount: int, enemy: bool, clan_id: StringName, turns: int) -> String:
+	var who := "quân địch" if enemy else "quân ta"
+	var when := ""
+	if turns > 0:
+		when = "Trong %d lượt%s" % [turns, (" (đánh với %s)" % _clan_name(state, clan_id)) if clan_id != &"" else ""]
+	else:
+		when = "Trận kế tiếp%s" % ((" với %s" % _clan_name(state, clan_id)) if clan_id != &"" else "")
+	return "%s: %s %+d nhuệ khí tối đa" % [when, who, amount]
+
+
 func _amounts(amounts: Dictionary[StringName, int]) -> String:
 	return UiFormat.amounts(amounts, _resource_types)
 
 
 func _clan_name(state: KingdomState, clan_id: StringName) -> String:
+	if clan_id == ClanOfficers.BANDITS:
+		return "đạo tặc"
 	return state.diplomacy.clans[clan_id].data.display_name
 
 
@@ -406,7 +534,20 @@ func to_save() -> Dictionary:
 	for entry in pending:
 		waiting.append({"event_id": String(entry.event_id), "clan_id": String(entry.clan_id)})
 	return {"last_turn": turns, "pending": waiting, "raid_won_turn": raid_won_turn, "annexed_turn": annexed_turn,
-			"raid_forced": raid_forced}
+			"raid_forced": raid_forced, "invasion_forced": String(invasion_forced)}
+
+
+## The warned clan, if it can still invade (at war, a neighbor, with soldiers); clears the warning.
+func take_forced_invasion(wars: Wars) -> StringName:
+	var clan_id := invasion_forced
+	invasion_forced = &""
+	if clan_id == &"" or not wars.fronts.has(clan_id):
+		return &""
+	var front := wars.fronts[clan_id]
+	if not front.at_war or front.annexed or front.strength <= 0 or not wars.is_neighbor(clan_id):
+		return &""
+	front.turns_since_invasion = 0
+	return clan_id
 
 
 ## Pending events that no longer exist in the data are dropped.
@@ -421,3 +562,4 @@ func load_save(data: Dictionary) -> void:
 	raid_won_turn = int(data.raid_won_turn)
 	annexed_turn = int(data.get("annexed_turn", -100))
 	raid_forced = bool(data.get("raid_forced", false))
+	invasion_forced = StringName(data.get("invasion_forced", ""))

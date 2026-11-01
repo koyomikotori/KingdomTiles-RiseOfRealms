@@ -1050,3 +1050,42 @@ Mọi bảng thông tin / nâng cấp trình bày điều kiện bằng hình th
 - **Làm mới:** tối đa 3 lần mỗi lần ghé, mỗi lần 10 khoáng sản + 10 gỗ cứng, thay cả 6 ô.
 - **Bán đồ (Hành trang):** nút dưới portrait chuyển sang trang hành trang: mọi món trong kho, rồi các món tướng / mưu sĩ đang mang (kèm mặt người mang, như tab Trang bị). Gã trả 1,5 lần giá phân rã (làm tròn lên, luôn hơn phân rã ít nhất 1). Bán món đang mang thì tháo ra luôn; người đang đi thảo phạt thì không bán được. Bấm Bán hai lần để chắc chắn.
 - **Giao diện:** bố cục cố định (thẻ hàng cùng cỡ 270×250, tác dụng dài thì cuộn trong thẻ; trang Mua và Hành trang cùng kích thước). Cột trái: portrait gã chợ đen (áo choàng đen, nón lá che mắt, cười gian với chiếc răng vàng, đèn lồng trong đêm; `tools/art/portrait_art.py`, có thể thay bằng `assets/portraits/custom/black_market.png`) và một câu chào, nút Làm mới với giá, số đồ trong kho và nút Hành trang; mỗi ô có icon, tên theo màu độ hiếm, tác dụng (mũi tên vàng) và giá bằng ô icon (xanh đủ / đỏ thiếu).
+
+## 21. Sự kiện có trận đánh và nhuệ khí tối đa (M16e, đã chốt)
+
+- **Nhuệ khí tối đa:** một số lựa chọn đổi nhuệ khí ban đầu của quân ta hoặc quân địch (`MoraleEffects`). Có hai loại: "trận kế tiếp" với gia tộc của sự kiện (hết sau trận đó), hoặc "trong N lượt". Chỉ tác động lính của chính bên đó (không tác động quân đồng minh), nhuệ khí không xuống dưới 1. Các hiệu ứng đang có hiện ở mục "Nhuệ khí tối đa" trong cột thông báo.
+- **Mỗi lượt tối đa 1 sự kiện dính tới tổng tướng hoặc trận đánh** (thách đấu, phục kích, tin tuồn ra, bắt quan chức). Trước khi hiện, sự kiện đó được kiểm tra lại: nếu trận đầu lượt hay một câu trả lời trước đó đã làm mất điều kiện (tổng tướng chết / bị thương, tướng địch không còn, gia tộc bị sáp nhập...) thì nó bị bỏ, không tính thời gian chờ, nên có thể ra lại ở lượt sau.
+- **Trận do sự kiện:** chọn xong thì nút đổi thành "Vào trận" và màn hình trận mở ngay. Tiểu đội đi theo là 3–5 đơn vị ngẫu nhiên đang ở nhà.
+- **Tướng địch thách đấu tay đôi** (gia tộc giáp ranh đang chiến tranh, có tướng; ta có tổng tướng ở nhà):
+  - Ra nghênh chiến: chỉ hai vị tướng đấu với nhau, có may rủi ±20%, không rút lui được. Người thua chắc chắn chết.
+    - Thắng: tướng địch chết, quân địch −2 ở trận kế tiếp với gia tộc đó, tổng tướng có thêm kinh nghiệm.
+    - Thua: tổng tướng chết (mất trang bị), quân ta −2.
+  - Đóng cổng không ra: quân ta −1 trong mọi trận suốt 5 lượt.
+- **Tổng tướng bị phục kích:**
+  - Mặc kệ: tổng tướng chết.
+  - Phá vòng vây: tổng tướng dẫn tiểu đội phòng thủ trước quân địch bằng 120% quân số tiểu đội. Thua thì mất tiểu đội và tổng tướng ngã ngựa (chết hoặc bị thương như thường).
+- **Tin tuồn ra** (gia tộc giáp ranh): cho quân đánh úp, 70% tin thật. Khi đó là một trận tấn công thường (cướp, mất sức mạnh, có thể sáp nhập), nhưng địch chỉ còn 50% quân và −2 nhuệ khí. Nếu là bẫy: tổng tướng bị thương và tiểu đội mất một nửa quân. Hoặc bỏ qua.
+- **Đạo tặc bắt giữ quan chức** (khi có đạo tặc gần đây):
+  - Cứu viện: tiểu đội (và tổng tướng nếu có) tấn công đạo tặc bằng 100% quân số tiểu đội, đạo tặc tối đa 6 đơn vị.
+    - Thắng: được 60 lương, 60 gỗ, 60 đá, 10 khoáng sản, mọi gia tộc +3.
+    - Thua: mọi gia tộc −5.
+  - Chuộc người: 100 lương + 20 khoáng sản.
+  - Bỏ mặc: mọi gia tộc −8.
+- **Mật thư bị đánh cắp:**
+  - Thay đổi kế hoạch: 60 lương, 40 gỗ, 15 khoáng sản.
+  - Bỏ qua: 80% quân địch +2 ở trận kế tiếp với ta.
+- **Đặc vụ báo tin khẩn** (có đặc vụ ở gia tộc giáp ranh đang chiến tranh):
+  - Tin tưởng: 50% tin thật, gia tộc đó tấn công đầu lượt sau và quân ta +3. Nếu là tin giả: quân ta −3 ở trận kế tiếp với họ.
+  - Mặc kệ: 50% không sao, 50% họ tấn công đầu lượt sau và quân ta −1.
+- **Thủ lĩnh đạo tặc:** từ lượt 20 đạo tặc có một thủ lĩnh có tên, dẫn các trận cướp như tướng gia tộc. Từ lượt 20 thủ lĩnh yếu (1–2★), từ lượt 40 trung bình (3–4★), từ lượt 60 mạnh (5–6★); khi đến mốc mới thì thủ lĩnh mạnh hơn lên thay. Thủ lĩnh ngã ngựa có thể chết; chết thì 5 lượt sau mới có người mới. Cột thông báo chỉ hiện mục "Đạo tặc" khi tỉ lệ cướp đang bị tăng / giảm.
+- **Thủ lĩnh đạo tặc thách đấu** (từ lượt 20, có thủ lĩnh, không cần chiến tranh):
+  - Cử tướng ra đấu: người chơi chọn bất kỳ vị tướng nào ở nhà sẵn sàng ra trận (có ảnh, sao, Võ lực, Thống suất, và chỉ số của đối thủ). Người thua tử trận.
+    - Thắng: thủ lĩnh chết; trong 10 lượt đạo tặc −2 nhuệ khí tối đa ở mọi trận với ta và tỉ lệ cướp ×0,5.
+    - Thua: tướng được cử chết; trận kế tiếp với đạo tặc quân ta −2.
+  - Đóng cổng: quân ta −1 nhuệ khí tối đa trong 5 lượt, tỉ lệ cướp ×2 trong 5 lượt (tối đa 90%).
+  - Nhuệ khí "với đạo tặc" áp dụng cho trận cướp và trận cứu quan chức, không áp dụng cho trận với gia tộc hay thảo phạt.
+- **Thách đấu khi thảo phạt:** lúc cử quân có ô "Nhận lời thách đấu của tướng nổi loạn" (mặc định bật, chỉ hiện khi có tướng đi cùng). Mỗi ải có 25% một tướng nổi loạn ra thách đấu trước trận phục kích đầu tiên.
+  - Nhận: trận tay đôi được chiếu đầu tiên trong phần xem lại ải, người thua tử trận. Thắng thì ải sau quân nổi loạn −2 nhuệ khí tối đa (tướng ta được thêm kinh nghiệm); thua thì tướng ta chết, đội đánh tiếp không có tướng và ải sau quân ta −2.
+  - Không nhận: quân ta −1 nhuệ khí tối đa trong ải đó.
+- **Trận tay đôi trông thế nào:** máu mỗi bên là tướng cộng cận vệ, gộp thành 10 người như nhau cho cả hai (nếu lấy đúng số cận vệ theo sao thì tướng nhiều sao thắng gần như chắc chắn), nên thanh máu tụt dần; trên sân chỉ vẽ hai vị tướng. Trận dài khoảng 20 giây; tỉ lệ thắng giữ như cũ (cùng sao ~50%, hơn 2 sao ~90%). Hai tướng vừa đánh vừa phi ngựa qua lại, lên xuống sân, lúc áp sát chém nhau, lúc dạt ra; cảnh xem lại khi thảo phạt cũng vậy.
+- **Bảng thống kê ải:** chia hai cột. Bên trái là diễn biến (tự xuống dòng) và phần thưởng bằng icon; bên phải là bảng đơn vị gộp theo loại lính (Còn = số đội còn lại / số đội đã đi), nên bảng không còn dài đến mức bị thu nhỏ.
