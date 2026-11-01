@@ -1,0 +1,20 @@
+KINGDOM TILES : RISE OF REALMS - v0.1 Early Access (Windows)
+=============================================================
+
+CACH CHAY
+- Giai nen file zip ra mot thu muc bat ky, chay KingdomTiles.exe.
+- Lan dau mo, Windows co the hien "Windows protected your PC" (vi game chua ky so).
+  Bam "More info" (Thong tin them) -> "Run anyway" (Van chay).
+- Can Windows 10/11 64-bit, card do hoa ho tro OpenGL 3.3.
+
+CACH CHOI
+- Menu chinh -> "Cach choi" de xem huong dan ngan.
+- Phim tat: 1-3 chon manh dat, Enter ket thuc luot, Esc dong cua so, Space tam dung tran danh.
+
+BAN LUU VA BAO LOI
+- Ban luu va nhat ky loi nam o:
+  %APPDATA%\Godot\app_userdata\Kingdom Tiles - Rise Of Realms\
+- Neu game loi hoac tu tat: Menu chinh -> "Gioi thieu" -> tab "Bao loi" -> "Mo thu muc nhat ky",
+  gui file godot.log cho tac gia kem vai dong ke lai ban dang lam gi.
+
+Day la ban choi thu som: luat choi va can bang con thay doi, ban luu co the khong dung duoc o phien ban sau.

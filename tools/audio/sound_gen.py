@@ -1,7 +1,8 @@
 """Generates every sound of the game (GDD §13, M14a): short 8-bit effects in assets/audio/sfx/ and
 chiptune music on an East Asian pentatonic scale in assets/audio/music/. WAV, 22050 Hz, 16-bit mono.
 
-Run: python tools/audio/sound_gen.py, then re-import in Godot. A file with the same name in
+Run: python tools/audio/sound_gen.py [name ...], then re-import in Godot (names: only those
+effects / songs, e.g. "kingdom"; none = everything). A file with the same name in
 assets/audio/custom/ (.wav or .ogg) replaces the generated one in the game.
 """
 from pathlib import Path
@@ -295,6 +296,85 @@ def song(name: str, bpm: float, bars: int, scale: list, root: int, rhythms: list
     return out
 
 
+def pluck(note: int, seconds: float, decay: float = 3.5) -> np.ndarray:
+    """A soft plucked string (koto-like): a sine with a little triangle, quick attack, long decay."""
+    f = freq(note)
+    x = 0.8 * osc("sine", f, seconds) + 0.2 * osc("triangle", f * 2, seconds) * expdecay(int(seconds * RATE), 9.0)
+    return x * expdecay(x.size, decay) * env(x.size, 0.004, seconds, 1.0, min(0.08, seconds * 0.2))
+
+
+def pad(notes: list, seconds: float) -> np.ndarray:
+    """A warm held chord: detuned sines with a slow swell in and out."""
+    n = int(seconds * RATE)
+    out = np.zeros(n)
+    for note in notes:
+        for detune in (0.997, 1.003):
+            out += osc("sine", freq(note) * detune, seconds) + 0.15 * osc("triangle", freq(note) * detune, seconds)
+    return lowpass(out, 0.6) * env(n, seconds * 0.35, 0.01, 1.0, seconds * 0.4)
+
+
+def place(out: np.ndarray, x: np.ndarray, start: float, gain: float) -> None:
+    """Adds x at `start` seconds, wrapping past the end (so a looping song has no gap)."""
+    i = int(start * RATE) % out.size
+    end = min(out.size, i + x.size)
+    out[i:end] += x[:end - i] * gain
+    if i + x.size > out.size:
+        rest = x[end - i:]
+        out[:rest.size] += rest * gain
+
+
+def loop_echo(x: np.ndarray, delay: float, feedback: float, repeats: int = 5) -> np.ndarray:
+    """Echoes that wrap around the loop point, darker each time."""
+    out = x.copy()
+    tap = x
+    for k in range(1, repeats + 1):
+        tap = lowpass(tap, 0.35) * feedback
+        out += np.roll(tap, int(delay * k * RATE))
+    return out
+
+
+def chill_song(bpm: float, bars: int, root: int, seed: int) -> np.ndarray:
+    """Calm, low background music for long play (the kingdom map, M14c): a sparse plucked melody
+    on the pentatonic scale over held chords (I maj7 - vi7 - IV maj7 - V sus), a gentle arpeggio,
+    a soft bass, light brushed percussion and an echo, all looping seamlessly."""
+    local = np.random.default_rng(seed)
+    beat = 60.0 / bpm
+    total = bars * 4 * beat
+    out = np.zeros(int(total * RATE))
+    # Two bars per chord, as semitones above the root (an octave below the melody).
+    chords = [[0, 4, 7, 11], [-3, 0, 4, 7], [-7, -3, 0, 4], [-5, 0, 2, 7]]
+    for bar in range(0, bars, 2):
+        chord = chords[(bar // 2) % len(chords)]
+        place(out, pad([root - 12 + c for c in chord], 8 * beat + 0.6), bar * 4 * beat, 0.05)
+        bass = root - 24 + chord[0]
+        for k in (0, 3, 4, 6.5):
+            place(out, pluck(bass, 2.5 * beat, 2.2), (bar * 4 + k) * beat, 0.30 if k in (0, 4) else 0.16)
+        # A slow arpeggio up and down the chord, eighth notes, very soft.
+        arp = [root + c for c in chord] + [root + chord[1] + 12, root + chord[2]]
+        for step in range(16):
+            if local.random() < 0.25:
+                continue
+            place(out, pluck(arp[step % len(arp)], 1.2, 5.0), (bar * 4 + step * 0.5) * beat, 0.05)
+    # The melody: long notes with room between them, phrases A A B A.
+    rhythms = [[2, 1, 1], [3, 1], [1, 1, 2], [4], [2, 2], [1.5, 0.5, 2]]
+    quarter = bars // 4
+    a = melody_phrase(local, quarter, SCALE, root - 12, 5, 9, rhythms)
+    b = melody_phrase(local, quarter, SCALE, root - 12, 6, 10, rhythms[::-1])
+    for i, phrase in enumerate((a, a, b, a)):
+        for start, length, note in phrase:
+            if note is not None and not (i == 1 and local.random() < 0.2):
+                place(out, pluck(note, min(length, 3.0) * beat + 0.4, 2.6), (start + i * quarter * 4) * beat, 0.24)
+    # Brushes: a soft kick on beat one and quiet shakers on the off-beats.
+    kick = drum(0.25, 90, 45, 14)
+    shaker = highpass(local.uniform(-1, 1, int(0.06 * RATE)), 0.5) * expdecay(int(0.06 * RATE), 60)
+    for bar in range(bars):
+        place(out, kick, bar * 4 * beat, 0.18)
+        for k in (1.5, 2.5, 3.5):
+            place(out, shaker, (bar * 4 + k) * beat, 0.035)
+    out = loop_echo(out, beat * 0.75, 0.32)
+    return lowpass(out, 0.25)
+
+
 def sting(notes: list, bpm: float, scale_gain: float, drums: list, kind: str = "square") -> np.ndarray:
     beat = 60.0 / bpm
     total = max(t + l for t, l, _ in notes) * beat + 1.5
@@ -307,7 +387,8 @@ def music() -> dict:
     m: dict = {}
     calm = [[1, 1, 2], [0.5, 0.5, 1, 2], [2, 1, 1], [1, 0.5, 0.5, 2]]
     m["menu"] = song("menu", 84, 16, SCALE, 74, calm, [0, 3, 4, 0], "calm", 3, "triangle", 0.5, 0.42)
-    m["kingdom"] = song("kingdom", 96, 32, SCALE, 74, calm + [[1, 1, 1, 1]], [0, 0, 3, 4, 0, 3, 1, 0], "calm", 8)
+    # M14c: calmer and lower than the first version (song("kingdom", 96, 32, SCALE, 74, ...)).
+    m["kingdom"] = chill_song(76, 40, 62, 8)
     war = [[0.5, 0.5, 0.5, 0.5, 1, 1], [1, 0.5, 0.5, 1, 1], [0.5, 0.5, 1, 2], [0.25, 0.25, 0.5, 1, 1, 1]]
     m["battle"] = song("battle", 138, 32, MINOR_SCALE, 69, war, [0, 0, 3, 4, 0, 4, 3, 0], "war", 21, "square", 0.5, 0.3)
     march = [[0.5, 0.5, 1, 1, 1], [1, 0.5, 0.5, 2], [0.5, 0.5, 0.5, 0.5, 2], [1, 1, 0.5, 0.5, 1]]
@@ -320,10 +401,15 @@ def music() -> dict:
 
 
 def main() -> None:
+    import sys
+    only = set(sys.argv[1:])
     for name, x in effects().items():
-        save(SFX_DIR / f"{name}.wav", x)
+        if not only or name in only:
+            save(SFX_DIR / f"{name}.wav", x)
     for name, x in music().items():
-        save(MUSIC_DIR / f"{name}.wav", x, 0.6)
+        if not only or name in only:
+            save(MUSIC_DIR / f"{name}.wav", x, 0.6)
+            print("wrote", name)
     print("sounds written to", SFX_DIR.parent)
 
 

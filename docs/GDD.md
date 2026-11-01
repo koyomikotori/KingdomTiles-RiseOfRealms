@@ -779,7 +779,7 @@ Thống kê trận thắng/thua và trạng thái thắng/thua được lưu cù
 - **Tự động lưu** mỗi khi sang lượt mới, sau khi trận đánh đầu lượt (nếu có) đã xong; và lúc bắt đầu ván mới.
 - **Lưu tay bất cứ lúc nào ở màn vương quốc**, kể cả giữa lượt: giữ nguyên mảnh đất trên tay, tài nguyên, giới hạn quà / giao thương / đề nghị của lượt. Không lưu được khi đang xem trận đánh hay đang mở bản đồ thế giới. Ghi đè ô đã có phải bấm 2 lần.
 - **Tải lại thì gieo lại ngẫu nhiên:** mảnh đất đang trên tay giữ nguyên, nhưng các mảnh sau, cướp, xâm lược, gia tộc đồng ý hay không đều ra kết quả mới.
-- **Menu chính** khi mở game: Tiếp tục (bản lưu mới nhất) · Ván mới · Tải game · Thoát. Phía sau là **cảnh nền chạy mờ** (M14j, kiểu Kairosoft): một trận đánh gia tộc và một ải thảo phạt chiếu luân phiên, do một vương quốc dựng tạm đánh (đạo quân, tướng, mưu sĩ ngẫu nhiên; không lưu gì). Cảnh rộng gấp 1,8 lần màn hình, camera **lia chậm qua lại** (18 giây mỗi chiều) để giao tranh lộ ra hai bên bảng menu; làm mờ, tối nhẹ, không có tiếng, không chữ; trận nền chạy x2; hết cảnh chờ 2 giây rồi mờ dần sang cảnh kia. Trong ván: nút **Menu** trên thanh trên cùng → Tiếp tục chơi · Lưu game · Tải game · Về menu chính.
+- **Menu chính** khi mở game: Tiếp tục (bản lưu mới nhất) · Ván mới · Tải game · **Cách chơi** · **Giới thiệu** (M14c) · Cài đặt · Thoát; góc dưới phải ghi phiên bản ("v0.1 Early Access"). Phía sau là **cảnh nền chạy mờ** (M14j, kiểu Kairosoft): một trận đánh gia tộc và một ải thảo phạt chiếu luân phiên, do một vương quốc dựng tạm đánh (đạo quân, tướng, mưu sĩ ngẫu nhiên; không lưu gì). Cảnh rộng gấp 1,8 lần màn hình, camera **lia chậm qua lại** (18 giây mỗi chiều) để giao tranh lộ ra hai bên bảng menu; làm mờ, tối nhẹ, không có tiếng, không chữ; trận nền chạy x2; hết cảnh chờ 2 giây rồi mờ dần sang cảnh kia. Trong ván: nút **Menu** trên thanh trên cùng → Tiếp tục chơi · Lưu game · Tải game · Về menu chính.
 - **Kỹ thuật:**
   - File JSON trong `user://saves/` (`auto.json`, `slot_1.json`…), ghi ra file tạm rồi mới đổi tên để không hỏng file cũ khi game tắt giữa chừng.
   - Mỗi file có `save_version`. Bản cũ hơn được nâng cấp từng bước (`v1 → v2 → …`) khi tải. Bản mới hơn phiên bản game thì báo lỗi, không tải.
@@ -961,3 +961,14 @@ Bảng thông tin ô đất chuyển xuống đáy cột này.
 **Bản lưu cũ** (bản đồ 6 gia tộc) không tải được nữa: báo phiên bản cũ, bắt đầu ván mới.
 
 **Sửa lỗi kèm theo:** khi chiêu mộ hoặc cộng điểm cho tướng sĩ, cửa sổ không còn co giãn làm khựng.
+
+## 16. Bản phát hành Windows (M14c, đã chốt)
+
+- **Bản 0.1 Early Access**, chỉ gửi bạn bè: file zip gồm `KingdomTiles.exe` (dữ liệu game gói luôn trong exe) và `Doc truoc.txt` (cách chạy, cảnh báo SmartScreen vì chưa ký số, chỗ để bản lưu và nhật ký).
+- Phiên bản lấy từ `application/config/version` trong `project.godot`, hiện ở góc menu chính và bảng Giới thiệu.
+- **Cách chơi:** bảng 6 tab (Bắt đầu, Đất đai, Xây dựng, Quân đội, Ngoại giao, Thảo phạt), mỗi tab vài đoạn ngắn.
+- **Giới thiệu:** tab Trò chơi (tác giả, công cụ, nguồn đồ họa / chân dung AI / âm thanh), tab Bản quyền (giấy phép MIT của Godot và mọi thành phần bên thứ ba lấy thẳng từ engine), tab Báo lỗi (đường dẫn thư mục nhật ký và bản lưu, nút mở thư mục).
+- **Nhật ký:** game luôn ghi log vào `user://logs/godot.log` (giữ vài lần chơi gần nhất); lúc mở menu ghi một dòng phiên bản, Godot và hệ điều hành.
+- Build lại: `python tools/release/build_windows.py` (export preset "Windows Desktop" trong `export_presets.cfg`, ra `build/KingdomTiles_v<phiên bản>_Windows.zip`). Exe chưa có icon riêng (cần rcedit), cửa sổ game vẫn dùng icon của game.
+- Thư mục `assets/audio/custom/` chỉ có tác dụng khi chạy trong Godot editor; bản build dùng nhạc đã gói sẵn.
+- **Nhạc bản đồ vương quốc làm lại** (người chơi thấy bản cũ tone quá cao): nhẹ và chill hơn, 76 BPM, thấp hơn một quãng tám, giai điệu gảy mềm kiểu đàn tranh thưa nốt trên pad hợp âm ấm, arpeggio khẽ, trống rất nhẹ, có tiếng vang; khoảng 2 phút rồi lặp lại liền mạch. Các bài khác giữ nguyên.
