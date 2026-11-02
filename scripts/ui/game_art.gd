@@ -184,9 +184,20 @@ static func officer_tier(stars: int) -> int:
 	return clampi((stars + 1) / 2, 1, 3)
 
 
+## A general on foot (M16h, for the duel mini game): general_foot_<m|f>[_<weapon>]_t<tier>.
+static func foot_sprite(look: OfficerLook, weapon_type: StringName = &"", stars: int = 1) -> StringName:
+	return StringName(String(officer_sprite(&"general", look, weapon_type, stars)).replace("general_", "general_foot_"))
+
+
+## The ruler on foot in their outfit (M16h): ruler_<m|f>_<outfit>.
+static func ruler_sprite(ruler: Ruler) -> StringName:
+	return StringName("ruler_%s_%s" % ["f" if ruler.look.is_female() else "m", ruler.outfit()])
+
+
 ## Frames per state in this sprite's sheet.
 static func frames_of(sprite_id: StringName) -> int:
-	return OFFICER_FRAMES if String(sprite_id).right(3) in OFFICER_TIER_SUFFIXES else UNIT_FRAMES
+	var id := String(sprite_id)
+	return OFFICER_FRAMES if id.right(3) in OFFICER_TIER_SUFFIXES or id.begins_with("ruler_") else UNIT_FRAMES
 
 
 ## The frame to show `beat` beats into a loop, a beat being one soldier frame (callers count
@@ -292,6 +303,11 @@ static func portrait_part(part: String) -> Texture2D:
 ## A hand-drawn portrait for this officer, if one was dropped into CUSTOM_PORTRAIT_DIR.
 static func custom_portrait(officer_name: String) -> Texture2D:
 	return _load(CUSTOM_PORTRAIT_DIR + officer_name + ".png")
+
+
+## The ruler's drawn portrait (assets/portraits/ruler/ruler_<preset>.png, M16h), or null.
+static func ruler_portrait(preset: int) -> Texture2D:
+	return _load(PORTRAIT_DIR + "ruler/ruler_%d.png" % preset)
 
 
 ## A non-officer character's portrait (96×96 with its background, e.g. the black market's

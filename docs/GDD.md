@@ -1123,3 +1123,14 @@ Mọi bảng thông tin / nâng cấp trình bày điều kiện bằng hình th
 - **Tướng và mưu sĩ của gia tộc (thay luật M14h):** mọi gia tộc đều có một tướng và một mưu sĩ, sao theo sức mạnh hiện tại: gia tộc yếu 1–2★, vừa 3–4★, mạnh 5–6★; trong hai người chỉ một người được mức sao cao nhất của bậc (ví dụ gia tộc mạnh có tướng 6★ thì mưu sĩ 5★). Khi gia tộc đổi bậc, người không còn hợp bậc được thay bằng người mới. Huyền thoại: gia tộc yếu và vừa +1 sao (mạnh vẫn 5–6★).
 - **Bảng đặt đất** không còn nhắc "đất tự nó không cho tài nguyên" (để dành cho phần hướng dẫn sau này).
 - **Đấu tướng:** hai tướng bắt đầu ở hàng sau (chỗ của quân đánh xa), mặt hướng vào nhau, rồi lao vào giữa trận.
+
+## 24. Chúa công và tướng đi bộ (M16h, đã chốt)
+
+- **Chúa công** là nhân vật của người chơi: không có chỉ số, không ra trận thường. Chọn ở màn Ván mới (dòng "Chúa công" → nút "Thay đổi"), lưu cùng ván.
+- **6 mẫu có sẵn** (3 nam, 3 nữ), chọn bằng ← / →, kèm ô đặt tên (bỏ trống thì gọi là "Chúa công"):
+  - Thiên tử (Long bào, tóc đen): Thiên tử, Nữ hoàng.
+  - Chiến binh (Chiến bào, tóc vàng): Bá vương, Nữ tướng quân.
+  - Mưu sĩ (Nho phục, tóc bạc): Mưu chủ, Nữ mưu chủ.
+- **Chỉ hiện chân dung** (ảnh vẽ bằng Gemini riêng cho từng mẫu, khung vàng; không lấy ảnh trong kho tướng): ở cửa sổ chọn chúa công và ở đầu tab Thông tin của Thành chính (to bằng chân dung trong Chiêu hiền). Chúa công không đứng trên tường thành trong trận. Prompt trong `docs/gemini_prompts.md`.
+- **Sprite đi bộ** (4 khung mỗi tư thế, 5 tư thế) cho chúa công nam / nữ theo 3 trang phục, và cho tướng nam / nữ theo 3 bậc sao × loại vũ khí. Chỉ dùng cho mini game tỉ thí (M16j).
+- **Sau này:** có thể thêm xuất thân ngẫu nhiên, người chơi trả lời vài lựa chọn để chúa công nhận một ít lợi thế nhỏ.

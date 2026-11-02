@@ -74,6 +74,8 @@ var raid_pressure := RaidPressure.new()
 var difficulty: int = Difficulty.Level.NORMAL
 var kingdom_name := DEFAULT_KINGDOM_NAME
 var player_color := PLAYER_COLOR
+## The player's ruler (Chúa công, M16h): a preset look and a name, no stats.
+var ruler := Ruler.from_preset(0)
 ## Counters for the end-of-game screen: {"battles_won", "battles_lost"}.
 var stats := {"battles_won": 0, "battles_lost": 0}
 ## False when building upkeep could not be paid last turn; building effects pause.
@@ -154,14 +156,15 @@ func _record_battle(won: bool) -> void:
 	stats["battles_won" if won else "battles_lost"] += 1
 
 
-## A new game's choices: {"difficulty": Difficulty.Level, "name": String, "color": Color}; missing
-## keys keep the defaults.
+## A new game's choices: {"difficulty": Difficulty.Level, "name": String, "color": Color,
+## "ruler_preset": int, "ruler_name": String}; missing keys keep the defaults.
 func setup_new_game(settings: Dictionary) -> void:
 	difficulty = clampi(int(settings.get("difficulty", Difficulty.Level.NORMAL)), 0, Difficulty.NAMES.size() - 1)
 	var chosen_name := String(settings.get("name", "")).strip_edges().left(MAX_NAME_LENGTH)
 	kingdom_name = chosen_name if not chosen_name.is_empty() else DEFAULT_KINGDOM_NAME
 	# Rounded as the save writes it, so a loaded game looks the same.
 	player_color = Color.html(Color(settings.get("color", PLAYER_COLOR)).to_html(false))
+	ruler = Ruler.from_preset(int(settings.get("ruler_preset", 0)), String(settings.get("ruler_name", "")))
 	wars.set_enemy_scale(Difficulty.enemy_scale(difficulty), turn)
 
 
@@ -174,7 +177,7 @@ func to_save() -> Dictionary:
 			"diplomacy": diplomacy.to_save(), "wars": wars.to_save(), "victory": victory.to_save(), "stats": stats.duplicate(),
 			"events": events.to_save(), "generals": generals.to_save(), "advisors": advisors.to_save(),
 			"equipment": equipment.to_save(), "agents": agents.to_save(), "clan_officers": clan_officers.to_save(),
-			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false),
+			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false), "ruler": ruler.to_save(),
 			"scrolls": scrolls, "black_market": black_market.to_save(), "morale_effects": morale_effects.to_save(), "raid_pressure": raid_pressure.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
 
 
@@ -187,6 +190,8 @@ func load_save(data: Dictionary) -> void:
 	difficulty = clampi(int(data.get("difficulty", Difficulty.Level.NORMAL)), 0, Difficulty.NAMES.size() - 1)
 	kingdom_name = String(data.get("kingdom_name", DEFAULT_KINGDOM_NAME))
 	player_color = Color.html(data.get("player_color", PLAYER_COLOR.to_html(false)))
+	# Saves from before M16h: the first preset, named Chúa công.
+	ruler = Ruler.from_save(data.get("ruler", {}))
 	wars.enemy_scale = Difficulty.enemy_scale(difficulty)
 	# Saves from before M11c have no castle level.
 	castle_level = clampi(int(data.get("castle_level", 1)), 1, castle_levels.size())

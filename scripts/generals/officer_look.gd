@@ -23,6 +23,9 @@ var gender: StringName = &"m"
 var skin := 0
 var hair_style := 0
 var hair_color := 0
+## A hair color outside HAIR_COLORS (alpha 0 = none): the rulers' blond hair (M16h). Not saved;
+## a ruler's look comes from its preset.
+var hair_override := Color(0, 0, 0, 0)
 var eyes := 0
 var brows := 0
 var beard := 0
@@ -61,6 +64,8 @@ func skin_color() -> Color:
 
 
 func hair_tint() -> Color:
+	if hair_override.a > 0.0:
+		return hair_override
 	return HAIR_COLORS[clampi(hair_color, 0, HAIR_COLORS.size() - 1)]
 
 
