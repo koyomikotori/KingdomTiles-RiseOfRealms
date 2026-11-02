@@ -1110,3 +1110,16 @@ Mọi bảng thông tin / nâng cấp trình bày điều kiện bằng hình th
   - Ngoại giao: mỗi điểm giá lợi 1,5%, khả năng chấp nhận +2,25%, cảnh giác −3%, quà +2,25%.
   - Quân sư: mỗi điểm +2,5% tỉ lệ mưu kế (trước 3%), +0,25 sĩ khí (trước 0,3).
 - **Gia hạn hợp đồng giao thương:** khi hợp đồng còn 5 lượt trở xuống, cửa sổ hợp đồng có ô "Gia hạn thêm N lượt" (5–30) giữ nguyên điều khoản; khả năng đồng ý tính như ký mới với điều khoản đó. Đồng ý thì số lượt cộng thêm vào số còn lại; mỗi lượt chỉ hỏi được một lần (dùng chung với đề nghị ký).
+
+## 23. Hình tướng theo sao và sự kiện đấu tướng (M16g, đã chốt)
+
+- **Sự kiện đấu tướng xuất hiện nhiều hơn:** trọng số của "Thủ lĩnh cướp khiêu chiến" và "Tướng địch thách đấu" tăng từ 1,5 lên 4,5 (khoảng 2% lên khoảng 6% mỗi lượt cho mỗi sự kiện; thời gian chờ 12 lượt giữ nguyên). Tỉ lệ kết quả không đổi.
+- **Hình tướng và mưu sĩ có 3 bậc theo sao** (nam / nữ, mọi loại vũ khí của tướng):
+  - 1–2★: tướng áo da, mũ sắt chóp ngắn, ngựa yên trơn, không áo choàng; mưu sĩ đội mũ vải mềm, áo trơn.
+  - 3–4★: tướng giáp vảy, mũ sắt có tua, ngựa phủ giáp vảy, che mặt ngựa bằng sắt, có áo choàng; mưu sĩ đội mũ cánh chuồn, viền áo bạc.
+  - 5–6★: tướng giáp vàng, mũ vàng cắm lông trĩ, viền và che mặt ngựa bằng vàng, áo choàng dài; mưu sĩ viền và thêu vàng, mũ có trang sức vàng, quạt cán vàng.
+- **4 khung hình mỗi tư thế** cho tướng và mưu sĩ (lính thường vẫn 2 khung); nhịp chuyển động giữ như cũ nên tướng trông mượt hơn. Đòn đánh của tướng có 4 nhịp: lấy đà, giơ cao, chém, theo đà.
+- **Hào quang chỉ cho 5–6★:** 5★ có quầng sáng xanh nhạt dưới chân, nhấp nháy nhẹ; 6★ có quầng vàng và đốm sáng vàng bay lên quanh người. Thấy trong trận, trong màn thảo phạt và ở hình đứng trong cửa sổ tướng sĩ.
+- **Tướng và mưu sĩ của gia tộc (thay luật M14h):** mọi gia tộc đều có một tướng và một mưu sĩ, sao theo sức mạnh hiện tại: gia tộc yếu 1–2★, vừa 3–4★, mạnh 5–6★; trong hai người chỉ một người được mức sao cao nhất của bậc (ví dụ gia tộc mạnh có tướng 6★ thì mưu sĩ 5★). Khi gia tộc đổi bậc, người không còn hợp bậc được thay bằng người mới. Huyền thoại: gia tộc yếu và vừa +1 sao (mạnh vẫn 5–6★).
+- **Bảng đặt đất** không còn nhắc "đất tự nó không cho tài nguyên" (để dành cho phần hướng dẫn sau này).
+- **Đấu tướng:** hai tướng bắt đầu ở hàng sau (chỗ của quân đánh xa), mặt hướng vào nhau, rồi lao vào giữa trận.

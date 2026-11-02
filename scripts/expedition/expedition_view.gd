@@ -303,10 +303,16 @@ func _replay_time(b: int, battle_time: float) -> float:
 func _draw_officer(kind: StringName, side: BattleSide, foot: Vector2, facing: float, state: StringName,
 		rotation: float = 0.0) -> void:
 	var look := side.general_look if kind == &"general" else side.advisor_look
-	var sprite := GameArt.officer_sprite(kind, look, side.general_weapon if kind == &"general" else &"")
-	var frame := int(_clock * ANIM_FPS) % GameArt.UNIT_FRAMES
+	var stars := side.general_stars if kind == &"general" else side.advisor_stars
+	var sprite := GameArt.officer_sprite(kind, look, side.general_weapon if kind == &"general" else &"", stars)
+	var frame := GameArt.anim_frame(sprite, _clock * ANIM_FPS)
+	var glowing := state != &"fall"
+	if glowing:
+		GameArt.draw_aura(self, sprite, foot, SPRITE_SCALE, stars, _clock)
 	GameArt.draw_unit(self, sprite, foot, rotation, Vector2(facing * SPRITE_SCALE, SPRITE_SCALE), state, frame,
 			GameArt.unit_tints(side.color, look))
+	if glowing:
+		GameArt.draw_aura_sparks(self, sprite, foot, SPRITE_SCALE, stars, _clock)
 
 
 func _draw_backdrop() -> void:

@@ -834,9 +834,9 @@ func _update_ghost() -> void:
 		return
 	var delta := UiFormat.amounts(Economy.placement_delta(state.board, piece, piece_origin, _terrains, _buildings),
 			_resource_types, true)
-	# Economy v2: land yields nothing by itself, only next to a production building of its kind (M14d).
+	# Land alone yields nothing (M14d); the how-to-play pages explain it, so no hint here (M16g).
 	if delta.is_empty():
-		placement_status.text = "Có thể đặt. Đất tự nó không cho tài nguyên: đặt cạnh nông trại / xưởng gỗ / mỏ cùng loại đất để công trình thu thêm."
+		placement_status.text = "Có thể đặt."
 	else:
 		placement_status.text = "Có thể đặt. Sản lượng mỗi lượt: %s." % delta
 

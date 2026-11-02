@@ -589,90 +589,151 @@ def artillery_frame(state: str, frame: int, barrel: str, length: int, thick: int
     return split_team(c)
 
 
-def general_frame(state: str, frame: int, female: bool = False, weapon_type: str = "") -> tuple:
-    """The commander (32×32): a barded warhorse with a plated chamfron and red tassels, the rider
-    in gilded armor with a flowing cape, a gold helmet with two long pheasant feathers, and the
-    weapon they wear (general_weapon: a plain sword without one). Clothes, barding and cape take
-    the side's color."""
+# Officers (M16g): 3 looks by stars (OFFICER_TIERS: 1–2★, 3–4★, 5–6★) and OFFICER_FRAMES frames per
+# state for smoother motion. Effects (the 5–6★ aura) are drawn by the game, not in the sheet.
+OFFICER_FRAMES = 4
+OFFICER_TIERS = (1, 2, 3)
+# Per frame of a 4-frame loop: gallop leg positions, the body's lift, the cape's flutter.
+GALLOP_LEGS = ((10, 13, 19, 22), (9, 14, 18, 23), (10, 13, 19, 22), (11, 12, 20, 21))
+WALK_LIFT = (0, 1, 1, 0)
+
+
+def general_frame(state: str, frame: int, female: bool = False, weapon_type: str = "", tier: int = 3) -> tuple:
+    """The commander (32×32), frame 0..OFFICER_FRAMES-1. Tier 1 (1–2★): leather armor, an iron cap
+    with a short plume, a plain saddle cloth. Tier 2 (3–4★): iron lamellar, a tasselled iron helmet,
+    scaled barding with a silver hem, an iron chamfron, a cape. Tier 3 (5–6★): gilded armor, a gold
+    helmet with two long pheasant feathers, gold-hemmed barding and a long cape. The weapon is the
+    one they wear (general_weapon: a plain sword without one). Clothes, barding and cape take the
+    side's color; hair and plume take the officer's colors."""
     c = Canvas(32, 32)
-    gallop = state in ("walk", "attack") and frame == 1
-    lift = 1 if (state == "cheer" and frame == 1) or (state == "walk" and frame == 1) else 0
+    moving = state in ("walk", "attack")
+    lift = WALK_LIFT[frame] if state in ("walk", "cheer") else 0
     # Tail and legs behind the body.
-    for y, x in ((17, 7), (18, 6), (19, 5), (20, 5), (21, 5 + frame), (22, 6 + frame)):
+    swish = (0, 1, 1, 0)[frame]
+    for y, x in ((17, 7), (18, 6), (19, 5), (20, 5), (21, 5 + swish), (22, 6 + swish)):
         c.px(x, y, C["mane"])
         c.px(x + 1, y, C["mane"])
-    legs_x = (10, 13, 19, 22) if not gallop else (9, 14, 18, 23)
+    legs_x = GALLOP_LEGS[frame] if moving else GALLOP_LEGS[0]
     for i, x in enumerate(legs_x):
-        bend = 1 if gallop and i in (0, 3) else 0
+        bend = 1 if moving and frame in (1, 3) and i in (0, 3) else 0
         c.vline(x, 23, 29 - bend, C["horse_dark"] if i in (1, 2) else C["horse"])
         c.vline(x + 1, 23, 29 - bend, C["horse_dark"])
         c.hline(x, x + 1, 30 - bend, C["boot"])
-    # Body, a short arched neck and a small head (kept one pixel inside the frame for its outline).
+    # Body, a short arched neck and a small head (kept one pixel inside the frame for its outline);
+    # the head nods while standing.
+    nod = 1 if state == "stand" and frame == 2 else 0
     c.rect(8, 16, 16, 7, C["horse"])
     c.hline(9, 22, 22, C["horse_dark"])
     for row, x0 in enumerate((22, 22, 23, 23, 24)):  # neck rising forward
         c.hline(x0, x0 + 2, 16 - row, C["horse"])
-    c.rect(24, 9, 4, 3, C["horse"])  # head
-    c.rect(27, 10, 2, 3, C["horse"])  # muzzle
-    c.px(29, 12, C["horse_dark"])
-    c.hline(27, 28, 12, C["horse_dark"])
-    c.px(26, 10, C["eye"])
-    c.px(24, 8, C["horse_dark"])  # ears
-    c.px(25, 8, C["horse_dark"])
-    c.rect(24, 9, 2, 2, C["iron"])  # chamfron
-    c.px(25, 9, C["iron_light"])
-    for x, y in ((23, 10), (23, 11), (22, 12)):
-        c.px(x, y, C["tassel"])
+    c.rect(24, 9 + nod, 4, 3, C["horse"])  # head
+    c.rect(27, 10 + nod, 2, 3, C["horse"])  # muzzle
+    c.px(29, 12 + nod, C["horse_dark"])
+    c.hline(27, 28, 12 + nod, C["horse_dark"])
+    c.px(26, 10 + nod, C["eye"])
+    c.px(24, 8 + nod, C["horse_dark"])  # ears
+    c.px(25, 8 + nod, C["horse_dark"])
+    if tier >= 2:  # chamfron
+        c.rect(24, 9 + nod, 2, 2, C["iron"] if tier == 2 else C["gold"])
+        c.px(25, 9 + nod, C["iron_light"] if tier == 2 else C["gold_light"])
+        for x, y in ((23, 10), (23, 11), (22, 12)):
+            c.px(x, y, C["tassel"])
     for y in range(12, 17):  # mane along the neck
         c.px(21 + (y - 12) // 3, y, C["mane"])
-    # Barding over the back and flanks: side color, scale pattern, gold hem and tassels.
-    c.rect(9, 15, 13, 5, TEAM)
-    for y in (16, 18):
-        for x in range(10 + (y // 2) % 2, 21, 2):
-            c.px(x, y, TEAM_DARK)
-    c.hline(9, 21, 15, TEAM_LIGHT)
-    c.hline(9, 21, 20, C["gold"])
-    for x in (10, 15, 20):
-        c.px(x, 21, C["tassel"])
-    # Cape behind the rider (flutters).
-    cape = ((10, 10), (9, 11), (9, 12), (8, 13), (8, 14)) if frame == 0 else ((10, 10), (9, 11), (8, 12), (7, 13), (7, 14))
-    for x, y in cape:
-        c.hline(x, 12, y - lift, TEAM_DARK)
+    # Barding / saddle cloth in the side's color.
+    if tier == 1:
+        c.rect(11, 15, 9, 4, TEAM)
+        c.hline(11, 19, 15, TEAM_LIGHT)
+        c.hline(11, 19, 18, C["belt"])
+    else:
+        c.rect(9, 15, 13, 5, TEAM)
+        for y in (16, 18):
+            for x in range(10 + (y // 2) % 2, 21, 2):
+                c.px(x, y, TEAM_DARK)
+        c.hline(9, 21, 15, TEAM_LIGHT)
+        c.hline(9, 21, 20, C["gold"] if tier == 3 else C["steel_dark"])
+        for x in (10, 15, 20):
+            c.px(x, 21, C["tassel"])
+    # Cape behind the rider, fluttering; longer for higher tiers.
+    if tier >= 2:
+        sway = (0, 1, 2, 1)[frame]
+        rows = 5 if tier == 3 else 4
+        for i in range(rows):
+            x = 10 - i // 2 - (sway * i) // 3
+            c.hline(x, 12, 10 + i - lift, TEAM_DARK)
     # Rider.
     top = 9 - lift
     c.rect(12, top, 6, 6, TEAM)
     c.vline(12, top, top + 5, TEAM_DARK)
     c.vline(16, top + 1, top + 3, TEAM_LIGHT)
-    c.hline(12, 17, top + 4, C["gold"])
-    c.hline(11, 13, top, C["gold"])
-    c.hline(16, 18, top, C["gold"])
-    c.px(17, top + 1, C["gold_dark"])
+    if tier == 1:  # leather jerkin: a strap across the chest and a belt
+        for i in range(4):
+            c.px(16 - i, top + i, C["quiver"])
+        c.hline(12, 17, top + 4, C["belt"])
+    elif tier == 2:  # iron lamellar rows and pauldrons
+        for y in (top + 1, top + 3):
+            c.hline(13, 17, y, C["iron"])
+        c.px(15, top + 2, C["iron_light"])
+        c.hline(12, 17, top + 4, C["belt"])
+        c.hline(11, 13, top, C["iron"])
+        c.hline(16, 18, top, C["iron"])
+    else:  # gilded armor
+        c.hline(12, 17, top + 4, C["gold"])
+        c.hline(11, 13, top, C["gold"])
+        c.hline(16, 18, top, C["gold"])
+        c.px(17, top + 1, C["gold_dark"])
+        c.px(14, top + 2, C["gold"])
     c.rect(13, top - 4, 4, 4, C["skin"])
     c.vline(13, top - 4, top - 1, C["skin_dark"])
     c.px(16, top - 2, C["eye"])
-    c.hline(12, 17, top - 5, C["gold"])
-    c.hline(13, 16, top - 6, C["gold"])
-    c.px(14, top - 6, C["gold_light"])
-    c.px(12, top - 4, C["gold_dark"])
-    # Two pheasant feathers sweeping back from the helmet (accent color).
-    for i, (x, y) in enumerate(((13, top - 7), (12, top - 8), (11, top - 8), (10, top - 9), (9, top - 9), (8, top - 9))):
-        c.px(x, y, ACCENT if i % 2 == 0 else ACCENT_DARK)
-        c.px(x + 1, y + 1, ACCENT_DARK)
+    feather_sway = (0, 0, 1, 1)[frame]
+    if tier == 1:  # an iron cap with a short plume
+        c.hline(13, 16, top - 5, C["iron"])
+        c.px(14, top - 5, C["iron_light"])
+        c.px(12, top - 4, C["iron_dark"])
+        c.px(14, top - 6, ACCENT)
+        c.px(13 - feather_sway, top - 7, ACCENT_DARK)
+    elif tier == 2:  # an iron helmet with a red tassel and a plume
+        c.hline(12, 17, top - 5, C["iron"])
+        c.hline(13, 16, top - 6, C["iron"])
+        c.px(14, top - 6, C["iron_light"])
+        c.px(12, top - 4, C["iron_dark"])
+        c.px(15, top - 7, C["tassel"])
+        for i, (x, y) in enumerate(((13, top - 7), (12, top - 8), (11, top - 8 + feather_sway))):
+            c.px(x, y, ACCENT if i % 2 == 0 else ACCENT_DARK)
+    else:  # a gold helmet with two long pheasant feathers
+        c.hline(12, 17, top - 5, C["gold"])
+        c.hline(13, 16, top - 6, C["gold"])
+        c.px(14, top - 6, C["gold_light"])
+        c.px(12, top - 4, C["gold_dark"])
+        feathers = ((13, top - 7), (12, top - 8), (11, top - 8), (10, top - 9), (9, top - 9 + feather_sway),
+                    (8, top - 9 + feather_sway))
+        for i, (x, y) in enumerate(feathers):
+            c.px(x, y, ACCENT if i % 2 == 0 else ACCENT_DARK)
+            c.px(x + 1, y + 1, ACCENT_DARK)
     if female:  # long hair flowing from under the helmet
+        hair_sway = (0, 1, 1, 0)[frame]
         for y in range(top - 3, top + 4):
-            c.hline(10 - (y - top) // 3 - frame, 12, y, HAIR if y < top + 2 else HAIR_DARK)
+            c.hline(10 - (y - top) // 3 - hair_sway, 12, y, HAIR if y < top + 2 else HAIR_DARK)
     # The weapon is drawn upright once (general_weapon) and placed or turned for each pose so its
-    # proportions never change; `grip` is the row the hand holds.
-    weapon, grip = general_weapon(weapon_type, frame)
-    if state == "attack" and frame == 0:  # wind-up: raised behind the rider
+    # proportions never change; `grip` is the row the hand holds. Attack: wind-up behind, raised
+    # overhead, swung forward, follow-through low.
+    weapon, grip = general_weapon(weapon_type, frame % 2)
+    if state == "attack" and frame == 0:
         c.paste(weapon, 9, max(0, top + 1 - grip) if grip > 12 else 0)
         c.px(12, top + 1, C["skin"])
-    elif state == "attack":  # swung forward, blade leading
+    elif state == "attack" and frame == 1:
+        c.paste(weapon, 14, max(0, top - 1 - grip))
+        c.px(15, top - 1, C["skin"])
+    elif state == "attack":
+        drop = 0 if frame == 2 else 2
         # The hand stays at x 18; the tip never reaches the right edge (room for the outline).
-        c.paste(guandao_turned(weapon), max(1, min(18 - (weapon.height - 1 - grip), c.width - 1 - weapon.height)), top + 1)
-        c.px(18, top + 2, C["skin"])
+        c.paste(guandao_turned(weapon), max(1, min(18 - (weapon.height - 1 - grip), c.width - 1 - weapon.height)),
+                top + 1 + drop)
+        c.px(18, top + 2 + drop, C["skin"])
     else:
-        hand_y = top + 3 - (2 if state == "cheer" else 0)
+        bounce = (0, 1, 1, 0)[frame] if state == "cheer" else 0
+        hand_y = top + 3 - (2 + bounce if state == "cheer" else 0)
         c.paste(weapon, 18, max(0, hand_y - grip))
         c.px(19, hand_y, C["skin"])
     return split_layers(c)
@@ -762,74 +823,100 @@ def guandao_turned(weapon: Canvas) -> Canvas:
     return turned
 
 
-def advisor_frame(state: str, frame: int, female: bool = False) -> tuple:
-    """A strategist (20×24): long robe with wide sleeves in the side's color, a black scholar's hat
-    and a white feather fan they raise to cast a stratagem."""
+def advisor_frame(state: str, frame: int, female: bool = False, tier: int = 3) -> tuple:
+    """A strategist (20×24), frame 0..OFFICER_FRAMES-1: a long robe with wide sleeves in the side's
+    color and a white feather fan they raise to cast a stratagem. Tier 1 (1–2★): a plain robe and a
+    soft cap. Tier 2 (3–4★): a silver hem and the winged official's cap. Tier 3 (5–6★): a gold hem,
+    gold embroidery down the robe, a gold cap ornament and a gold-handled fan."""
     c = Canvas(20, 24)
-    sway = 1 if state == "walk" and frame == 1 else 0
+    sway = (0, 1, 1, 0)[frame] if state == "walk" else 0
+    bob = (0, 0, 1, 0)[frame] if state == "cheer" else 0
     # Robe.
     for row in range(11):
         half = 3 + row // 3
-        c.hline(9 - half + sway * (row > 7), 10 + half + sway * (row > 7), 11 + row, TEAM)
+        c.hline(9 - half + sway * (row > 7), 10 + half + sway * (row > 7), 11 + row - bob, TEAM)
     for row in range(11):
         half = 3 + row // 3
-        c.px(9 - half, 11 + row, TEAM_DARK)
-    c.hline(5, 14, 21, C["gold"])
-    c.vline(10, 11, 14, C["feather"])  # white collar
-    c.px(9, 11, C["feather"])
-    c.px(11, 11, C["feather"])
-    c.hline(7, 12, 15, TEAM_DARK)  # sash
-    c.px(10, 16, TEAM_DARK)
+        c.px(9 - half, 11 + row - bob, TEAM_DARK)
+    if tier >= 2:
+        c.hline(5, 14, 21 - bob, C["gold"] if tier == 3 else C["steel_dark"])
+    if tier == 3:  # embroidery: a gold cloud line winding down the front
+        for i, y in enumerate(range(16, 21)):
+            c.px(10 + (1 if i % 2 else 0), y - bob, C["gold"])
+    c.vline(10, 11 - bob, 14 - bob, C["feather"])  # white collar
+    c.px(9, 11 - bob, C["feather"])
+    c.px(11, 11 - bob, C["feather"])
+    c.hline(7, 12, 15 - bob, TEAM_DARK)  # sash
+    c.px(10, 16 - bob, TEAM_DARK)
     c.hline(7, 8, 23, C["boot"])
     c.hline(11, 12, 23, C["boot"])
     # Sleeve.
-    c.rect(12, 12, 3, 4, TEAM_LIGHT)
-    c.vline(12, 12, 15, TEAM)
-    # Head and hat.
-    c.rect(8, 6, 4, 5, C["skin"])
-    c.vline(8, 6, 10, C["skin_dark"])
-    c.px(11, 8, C["eye"])
+    c.rect(12, 12 - bob, 3, 4, TEAM_LIGHT)
+    c.vline(12, 12 - bob, 15 - bob, TEAM)
+    # Head and headgear.
+    hy = 6 - bob
+    c.rect(8, hy, 4, 5, C["skin"])
+    c.vline(8, hy, hy + 4, C["skin_dark"])
+    c.px(11, hy + 2, C["eye"])
     if female:
-        c.rect(7, 4, 5, 3, HAIR)
-        c.ellipse(9.5, 3, 2.2, 1.8, HAIR)
-        c.vline(7, 6, 13, HAIR_DARK)  # long hair down the back
-        c.vline(6, 8, 12, HAIR_DARK)
-        c.hline(11, 14, 3, ACCENT)  # hairpin
-        c.px(14, 2, ACCENT_DARK)
+        c.rect(7, hy - 2, 5, 3, HAIR)
+        c.ellipse(9.5, hy - 3, 2.2, 1.8, HAIR)
+        c.vline(7, hy, hy + 7, HAIR_DARK)  # long hair down the back
+        c.vline(6, hy + 2, hy + 6 + (frame % 2), HAIR_DARK)
+        c.hline(11, 14, hy - 3, ACCENT)  # hairpin
+        c.px(14, hy - 4, ACCENT_DARK)
+        if tier == 3:
+            c.px(12, hy - 4, C["gold"])
+    elif tier == 1:  # a soft cloth cap
+        c.rect(7, hy - 2, 5, 2, C["hat_black"])
+        c.px(6, hy - 1, C["hat_black"])
+        c.hline(7, 11, hy - 1, ACCENT)
+        c.vline(7, hy, hy + 2, HAIR)
+    else:  # the winged official's cap
+        flap = (0, 0, 1, 0)[frame] if state == "walk" else 0
+        c.rect(7, hy - 3, 5, 3, C["hat_black"])
+        c.hline(4, 6, hy - 2 + flap, C["hat_black"])
+        c.hline(13, 15, hy - 2 + flap, C["hat_black"])
+        c.hline(7, 11, hy - 1, ACCENT)
+        c.vline(7, hy, hy + 2, HAIR)
+        if tier == 3:
+            c.px(9, hy - 3, C["gold"])
+            c.px(10, hy - 3, C["gold_light"])
+    # Feather fan: raised, held high, swept forward, lowered (attack); waved while standing.
+    handle = C["gold"] if tier == 3 else C["gold_dark"]
+    if state == "attack":
+        poses = (((13, 1), ("v", 14, 6, 11)), ((14, 0), ("v", 15, 4, 9)), ((16, 7), ("h", 14, 16, 12)),
+                 ((15, 9), ("v", 15, 13, 15)))
+        (fx, fy), stick = poses[frame]
+    elif state == "cheer":
+        (fx, fy), stick = (13, 1 - bob), ("v", 14, 6 - bob, 11 - bob)
     else:
-        c.rect(7, 3, 5, 3, C["hat_black"])  # winged official's cap
-        c.hline(4, 6, 4, C["hat_black"])
-        c.hline(13, 15, 4, C["hat_black"])
-        c.hline(7, 11, 5, ACCENT)
-        c.vline(7, 6, 8, HAIR)
-    # Feather fan.
-    if state == "attack" and frame == 0 or state == "cheer":
-        fan = (13, 1)
-        c.vline(14, 6, 11, C["gold_dark"])
-    elif state == "attack":
-        fan = (16, 7)
-        c.hline(14, 16, 12, C["gold_dark"])
+        wave = (0, 0, 1, 0)[frame] if state == "stand" else 0
+        (fx, fy), stick = (14, 9 - wave), ("v", 15, 13 - wave, 15)
+    if stick[0] == "v":
+        c.vline(stick[1], max(0, stick[2]), stick[3], handle)
     else:
-        fan = (14, 9)
-        c.vline(15, 13, 15, C["gold_dark"])
-    fx, fy = fan
+        c.hline(stick[1], stick[2], stick[3], handle)
+    fy = max(0, fy)
     c.rect(fx, fy, 4, 4, C["feather"])
     c.px(fx + 3, fy, CLEAR)
     c.px(fx, fy + 3, C["feather_dark"])
     c.hline(fx, fx + 2, fy + 3, C["feather_dark"])
     c.px(fx + 1, fy + 1, C["feather_dark"])
+    if tier == 3:
+        c.px(fx, fy, C["gold"])
     return split_layers(c)
 
 
-def sheet(draw_frame, width: int, height: int) -> tuple:
+def sheet(draw_frame, width: int, height: int, frames: int = FRAMES) -> tuple:
     """All states and frames of one sprite, one sheet per layer (base, team, and for officers hair
-    and accent)."""
+    and accent). Officers have OFFICER_FRAMES frames per state (M16g), everyone else FRAMES."""
     layers = None
     for row, state in enumerate(STATES):
-        for frame in range(FRAMES):
+        for frame in range(frames):
             parts = draw_frame(state, frame)
             if layers is None:
-                layers = [Canvas(width * FRAMES, height * len(STATES)) for _ in parts]
+                layers = [Canvas(width * frames, height * len(STATES)) for _ in parts]
             for layer, part in zip(layers, parts):
                 layer.paste(part, frame * width, row * height)
     return tuple(layers)
@@ -998,11 +1085,15 @@ def draw_all() -> None:
         save_sheet(name, sheet(lambda s, f, v=variant: cavalry_frame(s, f, v, "bow"), 24, 22))
     for name, spec in ARTILLERY.items():
         save_sheet(name, sheet(lambda s, f, sp=spec: artillery_frame(s, f, *sp), 24, 16))
+    # Officers: general_<m|f>[_<weapon>]_t<tier>, advisor_<m|f>_t<tier> (GameArt.officer_sprite).
     for gender, female in (("m", False), ("f", True)):
-        for weapon_type in GENERAL_WEAPONS:
-            name = f"general_{gender}" + (f"_{weapon_type}" if weapon_type else "")
-            save_sheet(name, sheet(lambda s, f, fe=female, w=weapon_type: general_frame(s, f, fe, w), 32, 32))
-        save_sheet(f"advisor_{gender}", sheet(lambda s, f, fe=female: advisor_frame(s, f, fe), 20, 24))
+        for tier in OFFICER_TIERS:
+            for weapon_type in GENERAL_WEAPONS:
+                name = f"general_{gender}" + (f"_{weapon_type}" if weapon_type else "") + f"_t{tier}"
+                save_sheet(name, sheet(lambda s, f, fe=female, w=weapon_type, ti=tier: general_frame(s, f, fe, w, ti),
+                                       32, 32, OFFICER_FRAMES))
+            save_sheet(f"advisor_{gender}_t{tier}", sheet(lambda s, f, fe=female, ti=tier: advisor_frame(s, f, fe, ti),
+                                                          20, 24, OFFICER_FRAMES))
     mountains().save("battle/mountains.png")
     cloud().save("battle/cloud.png")
     battle_ground().save("battle/ground.png")

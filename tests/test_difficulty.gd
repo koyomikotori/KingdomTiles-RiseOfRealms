@@ -16,14 +16,6 @@ func _state(settings: Dictionary = {}) -> KingdomState:
 	return state
 
 
-## A clan id with the given medium kind (ClanOfficers.medium_kind).
-func _clan_with_kind(state: KingdomState, kind: StringName) -> StringName:
-	for clan_id: StringName in state.wars.fronts:
-		if ClanOfficers.medium_kind(clan_id) == kind:
-			return clan_id
-	return &""
-
-
 func test_difficulty_sizes_every_enemy_unit() -> void:
 	var normal := _state()
 	var hard := _state({"difficulty": Difficulty.Level.HARD})
@@ -78,45 +70,52 @@ func test_clan_officers_follow_the_clans_strength() -> void:
 	var state := _state()
 	var wars := state.wars
 	var officers := state.clan_officers
-	var medium_general := _clan_with_kind(state, &"general")
-	var medium_advisor := _clan_with_kind(state, &"advisor")
-	wars.fronts[medium_general].strength = 100
-	check_eq(wars.tier(medium_general), Wars.Tier.WEAK, "Below 150: weak")
-	officers.ensure(medium_general, wars, state.difficulty)
-	check(officers.staff(medium_general).general == null and officers.staff(medium_general).advisor == null,
-			"Weak clans have nobody")
-	wars.fronts[medium_general].strength = 200
-	wars.fronts[medium_advisor].strength = 200
-	officers.ensure(medium_general, wars, state.difficulty)
-	officers.ensure(medium_advisor, wars, state.difficulty)
-	var general := officers.staff(medium_general).general
-	check(general != null and officers.staff(medium_general).advisor == null, "A medium clan: one general…")
-	check(general.stars >= 1 and general.stars <= 2, "of 1–2 stars")
-	check(general.items.is_empty() and general.trait_id == &"", "no items, no trait")
-	check(officers.staff(medium_advisor).advisor != null and officers.staff(medium_advisor).general == null,
-			"…or one advisor")
-	wars.fronts[medium_general].strength = 500
-	officers.ensure(medium_general, wars, state.difficulty)
-	check_eq(officers.staff(medium_general).general.stars, 3, "Strong: a 3-star general…")
-	check_eq(officers.staff(medium_general).advisor.stars, 3, "and a 3-star advisor")
-	check(officers.describe(medium_general, wars, state.difficulty).contains("Mưu sĩ"), "Shown in the clan panel")
-	wars.fronts[medium_general].strength = 100
-	check_eq(officers.describe(medium_general, wars, state.difficulty), "", "A beaten clan fields nobody")
+	var clan: StringName = wars.fronts.keys()[0]
+	for entry: Array in [[100, Wars.Tier.WEAK, 1, 2], [200, Wars.Tier.MEDIUM, 3, 4], [500, Wars.Tier.STRONG, 5, 6]]:
+		wars.fronts[clan].strength = entry[0]
+		check_eq(wars.tier(clan), entry[1], "Strength %d: tier %d" % [entry[0], entry[1]])
+		officers.ensure(clan, wars, state.difficulty)
+		var s := officers.staff(clan)
+		check(s.general != null and s.advisor != null, "Every clan has a general and an advisor")
+		for officer: Officer in [s.general, s.advisor]:
+			check(officer.stars >= entry[2] and officer.stars <= entry[3], "%d–%d stars" % [entry[2], entry[3]])
+		check(not (s.general.stars == entry[3] and s.advisor.stars == entry[3]), "Only one at the top stars")
+	check(officers.staff(clan).general.items.is_empty() and officers.staff(clan).general.trait_id == &"",
+			"No items, no trait")
+	check(officers.describe(clan, wars, state.difficulty).contains("Mưu sĩ"), "Shown in the clan panel")
+	var strong_general := officers.staff(clan).general
+	officers.ensure(clan, wars, state.difficulty)
+	check(officers.staff(clan).general == strong_general, "Kept while the tier holds")
+	wars.fronts[clan].strength = 100
+	officers.ensure(clan, wars, state.difficulty)
+	check(officers.staff(clan).general.stars <= 2, "A beaten clan's officers are replaced by weak ones")
+
+	var tops := 0
+	for i in 60:
+		var s := officers.staff(clan)
+		s.general = null
+		s.advisor = null
+		wars.fronts[clan].strength = 500
+		officers.ensure(clan, wars, state.difficulty)
+		check(s.general.stars + s.advisor.stars <= 11, "Never two 6-star officers")
+		tops += 1 if maxi(s.general.stars, s.advisor.stars) == 6 else 0
+	check(tops > 10, "Strong clans often have one 6-star officer (%d/60)" % tops)
 
 	var legendary := _state({"difficulty": Difficulty.Level.LEGENDARY})
-	var clan := _clan_with_kind(legendary, &"general")
-	legendary.wars.fronts[clan].strength = roundi(200 * legendary.wars.enemy_scale)
-	legendary.clan_officers.ensure(clan, legendary.wars, legendary.difficulty)
-	var stars := legendary.clan_officers.staff(clan).general.stars
-	check(stars >= 2 and stars <= 3, "Legendary medium: +1 star")
-	legendary.wars.fronts[clan].strength = roundi(500 * legendary.wars.enemy_scale)
-	legendary.clan_officers.ensure(clan, legendary.wars, legendary.difficulty)
-	check_eq(legendary.clan_officers.staff(clan).general.stars, 5, "Legendary strong: +2 stars")
+	var other: StringName = legendary.wars.fronts.keys()[0]
+	legendary.wars.fronts[other].strength = roundi(200 * legendary.wars.enemy_scale)
+	legendary.clan_officers.ensure(other, legendary.wars, legendary.difficulty)
+	var stars := legendary.clan_officers.staff(other).general.stars
+	check(stars >= 4 and stars <= 5, "Legendary medium: +1 star")
+	legendary.wars.fronts[other].strength = roundi(500 * legendary.wars.enemy_scale)
+	legendary.clan_officers.ensure(other, legendary.wars, legendary.difficulty)
+	stars = legendary.clan_officers.staff(other).general.stars
+	check(stars >= 5 and stars <= 6, "Legendary strong: still 5–6")
 
 
 func test_clan_officers_lead_and_may_fall() -> void:
 	var state := _state()
-	var clan := _clan_with_kind(state, &"general")
+	var clan: StringName = state.wars.fronts.keys()[0]
 	state.wars.fronts[clan].strength = 500
 	var side := state.wars.create_clan_side(clan, 500, state.units)
 	var squads := side.units.size()

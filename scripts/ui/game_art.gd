@@ -24,6 +24,14 @@ const LAYERS: Array[String] = ["", "_team", "_hair", "_accent"]
 ## Rows of every unit sprite sheet, top to bottom (tools/art/battle_art.py STATES); 2 frames each.
 const UNIT_STATES: Array[StringName] = [&"stand", &"walk", &"attack", &"fall", &"cheer"]
 const UNIT_FRAMES := 2
+## Officer sheets (general_… / advisor_…_t<tier>, M16g) have this many frames per state, played
+## over the same loop time as the soldiers' UNIT_FRAMES (anim_frame).
+const OFFICER_FRAMES := 4
+## Officers' looks by stars: 1–2★, 3–4★, 5–6★ (tools/art/battle_art.py OFFICER_TIERS).
+const OFFICER_TIER_SUFFIXES: Array[String] = ["_t1", "_t2", "_t3"]
+## The aura under officers from this many stars (M16g): a soft glow at 5★, gold with rising
+## sparks at 6★.
+const AURA_MIN_STARS := 5
 ## Board art is shown ×2: 24×24 tiles fill a cell (BoardView.TILE_SIZE), 16×16 buildings stand in
 ## its middle (M13c).
 const ART_SCALE := 2
@@ -163,9 +171,70 @@ static func unit_sheet(sprite_id: StringName, layer: String = "") -> Texture2D:
 
 ## The battle sprite of a general (&"general") or an advisor (&"advisor") with this look.
 ## `weapon_type`: the general's worn weapon (Item.WEAPON_TYPES, M12e); &"" is a plain sword.
-static func officer_sprite(kind: StringName, look: OfficerLook, weapon_type: StringName = &"") -> StringName:
+## `stars` picks the look of their tier (officer_tier, M16g).
+static func officer_sprite(kind: StringName, look: OfficerLook, weapon_type: StringName = &"",
+		stars: int = 1) -> StringName:
 	var id := "%s_%s" % [kind, "f" if look != null and look.is_female() else "m"]
-	return StringName(id + ("_" + String(weapon_type) if weapon_type != &"" else ""))
+	id += "_" + String(weapon_type) if weapon_type != &"" else ""
+	return StringName(id + OFFICER_TIER_SUFFIXES[officer_tier(stars) - 1])
+
+
+## 1 (1–2★), 2 (3–4★) or 3 (5–6★).
+static func officer_tier(stars: int) -> int:
+	return clampi((stars + 1) / 2, 1, 3)
+
+
+## Frames per state in this sprite's sheet.
+static func frames_of(sprite_id: StringName) -> int:
+	return OFFICER_FRAMES if String(sprite_id).right(3) in OFFICER_TIER_SUFFIXES else UNIT_FRAMES
+
+
+## The frame to show `beat` beats into a loop, a beat being one soldier frame (callers count
+## seconds × their frames per second): officers step through their extra frames in the same time.
+static func anim_frame(sprite_id: StringName, beat: float) -> int:
+	var frames := frames_of(sprite_id)
+	return int(beat * frames / UNIT_FRAMES) % frames
+
+
+## The 5–6★ aura (M16g) under an officer whose sprite stands on `foot`, `art_scale` × the art and
+## `sprite_id` sized: a soft pulsing glow at 5★, a gold one at 6★. Draw it before the sprite and
+## draw_aura_sparks after. `time` in seconds.
+static func draw_aura(canvas: CanvasItem, sprite_id: StringName, foot: Vector2, art_scale: float, stars: int,
+		time: float) -> void:
+	if stars < AURA_MIN_STARS:
+		return
+	var gold := stars >= 6
+	var pulse := 0.5 + 0.5 * sin(time * 3.0)
+	var color := Color(1.0, 0.82, 0.25) if gold else Color(0.7, 0.88, 1.0)
+	var radius := _aura_width(sprite_id) * 0.5 * art_scale
+	canvas.draw_set_transform(foot, 0.0, Vector2(1.0, 0.32))
+	for ring in 3:
+		var alpha := (0.3 + 0.15 * pulse) * (1.0 - ring * 0.3)
+		canvas.draw_circle(Vector2.ZERO, radius * (0.6 + ring * 0.25), Color(color, alpha))
+	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## The 6★ aura's gold sparks rising around the officer, drawn over their sprite (draw_aura).
+static func draw_aura_sparks(canvas: CanvasItem, sprite_id: StringName, foot: Vector2, art_scale: float,
+		stars: int, time: float) -> void:
+	if stars < 6:
+		return
+	var width := _aura_width(sprite_id)
+	for i in 8:
+		var rise := fmod(time * 0.5 + i / 8.0, 1.0)
+		var x := sin(i * 2.4 + time * 0.7) * width * 0.45 * art_scale
+		var spark := foot + Vector2(x, -rise * width * 0.9 * art_scale)
+		var side := art_scale * (1.5 if i % 2 == 0 else 1.0)
+		var fade := 1.0 - rise * rise
+		canvas.draw_rect(Rect2(spark - Vector2.ONE * side * 0.5, Vector2.ONE * side), Color(0.85, 0.55, 0.1, fade))
+		canvas.draw_rect(Rect2(spark - Vector2.ONE * side * 0.25, Vector2.ONE * side * 0.5),
+				Color(1.0, 1.0, 0.75, fade))
+
+
+## The width of a frame of this sprite in art pixels (16 when it cannot be loaded).
+static func _aura_width(sprite_id: StringName) -> float:
+	var sheet := unit_sheet(sprite_id)
+	return sheet.get_width() / float(frames_of(sprite_id)) if sheet != null else 16.0
 
 
 ## Tints for draw_unit: the side's color, plus the officer's hair and accent colors.
@@ -184,7 +253,7 @@ static func draw_unit(canvas: CanvasItem, sprite_id: StringName, foot: Vector2, 
 	var base := unit_sheet(sprite_id)
 	if base == null:
 		return
-	var region := unit_frame(base, state, frame)
+	var region := unit_frame(base, state, frame, frames_of(sprite_id))
 	var rect := Rect2(Vector2(-region.size.x * 0.5, -region.size.y), region.size)
 	canvas.draw_set_transform(foot, rotation, scale)
 	canvas.draw_texture_rect_region(base, rect, region, Color.WHITE.darkened(darken))
@@ -197,10 +266,10 @@ static func draw_unit(canvas: CanvasItem, sprite_id: StringName, foot: Vector2, 
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-## The region of `sheet` holding `frame` of `state`.
-static func unit_frame(sheet: Texture2D, state: StringName, frame: int) -> Rect2:
-	var size := sheet.get_size() / Vector2(UNIT_FRAMES, UNIT_STATES.size())
-	return Rect2(Vector2(frame % UNIT_FRAMES, maxi(0, UNIT_STATES.find(state))) * size, size)
+## The region of `sheet` (with `frames` frames per state) holding `frame` of `state`.
+static func unit_frame(sheet: Texture2D, state: StringName, frame: int, frames: int = UNIT_FRAMES) -> Rect2:
+	var size := sheet.get_size() / Vector2(frames, UNIT_STATES.size())
+	return Rect2(Vector2(frame % frames, maxi(0, UNIT_STATES.find(state))) * size, size)
 
 
 ## Battlefield pieces: &"mountains", &"cloud", &"ground", &"town", &"camp" (+ &"camp_team").

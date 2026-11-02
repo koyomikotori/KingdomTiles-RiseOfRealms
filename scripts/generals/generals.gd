@@ -300,6 +300,7 @@ static func _arm_guard(side: BattleSide, general: General) -> BattleSide.Unit:
 		guard.defense_pierce = WEAPON_PIERCE.get(weapon.weapon_type, 0.0) * points
 	side.general_name = general.name
 	side.general_look = general.look
+	side.general_stars = general.stars
 	side.general_weapon = general.weapon_type()
 	return guard
 
