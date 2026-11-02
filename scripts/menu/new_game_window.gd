@@ -1,11 +1,13 @@
 class_name NewGameWindow
 extends ModalWindow
 ## Starting a new game (GDD §15, M14h): a picture of the kingdom at its greatest (the level-6
-## castle and its soldiers) in the chosen color, the kingdom's name, its color and, near the
-## bottom, the difficulty; "Bắt đầu chơi" or back to the main menu. Legendary stays locked until a
+## castle and its soldiers) in the chosen color, the ruler ("Thay đổi" opens RulerWindow, M16h),
+## the kingdom's name, its color and, near the bottom, the difficulty; "Bắt đầu chơi" or back to
+## the main menu. Legendary stays locked until a
 ## game was won on Normal or Hard (GameSettings.legendary_unlocked).
 
-## The choices are made: {"difficulty", "name", "color"} for KingdomState.setup_new_game.
+## The choices are made: {"difficulty", "name", "color", "ruler_preset", "ruler_name"} for
+## KingdomState.setup_new_game.
 signal start_requested(settings: Dictionary)
 
 const SWATCH_SIZE := Vector2(44, 44)
@@ -22,6 +24,8 @@ var _difficulty: int = Difficulty.Level.NORMAL
 var _castle: TextureRect
 var _figures: Array[OfficerFigure] = []
 var _commander: General
+var _ruler := Ruler.from_preset(0)
+var _ruler_label: Label
 var _color_row: HBoxContainer
 var _difficulty_row: HBoxContainer
 var _description: Label
@@ -30,6 +34,9 @@ var _description: Label
 func open() -> void:
 	var body := build_frame("Ván mới", UiPalette.TEXT, 0.5, false)
 	body.add_child(_build_preview())
+	_ruler_label = _label("", 15, false)
+	_ruler_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(_row([_ruler_label, _button("Thay đổi", _open_ruler)]))
 	body.add_child(_label("Tên gia tộc của bạn:", 15, false))
 	_name_edit = LineEdit.new()
 	_name_edit.placeholder_text = KingdomState.DEFAULT_KINGDOM_NAME
@@ -78,8 +85,7 @@ func _build_preview() -> Control:
 	for unit in UnitData.load_all():
 		units[unit.unit_id] = unit
 	var figures: Array[OfficerFigure] = []
-	var commander := OfficerFigure.new()
-	figures.append(commander)
+	figures.append(OfficerFigure.new())
 	for unit_id in PREVIEW_UNITS:
 		if units.has(unit_id):
 			var figure := OfficerFigure.new()
@@ -128,13 +134,24 @@ func _refresh() -> void:
 		button.custom_minimum_size = Vector2(130, 44)
 		button.disabled = level == Difficulty.Level.LEGENDARY and not unlocked
 		_difficulty_row.add_child(button)
+	_ruler_label.text = "Chúa công: %s (%s)" % [_ruler.name, _ruler.describe()]
 	_description.text = Difficulty.DESCRIPTIONS[_difficulty]
 	if not unlocked:
 		_description.text += "\nHuyền thoại mở sau khi thắng một ván Bình thường hoặc Khó."
 
 
+func _open_ruler() -> void:
+	var window := RulerWindow.new()
+	get_parent().add_child(window)
+	window.open(_ruler.preset, _ruler.name, _color)
+	window.chosen.connect(func(preset: int, ruler_name: String) -> void:
+		_ruler = Ruler.from_preset(preset, ruler_name)
+		_refresh())
+
+
 func _start() -> void:
-	start_requested.emit({"difficulty": _difficulty, "name": _name_edit.text, "color": _color})
+	start_requested.emit({"difficulty": _difficulty, "name": _name_edit.text, "color": _color,
+			"ruler_preset": _ruler.preset, "ruler_name": _ruler.name})
 
 
 ## Esc goes back to the main menu.

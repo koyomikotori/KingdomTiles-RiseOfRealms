@@ -29,9 +29,14 @@ func _draw() -> void:
 	if _officer == null:
 		return
 	var rect := Rect2(Vector2.ZERO, Vector2.ONE * SIZE * art_scale)
-	var picture := GameArt.custom_portrait(_officer.name)
-	if picture == null:
-		picture = GameArt.officer_pool_portrait(_officer)
+	# A ruler shows their preset's picture (GDD §24), never a pool one.
+	var picture: Texture2D = null
+	if _officer is Ruler:
+		picture = GameArt.ruler_portrait((_officer as Ruler).preset)
+	else:
+		picture = GameArt.custom_portrait(_officer.name)
+		if picture == null:
+			picture = GameArt.officer_pool_portrait(_officer)
 	if picture != null:
 		for entry: Array in [["bg", null], [picture, null], [frame_part(_officer), null]]:
 			var texture: Texture2D = entry[0] if entry[0] is Texture2D else GameArt.portrait_part(entry[0])
@@ -49,12 +54,14 @@ static func layers(officer: Officer, team: Color) -> Array:
 	var look := officer.look
 	var g := "f" if look.is_female() else "m"
 	var kind := "advisor" if officer is Advisor else "general"
+	var outfit := String((officer as Ruler).outfit()) if officer is Ruler else ""
+	var body := "ruler_" + outfit if officer is Ruler else kind
 	var hair := look.hair_tint()
 	var result: Array = [
 		["bg", Color.WHITE],
 		["hair_back_%s_%d" % [g, look.hair_style], hair],
-		["body_%s_team" % kind, team],
-		["body_%s" % kind, Color.WHITE],
+		["body_%s_team" % body, team],
+		["body_%s" % body, Color.WHITE],
 		["face_%s" % g, look.skin_color()],
 	]
 	if look.beard > 0:
@@ -66,6 +73,8 @@ static func layers(officer: Officer, team: Color) -> Array:
 		["hair_front_%s_%d" % [g, look.hair_style], hair],
 	])
 	var headgear := "helmet" if kind == "general" else ("hairpin" if look.is_female() else "scholar_hat")
+	if officer is Ruler:
+		headgear = "ruler_hat_%s_%s" % [outfit, g]
 	result.append([headgear, Color.WHITE])
 	result.append([headgear + "_accent", look.accent_color()])
 	result.append([frame_part(officer), Color.WHITE])

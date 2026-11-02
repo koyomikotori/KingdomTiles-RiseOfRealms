@@ -432,6 +432,111 @@ def black_market_merchant() -> Canvas:
     return full
 
 
+# --- The ruler (Chúa công, M16h) --------------------------------------------------------------
+RULER_OUTFITS = ("dragon", "armor", "brocade")
+RK = {
+    "yellow": hex_color("f0c030"), "yellow_dark": hex_color("c08a1a"), "yellow_light": hex_color("fff09a"),
+    "red": hex_color("b8281e"), "red_dark": hex_color("7e1a14"), "jade": hex_color("3aa07a"),
+}
+
+
+def ruler_body(outfit: str) -> tuple:
+    """The ruler's shoulders: a yellow dragon robe with a red collar and a gold dragon coil; gold
+    armor over the side's color with a red cape; a brocade robe in the side's color with gold
+    dots. Returns the full color layer and the side-colored layer."""
+    if outfit == "armor":
+        base, team = body("general")
+        for y in range(36, 48):  # red cape at the shoulders' edges
+            base.hline(4, 6, y, RK["red"])
+            base.hline(41, 43, y, RK["red"])
+        base.rect(20, 42, 8, 3, K["gold"])
+        base.hline(21, 26, 43, K["gold_light"])
+        base.outline(K["line"])
+        return base, team
+    base = Canvas(S, S)
+    team = Canvas(S, S)
+    fill, shade = (RK["yellow"], RK["yellow_dark"]) if outfit == "dragon" else (None, None)
+    target = team if outfit == "brocade" else base
+    for y in range(36, 48):
+        half = 13 + min(6, (y - 36) // 2)
+        target.hline(24 - half, 23 + half, y, fill or G_BASE)
+        target.px(24 - half, y, shade or G_SHADE)
+        target.px(23 + half, y, shade or G_SHADE)
+    collar = RK["red"] if outfit == "dragon" else K["white"]
+    for y in range(36, 48):
+        d = y - 36
+        if d < 12:
+            base.px(20 + d // 2, y, collar)
+            base.px(27 - d // 2, y, collar)
+        if d < 10:
+            base.px(21 + d // 2, y, collar)
+    if outfit == "dragon":  # gold dragon coils on both shoulders
+        for cx in (12, 35):
+            for i, (dx, dy) in enumerate(((0, 0), (1, -1), (2, 0), (2, 1), (1, 2), (0, 2), (-1, 1))):
+                base.px(cx + dx, 41 + dy, RK["yellow_light"] if i % 2 else K["gold_dark"])
+            base.px(cx + 1, 41, RK["red"])
+    else:  # brocade
+        for y in range(39, 48, 3):
+            for x in range(9 + (y % 2) * 2, 40, 4):
+                if not 18 <= x <= 29:
+                    base.px(x, y, K["gold"])
+    base.outline(K["line"])
+    team.outline(K["line"])
+    return base, team
+
+
+def ruler_hat(outfit: str, female: bool) -> tuple:
+    """The ruler's headgear (and its accent layer): an imperial mũ miện with bead strings, or a
+    gold phoenix crown for a woman; a gold helmet with a red tassel and a plume; a black official's
+    cap or a gold-pinned bun."""
+    c = Canvas(S, S)
+    accent = Canvas(S, S)
+    if outfit == "dragon" and not female:
+        for y in range(5, 12):  # the cap
+            c.hline(17, 30, y, K["hat"])
+        c.hline(18, 29, 6, K["hat_light"])
+        c.hline(10, 37, 3, K["hat"])  # the flat board
+        c.hline(10, 37, 4, K["gold"])
+        c.hline(11, 36, 2, K["gold_dark"])
+        for x in range(11, 37, 3):  # bead strings in front of the brow
+            for y in range(5, 9 + (x // 3) % 2):
+                c.px(x, y, K["gold_light"] if y % 2 else RK["red"])
+        accent.hline(17, 30, 11, G_BASE)
+    elif outfit == "dragon":
+        for y in range(4, 13):
+            half = 9 - max(0, 7 - y)
+            c.hline(24 - half, 23 + half, y, K["gold"])
+        c.hline(16, 31, 12, K["gold_dark"])
+        c.ellipse(24, 8, 2.5, 2.5, RK["red"])
+        c.px(23, 7, K["gold_light"])
+        for x0 in (8, 37):  # phoenix wings and dangling beads
+            c.hline(x0, x0 + 3, 7, K["gold"])
+            c.vline(x0 + 1, 8, 15, K["gold_dark"])
+        for x in (9, 38):
+            accent.px(x, 16, G_BASE)
+            accent.px(x, 17, G_SHADE)
+        accent.ellipse(24, 3, 2, 1.6, G_BASE)
+    elif outfit == "armor":
+        base, feathers = helmet()
+        c.paste(base, 0, 0)
+        c.rect(22, 3, 4, 3, RK["red"])  # red tassel on the crest
+        accent.paste(feathers, 0, 0)
+    elif outfit == "brocade" and not female:
+        base, band = scholar_hat()
+        c.paste(base, 0, 0)
+        c.rect(22, 6, 4, 2, K["gold"])
+        accent.paste(band, 0, 0)
+    else:  # brocade, a woman
+        base, ornament = hairpin()
+        c.paste(base, 0, 0)
+        c.hline(18, 28, 6, K["gold"])
+        accent.paste(ornament, 0, 0)
+    if outfit == "dragon":
+        c.outline(K["line"])
+        accent.outline(K["line"])
+    return c, accent
+
+
 def save_part(part: Canvas, relative: str) -> None:
     """Saves a 48×48 part doubled onto the 96×96 portrait canvas."""
     full = Canvas(F, F)
@@ -460,6 +565,14 @@ def draw_all() -> None:
         base, team = body(kind)
         save_part(base, f"portraits/body_{kind}.png")
         save_part(team, f"portraits/body_{kind}_team.png")
+    for outfit in RULER_OUTFITS:
+        base, team = ruler_body(outfit)
+        save_part(base, f"portraits/body_ruler_{outfit}.png")
+        save_part(team, f"portraits/body_ruler_{outfit}_team.png")
+        for gender, female in (("m", False), ("f", True)):
+            base, accent = ruler_hat(outfit, female)
+            save_part(base, f"portraits/ruler_hat_{outfit}_{gender}.png")
+            save_part(accent, f"portraits/ruler_hat_{outfit}_{gender}_accent.png")
     for name, draw in (("helmet", helmet), ("scholar_hat", scholar_hat), ("hairpin", hairpin)):
         base, accent = draw()
         save_part(base, f"portraits/{name}.png")

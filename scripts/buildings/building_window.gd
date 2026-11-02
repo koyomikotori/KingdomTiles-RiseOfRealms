@@ -88,6 +88,9 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 	_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	area.add_child(_tabs)
 	_info = _tab_label("Thông tin")
+	if _is_castle:
+		_info.get_parent().add_child(_ruler_row())
+		_info.get_parent().move_child(_info, -1)
 	_info_view = _view_under(_info)
 	# Buildings that never level up get no Upgrade tab (M16c).
 	if _is_castle or (_building != null and _building.is_upgradable()):
@@ -138,6 +141,21 @@ func _open_construction(body: VBoxContainer, cell: CellData) -> void:
 		add_action("Hủy nâng cấp", _ask.bind(Action.CANCEL_UPGRADE), true)
 	else:
 		add_action("Phá hủy", _ask.bind(Action.DEMOLISH), true)
+
+
+## The ruler at the top of the castle's info tab (M16h): portrait (as big as the Chiêu hiền
+## ones), name and look.
+func _ruler_row() -> Control:
+	var ruler := _state.ruler
+	var portrait := PortraitView.new()
+	portrait.setup(ruler, 1.0, _state.player_color)
+	var text := _label("Chúa công %s
+%s" % [ruler.name, ruler.describe()], 15, false)
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var row := _row([portrait, text])
+	row.add_theme_constant_override("separation", 12)
+	return row
 
 
 func _title() -> String:

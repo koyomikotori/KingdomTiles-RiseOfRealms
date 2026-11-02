@@ -20,6 +20,8 @@ import numpy as np
 from PIL import Image
 
 SIZE, TOP, COLORS = 96, 5, 48
+# Opaque islands smaller than this (in real pixels) are background sparkles, not the figure.
+SPECK_PIXELS = 60
 # Block sizes the grid search tries, in source pixels.
 MIN_BLOCK, MAX_BLOCK, BLOCK_STEP = 3.0, 20.0, 0.05
 # Gemini's watermark: its alpha mask and where its top-left corner sits in a 1024x1024 image.
@@ -116,6 +118,31 @@ def corner_color(im: Image.Image) -> tuple:
     return tuple(int(v) for v in np.median(border, axis=0))
 
 
+def remove_specks(im: Image.Image) -> Image.Image:
+    """Clears opaque islands smaller than SPECK_PIXELS (sparkles Gemini scatters on the
+    background); anything that large or touching the figure stays."""
+    a = np.asarray(im).copy()
+    solid = a[..., 3] >= 128
+    h, w = solid.shape
+    seen = np.zeros_like(solid)
+    for y0, x0 in zip(*np.nonzero(solid)):
+        if seen[y0, x0]:
+            continue
+        island, queue = [], deque([(y0, x0)])
+        seen[y0, x0] = True
+        while queue:
+            y, x = queue.popleft()
+            island.append((y, x))
+            for ny, nx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+                if 0 <= ny < h and 0 <= nx < w and solid[ny, nx] and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    queue.append((ny, nx))
+        if len(island) < SPECK_PIXELS:
+            for y, x in island:
+                a[y, x, 3] = 0
+    return Image.fromarray(a)
+
+
 def fix(src: str, dst: str) -> None:
     im = remove_gemini_sparkle(Image.open(src).convert("RGBA"))
     key = corner_color(im)
@@ -126,6 +153,7 @@ def fix(src: str, dst: str) -> None:
         im = remove_checker(im) if flat_gray else remove_key_color(im, key)
     alpha = im.getchannel("A").point(lambda v: 255 if v >= 128 else 0)
     im.putalpha(alpha)
+    im = remove_specks(im)
     im = im.crop(im.getbbox())
     if im.width > SIZE:
         im = im.resize((SIZE, max(1, round(im.height * SIZE / im.width))), Image.NEAREST)
