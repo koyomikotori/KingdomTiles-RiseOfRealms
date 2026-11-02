@@ -241,6 +241,7 @@ func assist(side: BattleSide) -> void:
 func assist_officer(side: BattleSide, advisor: Advisor, strategy: int, stratagem_bonus: float) -> void:
 	side.advisor_name = advisor.name
 	side.advisor_look = advisor.look
+	side.advisor_stars = advisor.stars
 	side.strategy = strategy
 	side.stratagem_bonus = stratagem_bonus
 	for id in advisor.stratagems:

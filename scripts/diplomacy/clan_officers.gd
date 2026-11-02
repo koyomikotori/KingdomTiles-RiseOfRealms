@@ -1,16 +1,18 @@
 class_name ClanOfficers
 extends RefCounted
-## The generals and advisors of the clans (GDD §15, M14h), owned by KingdomState. Weak clans field
-## none; medium clans one general or one advisor of 1–2 stars; strong clans both, 3 stars; on
-## Legendary medium clans get +1 star and strong clans +2 (Difficulty). The tier comes from the
-## clan's current strength (Wars.tier), so a beaten clan stops fielding them until it grows back.
+## The generals and advisors of the clans (GDD §15, M14h; M16g), owned by KingdomState. Every clan
+## fields a general and an advisor, their stars by the clan's tier (STARS_BY_TIER: weak 1–2,
+## medium 3–4, strong 5–6; on Legendary weak and medium clans get +1, Difficulty), but only one of
+## the two may have the tier's top stars. The tier comes from the clan's current strength
+## (Wars.tier): officers whose stars no longer fit it are replaced by new ones.
 ## They lead the clan's army like the kingdom's own (Generals.lead_officer, Advisors.assist_officer)
 ## but have no items or traits. A fallen general may die (Generals.DEATH_CHANCE) and is replaced
 ## after VACANCY_TURNS turns; otherwise they are wounded for a few turns and stay at home.
 ## Officers are made when a clan first needs them, with their own random numbers.
 
-const MEDIUM_STARS := Vector2i(1, 2)
-const STRONG_STARS := 3
+## Lowest and highest stars of a clan's officers by Wars.Tier (WEAK, MEDIUM, STRONG).
+const STARS_BY_TIER: Array[Vector2i] = [Vector2i(1, 2), Vector2i(3, 4), Vector2i(5, 6)]
+const MAX_STARS := 6
 const VACANCY_TURNS := 5
 ## The bandits' leader (M16e) is kept under this key: [first turn, lowest stars, highest stars],
 ## a weak leader from turn 20, a medium one from 40, a strong one from 60.
@@ -40,19 +42,17 @@ func _init() -> void:
 	_advisors.rng = rng
 
 
-## Medium clans field a general or an advisor, always the same kind for a clan.
-static func medium_kind(clan_id: StringName) -> StringName:
-	return &"general" if String(clan_id).hash() % 2 == 0 else &"advisor"
+## The (lowest, highest) stars of the officers of a clan of `tier` on difficulty `level`.
+static func star_range(tier: int, level: int) -> Vector2i:
+	var stars := STARS_BY_TIER[clampi(tier, 0, STARS_BY_TIER.size() - 1)]
+	var extra := Difficulty.extra_stars(level, tier)
+	return Vector2i(mini(stars.x + extra, MAX_STARS), mini(stars.y + extra, MAX_STARS))
 
 
-## Lowest stars a clan of `tier` wants for `kind`; 0 = it fields none.
-static func wanted_stars(clan_id: StringName, tier: int, kind: StringName, level: int) -> int:
-	match tier:
-		Wars.Tier.MEDIUM:
-			return MEDIUM_STARS.x + Difficulty.extra_stars(level, tier) if kind == medium_kind(clan_id) else 0
-		Wars.Tier.STRONG:
-			return STRONG_STARS + Difficulty.extra_stars(level, tier)
-	return 0
+## Whether `officer` has stars that suit a clan of `tier` now.
+static func fits(officer: Officer, tier: int, level: int) -> bool:
+	var stars := star_range(tier, level)
+	return officer != null and officer.stars >= stars.x and officer.stars <= stars.y
 
 
 func staff(clan_id: StringName) -> Staff:
@@ -61,17 +61,16 @@ func staff(clan_id: StringName) -> Staff:
 	return staffs[clan_id]
 
 
-## Makes or promotes the officers the clan wants now (its tier may have grown).
+## Makes the officers the clan is missing and replaces those whose stars no longer suit its tier.
+## Only one of the two may have the tier's top stars.
 func ensure(clan_id: StringName, wars: Wars, level: int) -> void:
 	var tier := wars.tier(clan_id)
 	var s := staff(clan_id)
-	var general_stars := wanted_stars(clan_id, tier, &"general", level)
-	if general_stars > 0 and s.vacancy <= 0 and (s.general == null or s.general.stars < general_stars):
-		s.general = _generals.generate(_roll_stars(tier, general_stars))
+	if s.vacancy <= 0 and not fits(s.general, tier, level):
+		s.general = _generals.generate(_roll_stars(tier, level, s.advisor if fits(s.advisor, tier, level) else null))
 		s.general.trait_id = &""
-	var advisor_stars := wanted_stars(clan_id, tier, &"advisor", level)
-	if advisor_stars > 0 and s.advisor_vacancy <= 0 and (s.advisor == null or s.advisor.stars < advisor_stars):
-		s.advisor = _advisors.generate(_roll_stars(tier, advisor_stars))
+	if s.advisor_vacancy <= 0 and not fits(s.advisor, tier, level):
+		s.advisor = _advisors.generate(_roll_stars(tier, level, s.general if fits(s.general, tier, level) else null))
 
 
 ## The stars the bandits' leader has on `turn`: (lowest, highest), ZERO before the first one.
@@ -106,25 +105,24 @@ func lead_bandits(side: BattleSide, turn: int) -> void:
 		_generals.lead_officer(side, general)
 
 
-func _roll_stars(tier: int, lowest: int) -> int:
-	if tier == Wars.Tier.MEDIUM:
-		return lowest + rng.randi_range(0, MEDIUM_STARS.y - MEDIUM_STARS.x)
-	return lowest
+## Stars for a new officer of a clan of `tier`: the lowest when `partner` (the other officer)
+## already has the top stars.
+func _roll_stars(tier: int, level: int, partner: Officer) -> int:
+	var stars := star_range(tier, level)
+	if partner != null and partner.stars >= stars.y:
+		return stars.x
+	return rng.randi_range(stars.x, stars.y)
 
 
-## The general and advisor the clan sends into battle now (null when none, wounded or not wanted).
-func fielded_general(clan_id: StringName, wars: Wars, level: int) -> General:
+## The general and advisor the clan sends into battle now (null when none or wounded).
+func fielded_general(clan_id: StringName, _wars: Wars, _level: int) -> General:
 	var general := staff(clan_id).general
-	if general == null or general.wounded_turns > 0:
-		return null
-	return general if wanted_stars(clan_id, wars.tier(clan_id), &"general", level) > 0 else null
+	return general if general != null and general.wounded_turns <= 0 else null
 
 
-func fielded_advisor(clan_id: StringName, wars: Wars, level: int) -> Advisor:
+func fielded_advisor(clan_id: StringName, _wars: Wars, _level: int) -> Advisor:
 	var advisor := staff(clan_id).advisor
-	if advisor == null or advisor.wounded_turns > 0:
-		return null
-	return advisor if wanted_stars(clan_id, wars.tier(clan_id), &"advisor", level) > 0 else null
+	return advisor if advisor != null and advisor.wounded_turns <= 0 else null
 
 
 ## Puts the clan's officers at the head of its army on `side` (its own units, not lent ones).
@@ -204,9 +202,9 @@ func describe(clan_id: StringName, wars: Wars, level: int) -> String:
 	ensure(clan_id, wars, level)
 	var parts: Array[String] = []
 	var s := staff(clan_id)
-	for entry: Array in [[s.general, "Tướng", &"general"], [s.advisor, "Mưu sĩ", &"advisor"]]:
+	for entry: Array in [[s.general, "Tướng"], [s.advisor, "Mưu sĩ"]]:
 		var officer: Officer = entry[0]
-		if officer == null or wanted_stars(clan_id, wars.tier(clan_id), entry[2], level) == 0:
+		if officer == null:
 			continue
 		var text := "%s %s %s" % [entry[1], officer.name, officer.star_text()]
 		if officer.wounded_turns > 0:

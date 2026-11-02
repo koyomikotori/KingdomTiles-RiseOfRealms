@@ -102,7 +102,9 @@ func _apply_open() -> void:
 
 func _rebuild() -> void:
 	_title.text = "Thông báo · Lượt %d" % _turn
+	# Out of the list at once, so the old rows are never drawn under the new ones.
 	for child in _list.get_children():
+		_list.remove_child(child)
 		child.queue_free()
 	if _sections.is_empty():
 		var empty := _label(EMPTY_TEXT, LINE_FONT_SIZE)
@@ -150,6 +152,9 @@ func _label(text: String, font_size: int, wrap: bool = true) -> Label:
 	label.text = text
 	if wrap:
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		# Start at the list's width: a rebuild after this frame's layout would otherwise draw the
+		# label 1 px wide (one letter per line), which crashed the engine on Vietnamese text.
+		label.size.x = maxf(_list.size.x, WIDTH - 40.0)
 	else:
 		label.clip_text = true
 	label.add_theme_font_size_override("font_size", font_size)

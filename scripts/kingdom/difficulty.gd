@@ -13,10 +13,10 @@ const DESCRIPTIONS: Array[String] = [
 	"Quân địch mỗi đơn vị chỉ bằng 75% đơn vị tiêu chuẩn của bạn.",
 	"Quân địch mỗi đơn vị bằng 100% đơn vị tiêu chuẩn của bạn.",
 	"Quân địch mỗi đơn vị bằng 150% đơn vị tiêu chuẩn của bạn.",
-	"Quân địch mỗi đơn vị bằng 200%; tướng và mưu sĩ gia tộc trung bình +1 sao, gia tộc mạnh +2 sao.",
+	"Quân địch mỗi đơn vị bằng 200%; tướng và mưu sĩ gia tộc yếu và vừa +1 sao.",
 ]
-## Legendary: extra stars for the officers of medium / strong clans.
-const LEGENDARY_EXTRA_STARS: Dictionary[int, int] = {Wars.Tier.MEDIUM: 1, Wars.Tier.STRONG: 2}
+## Legendary: extra stars for the officers of weak / medium clans (strong ones already have 5–6).
+const LEGENDARY_EXTRA_STARS: Dictionary[int, int] = {Wars.Tier.WEAK: 1, Wars.Tier.MEDIUM: 1}
 
 
 static func enemy_scale(level: int) -> float:

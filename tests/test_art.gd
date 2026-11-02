@@ -101,11 +101,41 @@ func test_commander_and_strategist_have_their_own_sprites() -> void:
 		for gender: StringName in OfficerLook.GENDERS:
 			var look := OfficerLook.new()
 			look.gender = gender
-			var id := GameArt.officer_sprite(kind, look)
-			check_eq(id, StringName("%s_%s" % [kind, gender]), "Sprite id by gender")
-			for layer in GameArt.LAYERS:
-				check(ResourceLoader.exists(GameArt.UNIT_DIR + String(id) + layer + ".png"), "%s%s" % [id, layer])
-	var general := GameArt.unit_sheet(GameArt.officer_sprite(BattleView.GENERAL_KIND, null))
+			for stars in range(1, 7):
+				var id := GameArt.officer_sprite(kind, look, &"", stars)
+				check_eq(id, StringName("%s_%s_t%d" % [kind, gender, GameArt.officer_tier(stars)]),
+						"Sprite id by gender and tier")
+				for layer in GameArt.LAYERS:
+					check(ResourceLoader.exists(GameArt.UNIT_DIR + String(id) + layer + ".png"), "%s%s" % [id, layer])
+	var general_id := GameArt.officer_sprite(BattleView.GENERAL_KIND, null)
+	var general := GameArt.unit_sheet(general_id)
 	var soldier := GameArt.unit_sheet(&"swordsman")
-	check(GameArt.unit_frame(general, &"stand", 0).size.y > GameArt.unit_frame(soldier, &"stand", 0).size.y,
-			"The commander is bigger than a soldier")
+	check(GameArt.unit_frame(general, &"stand", 0, GameArt.frames_of(general_id)).size.y
+			> GameArt.unit_frame(soldier, &"stand", 0).size.y, "The commander is bigger than a soldier")
+
+
+func test_officer_tiers_and_frames() -> void:
+	check_eq([1, 2, 3, 4, 5, 6].map(GameArt.officer_tier), [1, 1, 2, 2, 3, 3], "Tiers by stars")
+	var look := OfficerLook.new()
+	for stars in [1, 3, 5]:
+		for kind: StringName in [BattleView.GENERAL_KIND, BattleView.ADVISOR_KIND]:
+			var id := GameArt.officer_sprite(kind, look, &"", stars)
+			var sheet := GameArt.unit_sheet(id)
+			check_eq(GameArt.frames_of(id), GameArt.OFFICER_FRAMES, "%s has 4 frames" % id)
+			check(sheet != null, "%s sheet loads" % id)
+			if sheet != null:
+				var frame := GameArt.unit_frame(sheet, &"cheer", 3, GameArt.OFFICER_FRAMES)
+				check_eq(sheet.get_size(), frame.size * Vector2(GameArt.OFFICER_FRAMES, GameArt.UNIT_STATES.size()),
+						"%s: 4 frames × 5 states" % id)
+	check_eq(GameArt.frames_of(&"general_guard"), GameArt.UNIT_FRAMES, "The bodyguard is a 2-frame unit sheet")
+	check_eq(GameArt.frames_of(&"general_duelist"), GameArt.UNIT_FRAMES, "So is the duelist")
+	var officer := GameArt.officer_sprite(BattleView.GENERAL_KIND, look)
+	check_eq([0.0, 0.5, 1.0, 1.5, 2.0].map(func(beat: float) -> int: return GameArt.anim_frame(officer, beat)),
+			[0, 1, 2, 3, 0], "Officers play 4 frames in a soldier's 2-frame loop")
+	check_eq(GameArt.anim_frame(&"swordsman", 1.5), 1, "Soldiers keep 2 frames")
+
+
+func test_duel_events_come_more_often() -> void:
+	for id in ["bandit_challenge", "enemy_duel"]:
+		var event: EventData = load("res://data/events/%s.tres" % id)
+		check_eq(event.weight, 4.5, "%s weight raised" % id)

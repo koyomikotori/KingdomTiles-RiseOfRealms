@@ -93,9 +93,11 @@ var display_name: String
 ## bandit brown). Lent units wear their clan's color instead (Unit.ally).
 var color := Color(0.6, 0.6, 0.6)
 var units: Array[Unit] = []
-## The commander leading this side, or "" (Generals.lead), and how they look (their sprite).
+## The commander leading this side, or "" (Generals.lead), and how they look (their sprite; their
+## stars pick its tier and the 5–6★ aura, M16g).
 var general_name := ""
 var general_look: OfficerLook
+var general_stars := 1
 ## Set by the simulator when the commander's bodyguard broke or died.
 var general_fallen := false
 ## The commander's weapon type (Item.WEAPON_TYPES; &"" = a plain sword), for their sprite.
@@ -104,6 +106,7 @@ var general_weapon: StringName = &""
 ## stratagems the simulator rolls at the start of the battle.
 var advisor_name := ""
 var advisor_look: OfficerLook
+var advisor_stars := 1
 var strategy := 0
 ## Extra stratagem chance from the advisor's items (M12e).
 var stratagem_bonus := 0.0

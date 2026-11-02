@@ -279,7 +279,8 @@ func _assign_lanes() -> void:
 func _home_x(view: UnitView) -> float:
 	var zone := _zone_width()
 	var x: float
-	if _is_in_side_zone(view.unit):
+	# Duelists wait at the back (M16g), facing each other across the field, then ride in.
+	if _is_in_side_zone(view.unit) or _is_duelist(view.unit):
 		x = zone * 0.5 + FIGURE_SPACING.x * (FIGURES_PER_ROW - 1) * 0.5
 	else:
 		x = zone + (FIGURES_PER_ROW * FIGURE_SPACING.x + (FRONT_ROW_LEAD if view.unit.row == UnitData.Row.FRONT else 0.0))
@@ -577,7 +578,7 @@ func _draw_unit(view: UnitView) -> void:
 				break
 	var base_id := view.unit.data.get_sprite_id()
 	var side := _simulator.record.sides[view.battle_side]
-	var leader_id := GameArt.officer_sprite(GENERAL_KIND, side.general_look, side.general_weapon)
+	var leader_id := GameArt.officer_sprite(GENERAL_KIND, side.general_look, side.general_weapon, side.general_stars)
 	var tints := GameArt.unit_tints(_clothes_color(view))
 	var leader_tints := GameArt.unit_tints(_clothes_color(view), side.general_look)
 	for figure in view.figures:
@@ -592,14 +593,19 @@ func _draw_unit(view: UnitView) -> void:
 					state = &"walk"
 				elif fighting or shooting:
 					state = &"attack"
-				var frame := _frame(state, figure.phase)
-				if shooting and not fighting and not running and not cheering:
+				var frame := _frame(state, figure.phase, sprite_id)
+				var foot := view.pos + figure.offset
+				if figure == leader:
+					GameArt.draw_aura(self, sprite_id, foot, SPRITE_SCALE, side.general_stars, _clock)
+				elif shooting and not fighting and not running and not cheering:
 					frame = 0 if _simulator.time - view.last_volley < SHOT_POSE_TIME * 0.5 else 1
-				_draw_sprite(sprite_id, view.pos + figure.offset, 0.0, facing, state, frame, 0.0, figure_tints)
+				_draw_sprite(sprite_id, foot, 0.0, facing, state, frame, 0.0, figure_tints)
+				if figure == leader:
+					GameArt.draw_aura_sparks(self, sprite_id, foot, SPRITE_SCALE, side.general_stars, _clock)
 			Figure.State.FLY:
 				_draw_sprite(sprite_id, figure.pos, figure.rotation, facing, &"fall", 0, 0.25, figure_tints)
 			Figure.State.FLEE:
-				_draw_sprite(sprite_id, figure.pos, 0.0, -facing, &"walk", _frame(&"walk", figure.phase), 0.35,
+				_draw_sprite(sprite_id, figure.pos, 0.0, -facing, &"walk", _frame(&"walk", figure.phase, sprite_id), 0.35,
 						figure_tints)
 	if view.unit.ally != null:
 		_draw_banner(view, facing, view.unit.ally.color, 18.0)
@@ -621,12 +627,16 @@ func _draw_advisor(battle_side: int) -> void:
 		state = &"cheer"
 	elif _simulator.time - _advisor_cast[battle_side] < ADVISOR_CAST_TIME:
 		state = &"attack"
-	_draw_sprite(GameArt.officer_sprite(ADVISOR_KIND, side.advisor_look), foot, 0.0, _facing(screen_side), state,
-			_frame(state, 0.0), 0.0, GameArt.unit_tints(side.color, side.advisor_look))
+	var sprite_id := GameArt.officer_sprite(ADVISOR_KIND, side.advisor_look, &"", side.advisor_stars)
+	GameArt.draw_aura(self, sprite_id, foot, SPRITE_SCALE, side.advisor_stars, _clock)
+	_draw_sprite(sprite_id, foot, 0.0, _facing(screen_side), state, _frame(state, 0.0, sprite_id), 0.0,
+			GameArt.unit_tints(side.color, side.advisor_look))
+	GameArt.draw_aura_sparks(self, sprite_id, foot, SPRITE_SCALE, side.advisor_stars, _clock)
 
 
-func _frame(state: StringName, phase: float) -> int:
-	return int(_clock * STATE_FPS.get(state, 2.0) + phase) % GameArt.UNIT_FRAMES
+## The frame of `sprite_id` to show now (officers have more frames over the same loop time).
+func _frame(state: StringName, phase: float, sprite_id: StringName) -> int:
+	return GameArt.anim_frame(sprite_id, _clock * STATE_FPS.get(state, 2.0) + phase)
 
 
 ## Clothes color: the side's color, or the lending clan's for allied units.
