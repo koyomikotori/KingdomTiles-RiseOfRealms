@@ -6,46 +6,218 @@
 
 [sub_resource type="Resource" id="outcome_0_0"]
 script = ExtResource("3_outcome")
-weight = 0.5
-text = "Hàng thật, giá hời!"
-resources = Dictionary[StringName, int]({&"stone": 25})
+weight = 0.14
+text = "Hàng thật, đổi được khoáng sản quý!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"ore": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+}
+})
 
 [sub_resource type="Resource" id="outcome_0_1"]
 script = ExtResource("3_outcome")
-weight = 0.35
-text = "Giá vừa phải, không lời không lỗ."
-resources = Dictionary[StringName, int]({&"stone": 12})
+weight = 0.13
+text = "Hàng thật, đổi được gỗ cứng tốt!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"hardwood": {
+8: 0.4,
+15: 0.4,
+20: 0.2
+}
+})
 
 [sub_resource type="Resource" id="outcome_0_2"]
 script = ExtResource("3_outcome")
+weight = 0.13
+text = "Hàng thật, đổi được mấy con ngựa khỏe!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"horses": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+}
+})
+
+[sub_resource type="Resource" id="outcome_0_3"]
+script = ExtResource("3_outcome")
 weight = 0.15
+text = "Giá vừa phải, không lời không lỗ."
+resources = Dictionary[StringName, int]({&"wood": 20})
+
+[sub_resource type="Resource" id="outcome_0_4"]
+script = ExtResource("3_outcome")
+weight = 0.15
+text = "Giá vừa phải, không lời không lỗ."
+resources = Dictionary[StringName, int]({&"stone": 10})
+
+[sub_resource type="Resource" id="outcome_0_5"]
+script = ExtResource("3_outcome")
+weight = 0.2
+text = "Bị ép giá, lỗ mất một nửa."
+resources = Dictionary[StringName, int]({&"wood": 10})
+
+[sub_resource type="Resource" id="outcome_0_6"]
+script = ExtResource("3_outcome")
+weight = 0.1
 text = "Hàng giả! Bọn chúng đã cao chạy xa bay."
 
 [sub_resource type="Resource" id="choice_0"]
 script = ExtResource("2_choice")
-text = "Mua một chuyến"
-hint = "Có thể lời to, cũng có thể bị lừa."
+text = "Đổi 20 lương thực"
+hint = "Có thể đổi được hàng quý, cũng có thể lỗ hoặc bị lừa."
 cost = Dictionary[StringName, int]({&"food": 20})
-outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1"), SubResource("outcome_0_2")])
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1"), SubResource("outcome_0_2"), SubResource("outcome_0_3"), SubResource("outcome_0_4"), SubResource("outcome_0_5"), SubResource("outcome_0_6")])
 
 [sub_resource type="Resource" id="outcome_1_0"]
 script = ExtResource("3_outcome")
-weight = 1.0
-text = "Đoàn thương nhân lặng lẽ rời đi."
+weight = 0.14
+text = "Hàng thật, đổi được khoáng sản quý!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"ore": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+}
+})
+
+[sub_resource type="Resource" id="outcome_1_1"]
+script = ExtResource("3_outcome")
+weight = 0.13
+text = "Hàng thật, đổi được gỗ cứng tốt!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"hardwood": {
+8: 0.4,
+15: 0.4,
+20: 0.2
+}
+})
+
+[sub_resource type="Resource" id="outcome_1_2"]
+script = ExtResource("3_outcome")
+weight = 0.13
+text = "Hàng thật, đổi được mấy con ngựa khỏe!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"horses": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+}
+})
+
+[sub_resource type="Resource" id="outcome_1_3"]
+script = ExtResource("3_outcome")
+weight = 0.15
+text = "Giá vừa phải, không lời không lỗ."
+resources = Dictionary[StringName, int]({&"food": 20})
+
+[sub_resource type="Resource" id="outcome_1_4"]
+script = ExtResource("3_outcome")
+weight = 0.15
+text = "Giá vừa phải, không lời không lỗ."
+resources = Dictionary[StringName, int]({&"stone": 10})
+
+[sub_resource type="Resource" id="outcome_1_5"]
+script = ExtResource("3_outcome")
+weight = 0.2
+text = "Bị ép giá, lỗ mất một nửa."
+resources = Dictionary[StringName, int]({&"food": 10})
+
+[sub_resource type="Resource" id="outcome_1_6"]
+script = ExtResource("3_outcome")
+weight = 0.1
+text = "Hàng giả! Bọn chúng đã cao chạy xa bay."
 
 [sub_resource type="Resource" id="choice_1"]
 script = ExtResource("2_choice")
+text = "Đổi 20 gỗ"
+hint = "Có thể đổi được hàng quý, cũng có thể lỗ hoặc bị lừa."
+cost = Dictionary[StringName, int]({&"wood": 20})
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1"), SubResource("outcome_1_2"), SubResource("outcome_1_3"), SubResource("outcome_1_4"), SubResource("outcome_1_5"), SubResource("outcome_1_6")])
+
+[sub_resource type="Resource" id="outcome_2_0"]
+script = ExtResource("3_outcome")
+weight = 0.14
+text = "Hàng thật, đổi được khoáng sản quý!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"ore": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+}
+})
+
+[sub_resource type="Resource" id="outcome_2_1"]
+script = ExtResource("3_outcome")
+weight = 0.13
+text = "Hàng thật, đổi được gỗ cứng tốt!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"hardwood": {
+8: 0.4,
+15: 0.4,
+20: 0.2
+}
+})
+
+[sub_resource type="Resource" id="outcome_2_2"]
+script = ExtResource("3_outcome")
+weight = 0.13
+text = "Hàng thật, đổi được mấy con ngựa khỏe!"
+random_resources = Dictionary[StringName, Dictionary]({
+&"horses": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+}
+})
+
+[sub_resource type="Resource" id="outcome_2_3"]
+script = ExtResource("3_outcome")
+weight = 0.15
+text = "Giá vừa phải, không lời không lỗ."
+resources = Dictionary[StringName, int]({&"food": 20})
+
+[sub_resource type="Resource" id="outcome_2_4"]
+script = ExtResource("3_outcome")
+weight = 0.15
+text = "Giá vừa phải, không lời không lỗ."
+resources = Dictionary[StringName, int]({&"wood": 20})
+
+[sub_resource type="Resource" id="outcome_2_5"]
+script = ExtResource("3_outcome")
+weight = 0.2
+text = "Bị ép giá, lỗ mất một nửa."
+resources = Dictionary[StringName, int]({&"food": 10})
+
+[sub_resource type="Resource" id="outcome_2_6"]
+script = ExtResource("3_outcome")
+weight = 0.1
+text = "Hàng giả! Bọn chúng đã cao chạy xa bay."
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2_choice")
+text = "Đổi 10 đá"
+hint = "Có thể đổi được hàng quý, cũng có thể lỗ hoặc bị lừa."
+cost = Dictionary[StringName, int]({&"stone": 10})
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_2_0"), SubResource("outcome_2_1"), SubResource("outcome_2_2"), SubResource("outcome_2_3"), SubResource("outcome_2_4"), SubResource("outcome_2_5"), SubResource("outcome_2_6")])
+
+[sub_resource type="Resource" id="outcome_3_0"]
+script = ExtResource("3_outcome")
+text = "Đoàn thương nhân lặng lẽ rời đi."
+
+[sub_resource type="Resource" id="choice_3"]
+script = ExtResource("2_choice")
 text = "Đuổi đi"
 hint = "Không mất gì."
-outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_3_0")])
 
 [resource]
 script = ExtResource("1_event")
 event_id = &"traveling_merchant"
 title = "Thương nhân lạ"
-text = "Một đoàn thương nhân từ phương xa ghé qua, rao bán đá quý với giá lạ."
+text = "Một đoàn thương nhân từ phương xa ghé qua, sẵn lòng đổi hàng lạ lấy lương thực, gỗ hay đá."
 category = 0
 weight = 2.0
 cooldown = 6
-min_stock = Dictionary[StringName, int]({&"food": 20})
-choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1"), SubResource("choice_2"), SubResource("choice_3")])

@@ -16,6 +16,8 @@ var _report: Dictionary
 var _speed_buttons: Array[Button] = []
 var _skip_button: Button
 var _stats_shown := false
+## The leading counselor (KingdomState.counselor), who comments on the stage (M16i).
+var counselor := Counselor.LINH_NHI
 
 
 ## `report`: the stage (Expedition.run_stage, plus "rewards" when it was the last one).
@@ -106,6 +108,13 @@ func _show_stats() -> void:
 	left.custom_minimum_size = Vector2(SUMMARY_WIDTH, 0)
 	left.add_theme_constant_override("separation", 6)
 	columns.add_child(left)
+	var topic := &"expedition_failed" if not won else (&"expedition_cleared"
+			if not _report.get("rewards", {}).is_empty() else &"expedition_stage_won")
+	var counsel := Counsel.lines(topic, counselor)
+	if not counsel.is_empty():
+		var box := CounselBox.new()
+		box.setup(counsel, SUMMARY_WIDTH)
+		left.add_child(box)
 	for line in summary_lines(_report, false):
 		var label := _paper_label(line, 15)
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

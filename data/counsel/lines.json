@@ -1,0 +1,328 @@
+{
+	"game_start": {
+		"linh_nhi": [
+			["happy", "Chúa công! Từ hôm nay {kingdom} chính thức dựng cờ rồi! Linh Nhi sẽ theo sát người, việc gì cũng báo, chuyện gì cũng kể, không sót chút nào đâu ạ!"],
+			["happy", "Thành mới, đất mới, quân mới… Tiểu nữ hồi hộp quá! Chúa công cứ yên tâm, mấy chuyện lặt vặt cứ để Linh Nhi lo."],
+			["happy", "Chúa công đừng lo, ta có lương, có quân, lại có Linh Nhi kề bên nữa! Sớm muộn gì thiên hạ cũng biết tên {kingdom}!"],
+			["neutral", "Tiểu nữ sẽ nhắc Chúa công nghỉ ngơi đúng bữa! Đánh trận cũng phải ăn cơm chứ ạ."]
+		],
+		"tu_uyen": [
+			["neutral", "Thuộc hạ Tử Uyên, xin theo hầu Chúa công. {kingdom} còn nhỏ: lương thực, gỗ, đá đều phải tính từng phần. Đất tự nó không sinh lợi, phải có người và công trình."],
+			["neutral", "Chúa công, cờ của {kingdom} đã dựng. Việc trước mắt là giữ đủ lương nuôi quân, rồi mới bàn đến chuyện thiên hạ."],
+			["neutral", "Thuộc hạ sẽ ghi chép sổ sách, báo cáo những gì nhìn thấy. Còn quyết định, vẫn là của Chúa công."],
+			["neutral", "Quân cướp quanh vùng sớm muộn cũng đến. Đừng để kho trống, Chúa công."]
+		]
+	},
+	"raid_won": {
+		"linh_nhi": [
+			["happy", "Đuổi được bọn cướp rồi! Chúa công thấy không, chúng chạy còn nhanh hơn thỏ ấy!"],
+			["happy", "Thắng rồi thắng rồi! Dân trong thành reo hò ầm cả lên, tiểu nữ cũng muốn reo theo!"],
+			["happy", "Thắng rồi thì Chúa công cứ vui một chút đi ạ! Nhíu mày mãi là mau già lắm đó!"],
+			["neutral", "Lần sau chúng còn dám đến thì Linh Nhi sẽ treo chuông khắp tường thành, đứa nào leo là kêu ngay!"]
+		],
+		"tu_uyen": [
+			["neutral", "Quân cướp đã rút. Thiệt hại nằm trong mức chịu được."],
+			["happy", "Thành vững, lương còn. Lần này Chúa công giữ được nhà."],
+			["neutral", "Đám cướp thua một lần sẽ quay lại đông hơn. Nên bổ sung quân ngay khi còn lương."],
+			["neutral", "Thuộc hạ đã cho đếm lại lính. Đơn vị nào hao nhiều, Chúa công xem trong tab Quân đội."]
+		]
+	},
+	"raid_lost": {
+		"linh_nhi": [
+			["concerned", "Bọn cướp… lấy mất một ít đồ trong kho rồi. Chúa công đừng buồn, chỉ là xui một lần thôi mà!"],
+			["concerned", "Hu… Lính mình đã cố hết sức rồi ạ. Nhà còn, người còn, mình làm lại được!"],
+			["concerned", "Chúa công mệt rồi… Ngồi nghỉ chút đi ạ, phần còn lại để tiểu nữ lo."],
+			["neutral", "Thêm vài đội lính nữa là lần sau bọn cướp hết dám ló mặt, Chúa công!"]
+		],
+		"tu_uyen": [
+			["concerned", "Quân ta không giữ được. Lính quá ít so với số cướp kéo đến, mất một phần kho."],
+			["concerned", "Thất thủ. Thuộc hạ nghĩ quân ta thiếu người, hoặc hàng trước quá mỏng."],
+			["neutral", "Thuộc hạ đã pha sẵn trà. Chúa công ngồi xuống đã, rồi mình tính tiếp."],
+			["neutral", "Mất ít của để biết mình yếu chỗ nào, cũng chưa phải là lỗ."]
+		]
+	},
+	"invasion_won": {
+		"linh_nhi": [
+			["happy", "Quân {clan} bị đánh bật về rồi! Chúa công giỏi quá, đất của mình không mất tấc nào!"],
+			["happy", "{clan} tưởng mình dễ bắt nạt lắm à? Giờ thì biết tay {kingdom} rồi nhé!"],
+			["happy", "Thắng thì phải ăn mừng chứ ạ! Tiểu nữ đi bảo nhà bếp nấu thêm món!"],
+			["neutral", "Ừm… Nếu {clan} còn quay lại, mình cứ đánh lui tiếp thôi!"]
+		],
+		"tu_uyen": [
+			["neutral", "Quân {clan} đã bị đẩy lui. Biên giới giữ nguyên."],
+			["happy", "Thủ được. {clan} sẽ phải tính kỹ trước khi đem quân sang lần nữa."],
+			["neutral", "{clan} chưa bị đánh tận gốc. Chừng nào chưa hòa, họ vẫn sẽ hồi sức."],
+			["neutral", "Thắng phòng thủ không cho thêm đất. Muốn yên, Chúa công phải tính chuyện hòa hoặc đánh sang."]
+		]
+	},
+	"invasion_lost": {
+		"linh_nhi": [
+			["concerned", "{clan} chiếm mất mấy ô đất của mình rồi… Chúa công, tiểu nữ biết người đang tức lắm, nhưng mình vẫn còn thành, còn quân mà!"],
+			["concerned", "Hu, thua rồi… Nhưng không sao đâu ạ! Đất mất thì lấy lại, Linh Nhi tin Chúa công."],
+			["concerned", "Chắc là… mình phải thêm quân thật rồi ạ. Tiểu nữ đi xem kho còn bao nhiêu lương."],
+			["neutral", "Lần sau tiểu nữ sẽ để ý tin tức từ {clan} kỹ hơn, có động là báo Chúa công ngay!"]
+		],
+		"tu_uyen": [
+			["concerned", "Không giữ được biên giới. {clan} lấy đất ở phía giáp họ, và cướp đi một phần kho."],
+			["concerned", "Thua trận phòng thủ. Quân {clan} đông hơn ta dự tính; cứ thế này đất sẽ còn bị gặm dần."],
+			["neutral", "Chúa công nên cân nhắc nghị hòa với {clan}, hoặc dồn quân đủ mạnh trước khi họ quay lại."],
+			["neutral", "Thuộc hạ không trách quân lính. Họ đã đứng đến cuối."]
+		]
+	},
+	"attack_won": {
+		"linh_nhi": [
+			["happy", "Thắng rồi! Quân {clan} chạy tán loạn, của cải để lại đầy đường! Chúa công thật là oai phong!"],
+			["happy", "Tiểu nữ biết ngay mà! Chúa công đánh đâu thắng đó!"],
+			["happy", "Linh Nhi đi lo phát thưởng cho lính đây! Ai cũng có phần hết!"],
+			["neutral", "Nhưng Chúa công cũng cho lính nghỉ chút nha, đánh liền mấy trận mệt lắm…"]
+		],
+		"tu_uyen": [
+			["neutral", "Quân {clan} bị đánh tan. Sức của họ đã giảm rõ."],
+			["happy", "Trận này được. {clan} mất quân nhiều hơn ta."],
+			["neutral", "Thắng một trận chưa phải là thắng cả cuộc chiến. Quân ta cũng hao, nên cho hồi sức trước trận sau."],
+			["neutral", "Đánh liên tiếp thì lính mỏi. Thuộc hạ khuyên chờ quân bổ sung đủ rồi hãy tiến tiếp."]
+		]
+	},
+	"attack_lost": {
+		"linh_nhi": [
+			["concerned", "Mình… phải lui quân rồi ạ. Chúa công đừng tự trách, chắc tại hôm nay trời xấu, gió thổi ngược chiều thôi!"],
+			["concerned", "Hu… Lính về ít hơn lúc đi. Nhưng Chúa công còn đây, vậy là còn hy vọng!"],
+			["concerned", "Tiểu nữ sẽ đi đếm lương, xem bao giờ đủ quân đánh lại {clan}."],
+			["neutral", "Lần sau mình chuẩn bị kỹ hơn, rồi đánh cho {clan} biết tay!"]
+		],
+		"tu_uyen": [
+			["concerned", "Thất bại. Quân {clan} còn quá mạnh; ta tấn công khi chưa đủ sức."],
+			["concerned", "Thua trận. Thuộc hạ phải nói thẳng: lực lượng hai bên chênh lệch, đánh lúc này là vội."],
+			["neutral", "Xin Chúa công xem lại sức của {clan} trên bản đồ trước khi cất quân lần nữa."],
+			["neutral", "Thuộc hạ đã pha trà. Thua một trận, đừng để thua cả cái đầu tỉnh táo."]
+		]
+	},
+	"annexed": {
+		"linh_nhi": [
+			["surprised", "{clan} quy phục rồi! Đất của họ giờ là đất của mình! Chúa công ơi, bản đồ to ra kìa!"],
+			["happy", "Lại thêm một gia tộc về dưới cờ {kingdom}! Tiểu nữ phải viết thư báo tin khắp nơi mới được!"],
+			["happy", "Hôm nay Chúa công xứng đáng được vui! Mai rồi hẵng lo chuyện biên giới mới nha!"],
+			["neutral", "Dân {clan} chắc đang lo lắm. Linh Nhi sẽ nhắc mọi người đối xử tử tế với họ."]
+		],
+		"tu_uyen": [
+			["happy", "{clan} đã bị sáp nhập. Một mối lo ở biên giới không còn nữa."],
+			["neutral", "Sáp nhập {clan} xong. Biên giới mới sẽ giáp với những gia tộc khác, Chúa công nên xem lại bản đồ."],
+			["neutral", "Đất rộng hơn thì biên giới cũng dài hơn. Các gia tộc còn lại sẽ dè chừng ta hơn trước."],
+			["neutral", "Thuộc hạ xin chúc mừng Chúa công. Nhưng đừng quên lương thực của quân."]
+		]
+	},
+	"battle_won": {
+		"linh_nhi": [
+			["happy", "Thắng rồi ạ! Mọi người về đủ cả, Chúa công tuyệt quá!"],
+			["happy", "Tiểu nữ nín thở suốt trận luôn đó! Thắng rồi, giờ mới thở ra được!"],
+			["happy", "Lính mình về rồi kìa, ai cũng tươi cười! Tiểu nữ đi pha nước mời họ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Trận đã thắng. Kết quả như trong báo cáo."],
+			["happy", "Được việc. Quân ta làm tốt."],
+			["neutral", "Thuộc hạ đã ghi lại thiệt hại. Chúa công xem để biết đội nào cần bổ sung."]
+		]
+	},
+	"battle_lost": {
+		"linh_nhi": [
+			["concerned", "Không được rồi ạ… Nhưng Chúa công đừng nản! Lần này xui, lần sau may!"],
+			["concerned", "Hu… Tiểu nữ thấy lính mình đánh hăng lắm, chỉ là đối phương mạnh quá thôi."],
+			["concerned", "Chúa công nghỉ một chút đi ạ. Tiểu nữ mang bánh lên ngay!"]
+		],
+		"tu_uyen": [
+			["concerned", "Trận này thua. Xin Chúa công xem lại thiệt hại."],
+			["concerned", "Không thành. Quân ta không đủ sức cho trận này."],
+			["neutral", "Đánh mà không chắc thắng thì nên lui sớm. Giữ quân cũng là giữ thế."]
+		]
+	},
+	"duel_won": {
+		"linh_nhi": [
+			["happy", "{general} thắng rồi! Một chiêu cuối đẹp quá Chúa công ơi, tiểu nữ nhảy cẫng cả lên!"],
+			["surprised", "Trời ơi, {general} hạ được đối thủ thật rồi! Tiểu nữ còn chưa kịp nhắm mắt sợ!"],
+			["happy", "Đêm nay phải mở tiệc cho {general}! Tiểu nữ xin được rót chén rượu đầu tiên!"]
+		],
+		"tu_uyen": [
+			["happy", "{general} thắng. Tinh thần quân ta sẽ lên."],
+			["neutral", "Trận đấu tay đôi kết thúc. {general} vẫn đứng."],
+			["neutral", "Lần này may mắn đứng về phía ta. Đấu tay đôi, một nhát sai là mất một tướng giỏi."]
+		]
+	},
+	"duel_lost": {
+		"linh_nhi": [
+			["concerned", "{general}… không qua khỏi rồi ạ. Chúa công, tiểu nữ… tiểu nữ xin lỗi, Linh Nhi không biết nói gì nữa."],
+			["concerned", "Hu… {general} đã chiến đấu đến hơi thở cuối cùng. Chúa công nhớ đến người ấy nhé."],
+			["concerned", "Chúa công… để tiểu nữ ngồi đây với người một lúc nhé."]
+		],
+		"tu_uyen": [
+			["concerned", "{general} đã tử trận trong trận đấu tay đôi."],
+			["concerned", "Mất {general}. Đối thủ mạnh hơn ta lường."],
+			["neutral", "Thuộc hạ sẽ lo hậu sự cho {general}. Chúa công không cần bận tâm việc đó."]
+		]
+	},
+	"commander_fallen": {
+		"linh_nhi": [
+			["concerned", "Tổng tướng {general}… đã ngã xuống rồi ạ. Chúa công, tiểu nữ biết người buồn lắm… Linh Nhi cũng vậy."],
+			["concerned", "{general} không về nữa… Trang bị của người ấy cũng mất theo. Chúa công đừng giữ trong lòng nhé, khóc một chút cũng được."],
+			["concerned", "Quân phải có người dẫn… nhưng hôm nay, để Chúa công thương tiếc {general} đã."]
+		],
+		"tu_uyen": [
+			["concerned", "Tổng tướng {general} tử trận. Quân ta mất người cầm quân, và cả trang bị người ấy mang."],
+			["concerned", "{general} đã hy sinh. Thuộc hạ sẽ báo tin cho gia quyến."],
+			["neutral", "Xin Chúa công sớm chọn tổng tướng mới. Quân không tướng thì tinh thần sẽ lung lay."]
+		]
+	},
+	"expedition_stage_won": {
+		"linh_nhi": [
+			["happy", "Qua ải rồi! Đội thảo phạt đi tiếp thôi, đạo tặc sợ vỡ mật luôn!"],
+			["happy", "Thêm một ải nữa! Tiểu nữ đang đếm từng ải đó Chúa công!"],
+			["happy", "Thắng ải này rồi! Chúa công vui chút đi ạ, đội quân đang hăng lắm!"]
+		],
+		"tu_uyen": [
+			["neutral", "Vượt ải. Đội thảo phạt vẫn còn sức đi tiếp."],
+			["neutral", "Ải này đã qua. Quân bị thương được băng bó trước khi lên đường."],
+			["neutral", "Càng vào sâu, đạo tặc càng đông. Đừng chủ quan."]
+		]
+	},
+	"expedition_cleared": {
+		"linh_nhi": [
+			["happy", "Dẹp xong đạo tặc rồi! Vùng đất đó lại bình yên, dân làng mở cửa đón đội quân về kìa!"],
+			["happy", "Thảo phạt thành công! Chúa công ơi, chiến lợi phẩm nhiều ghê, Linh Nhi khiêng không nổi!"],
+			["happy", "Hì, đội quân về tới cổng là cả thành ra đón! Tiểu nữ cũng chen lên hàng đầu!"]
+		],
+		"tu_uyen": [
+			["happy", "Đạo tặc đã bị dẹp. Đất bị chiếm trở lại tay ta, các gia tộc cũng nể ta hơn."],
+			["neutral", "Thảo phạt hoàn tất. Chiến lợi phẩm và kinh nghiệm đã chia cho đội quân."],
+			["neutral", "Đạo tặc sẽ còn nổi lên nơi khác. Nhưng lần này, Chúa công làm tốt."]
+		]
+	},
+	"expedition_failed": {
+		"linh_nhi": [
+			["concerned", "Đội thảo phạt phải lui về rồi ạ… Không sao, không sao! Người về được là tốt rồi, Chúa công!"],
+			["concerned", "Đạo tặc lần này đông quá… Chúa công đừng buồn, mình gom thêm quân rồi đi lần nữa!"],
+			["concerned", "Ừm… nói ra thì đau, nhưng tiểu nữ thấy lần sau nên mang nhiều quân hơn ạ."]
+		],
+		"tu_uyen": [
+			["concerned", "Đội thảo phạt bị chặn lại. Quân mang theo không đủ cho số đạo tặc ở đó."],
+			["concerned", "Thảo phạt thất bại. Đạo tặc mạnh hơn đội quân ta cử đi."],
+			["neutral", "Lần sau, nên cử thêm đơn vị và một tướng khỏe trước khi vào vùng loạn."]
+		]
+	},
+	"news_war": {
+		"linh_nhi": [
+			["surprised", "Chúa công! {clan} tuyên chiến với mình rồi! Sao họ dám chứ?!"],
+			["concerned", "Tin xấu ạ… {clan} đã tuyên chiến. Tiểu nữ hơi sợ, nhưng có Chúa công thì chắc ổn thôi!"],
+			["neutral", "Vậy… mình có nên gửi quà cho mấy nhà khác, kẻo họ cũng nhảy vào không ạ?"],
+			["concerned", "Tiểu nữ hơi run… Nhưng ừm, chuẩn bị quân thôi Chúa công!"]
+		],
+		"tu_uyen": [
+			["concerned", "{clan} đã tuyên chiến. Từ giờ họ có thể kéo quân sang bất cứ lượt nào."],
+			["neutral", "Chúa công, {clan} khai chiến. Nên kiểm tra quân phòng thủ và lương thực."],
+			["neutral", "Tức giận không giúp được gì. Việc cần làm là đếm quân, đếm lương, rồi xem có nên nghị hòa."],
+			["neutral", "Nếu chưa đủ sức, nghị hòa sớm cũng là một nước cờ."]
+		]
+	},
+	"news_agent": {
+		"linh_nhi": [
+			["concerned", "Đặc vụ của mình bị lộ rồi ạ… Tiểu nữ lo cho họ quá."],
+			["surprised", "Ơ! Người của mình bị phát hiện rồi! Bên đó canh gác kỹ thật…"],
+			["concerned", "Hu, mong là lần sau đặc vụ của mình may mắn hơn…"]
+		],
+		"tu_uyen": [
+			["concerned", "Đặc vụ bị lộ. Quan hệ với gia tộc đó sẽ xấu đi."],
+			["neutral", "Một đặc vụ đã bị phát hiện. Ở càng lâu, nguy cơ bị lộ càng cao."],
+			["neutral", "Đừng để đặc vụ ở một nơi quá lâu. Sổ sách cho thấy rủi ro tăng mỗi lượt."]
+		]
+	},
+	"news_officer": {
+		"linh_nhi": [
+			["concerned", "Tướng sĩ của mình có người bị thương, có người… Chúa công xem báo cáo đi ạ, tiểu nữ không nỡ đọc."],
+			["concerned", "Trận vừa rồi, tướng sĩ của mình chịu thiệt rồi… Linh Nhi sẽ đi thăm họ ngay."],
+			["neutral", "Tiểu nữ sẽ nấu canh bồi bổ cho mấy người bị thương! Nghỉ vài lượt là khỏe lại thôi."]
+		],
+		"tu_uyen": [
+			["concerned", "Tướng sĩ có tổn thất. Người bị thương sẽ nghỉ vài lượt, không ra trận được."],
+			["neutral", "Báo cáo về tướng sĩ đã có. Chúa công nên xem ai còn sẵn sàng cầm quân."],
+			["neutral", "Một quân y tốt sẽ giúp họ hồi phục nhanh hơn. Chúa công cân nhắc xây Y quán."]
+		]
+	},
+	"news_deserted": {
+		"linh_nhi": [
+			["concerned", "Có lính bỏ đi vì đói ạ… Bụng đói thì ai mà đánh trận được, Chúa công đừng giận họ nhé."],
+			["concerned", "Kho lương cạn quá, một số lính đã bỏ về quê rồi…"],
+			["neutral", "Vậy mình xây thêm ruộng đi Chúa công! Lúa đầy kho là lính ở lại hết!"]
+		],
+		"tu_uyen": [
+			["concerned", "Lính đào ngũ vì thiếu lương. Quân đội đang lớn hơn sức kho nuôi."],
+			["neutral", "Lương thực âm, một phần lính đã bỏ đi. Cần thêm ruộng hoặc bớt quân."],
+			["neutral", "Nuôi quân trước, mộ quân sau. Đó là thứ tự."]
+		]
+	},
+	"news_ally_left": {
+		"linh_nhi": [
+			["concerned", "Đồng minh của mình… bỏ đi rồi ạ. Quan hệ xấu đi lúc nào tiểu nữ cũng không để ý nữa."],
+			["surprised", "Ơ, liên minh tan rồi sao? Tiểu nữ tưởng họ quý mình lắm…"],
+			["neutral", "Hay mình gửi quà hỏi thăm họ đi Chúa công? Biết đâu lại thân như cũ!"]
+		],
+		"tu_uyen": [
+			["concerned", "Một đồng minh đã rời liên minh vì quan hệ đi xuống dưới mức Thân thiện."],
+			["neutral", "Liên minh tan. Từ giờ không còn quân của họ giúp ta trong các trận."],
+			["neutral", "Liên minh cần được giữ. Quà, giao thương, đừng để họ thấy ta quá mạnh mà không đáp lễ."]
+		]
+	},
+	"news_uprising": {
+		"linh_nhi": [
+			["surprised", "Đạo tặc nổi loạn ngay trong đất mình! Chỗ đó đỏ lòm trên bản đồ kìa Chúa công!"],
+			["concerned", "Bọn nổi loạn chiếm mất mấy ô đất rồi, công trình ở đó đứng im hết…"],
+			["happy", "Cử đội thảo phạt đi Chúa công! Tiểu nữ sẽ chuẩn bị lương khô cho họ!"]
+		],
+		"tu_uyen": [
+			["concerned", "Đạo tặc nổi loạn trong lãnh thổ. Công trình vùng đó ngừng hoạt động, và chúng sẽ lan dần."],
+			["neutral", "Có nổi loạn. Bấm vào vùng đỏ để cử quân thảo phạt, càng sớm càng ít thiệt."],
+			["neutral", "Để lâu thì vùng loạn lan đến tận thành. Đừng chần chừ, Chúa công."]
+		]
+	},
+	"news_castle_danger": {
+		"linh_nhi": [
+			["concerned", "Chúa công… đất ngoài thành gần hết rồi. Tiểu nữ sợ lắm, nhưng Linh Nhi sẽ không bỏ đi đâu!"],
+			["concerned", "Chỉ còn chút đất bao quanh thành nữa thôi… Mình phải giữ bằng được, Chúa công!"],
+			["concerned", "Hòa được với ai thì hòa trước, giữ thành đã… Chúa công còn đó thì còn tất cả."]
+		],
+		"tu_uyen": [
+			["concerned", "Chúa công, đất ngoài thành sắp hết. Mất trận phòng thủ tiếp theo là mất thành."],
+			["concerned", "Thành chính đang nguy. Thuộc hạ khuyên nghị hòa với kẻ địch mạnh nhất ngay lượt này."],
+			["neutral", "Lúc này cần bình tĩnh. Nghị hòa được với ai thì hòa, dồn hết quân về phòng thủ."]
+		]
+	},
+	"black_market": {
+		"linh_nhi": [
+			["surprised", "Ơ, gã đội nón lá lại đến kìa! Đồ của gã lạ lắm Chúa công, xem thử đi ạ!"],
+			["happy", "Chợ đen mở rồi! Tiểu nữ thích nhất là lúc gã bày hàng ra, cái gì cũng lấp lánh!"],
+			["neutral", "Nghe đồn có lần gã bán được cây đao tốt thật đó! Biết đâu hôm nay có món hợp với tướng mình."]
+		],
+		"tu_uyen": [
+			["neutral", "Tay buôn chợ đen lại đến. Hàng tốt có, giá cũng không rẻ. Chúa công xem kỹ trước khi trả tiền."],
+			["neutral", "Gã chỉ ở lại lượt này. Nếu kho đồ đầy, nên bán bớt thứ không dùng."],
+			["neutral", "Đừng mua chỉ vì thấy đẹp. Hãy hỏi trước: tướng nào sẽ dùng nó?"]
+		]
+	},
+	"victory": {
+		"linh_nhi": [
+			["happy", "Chúa công! Thiên hạ thống nhất rồi! Tiểu nữ… tiểu nữ khóc mất thôi! Linh Nhi đã biết ngay từ ngày đầu mà!"],
+			["happy", "Cả thành đang mở hội kìa Chúa công! Hôm nay đúng là ngày lịch sử!"]
+		],
+		"tu_uyen": [
+			["happy", "Mọi gia tộc đã quy phục hoặc kết minh. Thuộc hạ được theo Chúa công đến ngày này, là vinh hạnh lớn nhất đời."],
+			["happy", "Chúa công. Thuộc hạ đã pha một ấm trà ngon nhất. Hôm nay, xin người ngồi uống cùng."]
+		]
+	},
+	"defeat": {
+		"linh_nhi": [
+			["concerned", "Thành mất rồi… Chúa công, Linh Nhi vẫn ở đây. Người còn sống là còn làm lại được, tiểu nữ tin vậy!"],
+			["concerned", "Tiểu nữ sẽ đi cùng Chúa công, dù là lần sau hay lần sau nữa."]
+		],
+		"tu_uyen": [
+			["concerned", "Thành chính thất thủ. Thuộc hạ không bảo vệ được Chúa công đến cùng, xin chịu tội."],
+			["neutral", "Ván cờ này đã hết. Nhưng Chúa công đã học được nhiều. Lần sau, ta sẽ đi khác."]
+		]
+	}
+}

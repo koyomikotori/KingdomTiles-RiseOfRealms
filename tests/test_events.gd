@@ -39,7 +39,7 @@ func test_every_event_is_complete() -> void:
 	for event_id in events:
 		var event := events[event_id]
 		check(not event.title.is_empty() and not event.text.is_empty(), "%s has text" % event_id)
-		check(event.choices.size() >= 1 and event.choices.size() <= 3, "%s has 1-3 choices" % event_id)
+		check(event.choices.size() >= 1 and event.choices.size() <= 4, "%s has 1-4 choices" % event_id)
 		for choice in event.choices:
 			check(not choice.outcomes.is_empty(), "%s: '%s' has an outcome" % [event_id, choice.text])
 			for resource_id in choice.cost:
@@ -49,6 +49,9 @@ func test_every_event_is_complete() -> void:
 				check(outcome.add_unit == &"" or units.has(outcome.add_unit), "%s: unit %s exists" % [event_id, outcome.add_unit])
 				for resource_id in outcome.resources:
 					check(resources.has(resource_id), "%s: resource %s exists" % [event_id, resource_id])
+				for resource_id in outcome.random_resources:
+					check(resources.has(resource_id), "%s: resource %s exists" % [event_id, resource_id])
+					check(not outcome.random_resources[resource_id].is_empty(), "%s: %s has amounts" % [event_id, resource_id])
 				if outcome.relation != 0 or outcome.declare_war or outcome.clan_strength != 0:
 					check(event.needs_clan, "%s: clan effects need a clan" % event_id)
 
@@ -150,15 +153,95 @@ func test_unaffordable_choices_change_nothing() -> void:
 
 
 func test_outcomes_roll_by_weight() -> void:
-	var stones := {}
-	for seed_value in 200:
+	# The merchant (M16i): pay food, then rare goods 40%, an even swap 30%, a loss 20%, nothing 10%.
+	var kinds := {&"rare": 0, &"even": 0, &"loss": 0, &"nothing": 0}
+	for seed_value in 1000:
 		var state := _state()
 		state.stockpile.add({&"food": 20})
 		_resolve(state, &"traveling_merchant", 0, &"", _rng(seed_value))
+		check_eq(state.stockpile.get_amount(&"food"), 0, "Paid 20 food")
+		var rare := state.stockpile.get_amount(&"ore") + state.stockpile.get_amount(&"hardwood") 				+ state.stockpile.get_amount(&"horses")
+		var wood := state.stockpile.get_amount(&"wood")
 		var stone := state.stockpile.get_amount(&"stone")
-		stones[stone] = stones.get(stone, 0) + 1
-	check_eq(stones.keys().size(), 3, "Three possible results")
-	check(stones[25] > stones[0], "The likely result comes up more often than the scam")
+		if rare > 0:
+			kinds[&"rare"] += 1
+		elif wood == 20 or stone == 10:
+			kinds[&"even"] += 1
+		elif wood == 10:
+			kinds[&"loss"] += 1
+		else:
+			kinds[&"nothing"] += 1
+	for kind: StringName in {&"rare": 0.4, &"even": 0.3, &"loss": 0.2, &"nothing": 0.1}:
+		var share: float = {&"rare": 0.4, &"even": 0.3, &"loss": 0.2, &"nothing": 0.1}[kind]
+		check(absf(kinds[kind] / 1000.0 - share) < 0.05, "%s about %d%%: %s" % [kind, share * 100, kinds])
+
+
+func test_the_merchant_takes_food_wood_or_stone() -> void:
+	var paid := {0: [&"food", 20], 1: [&"wood", 20], 2: [&"stone", 10]}
+	for index: int in paid:
+		var state := _state()
+		var amounts: Dictionary[StringName, int] = {paid[index][0]: paid[index][1]}
+		state.stockpile.add(amounts)
+		check(not _resolve(state, &"traveling_merchant", index).is_empty(), "Choice %d taken" % index)
+		check_eq(state.stockpile.get_amount(paid[index][0]), 0, "Paid %s" % paid[index][0])
+	var poor := _state()
+	check(_resolve(poor, &"traveling_merchant", 1).is_empty(), "No wood: refused")
+	check(not _resolve(poor, &"traveling_merchant", 3).is_empty(), "Turning them away is free")
+
+
+## Answers `event_id` with `choice` 1000 times; {resource: {amount: times}}.
+func _rolled(event_id: StringName, choice: int, pay: Dictionary, resources: Array[StringName]) -> Dictionary:
+	var seen := {}
+	for resource_id in resources:
+		seen[resource_id] = {}
+	var amounts: Dictionary[StringName, int] = {}
+	amounts.assign(pay)
+	for seed_value in 1000:
+		var state := _state()
+		state.stockpile.add(amounts)
+		_resolve(state, event_id, choice, &"", _rng(seed_value))
+		for resource_id in resources:
+			var amount := state.stockpile.get_amount(resource_id)
+			seen[resource_id][amount] = seen[resource_id].get(amount, 0) + 1
+	return seen
+
+
+## `seen` (from _rolled) matches {amount: share} within 5%.
+func _check_odds(seen: Dictionary, odds: Dictionary, label: String) -> void:
+	check_eq(seen.keys().size(), odds.size(), "%s: amounts %s" % [label, seen])
+	for amount: int in odds:
+		check(absf(seen.get(amount, 0) / 1000.0 - odds[amount]) < 0.05, "%s: %d about %d%%: %s" % [label, amount, odds[amount] * 100, seen])
+
+
+func test_stone_vein_rolls_stone_and_ore_on_their_own() -> void:
+	var seen := _rolled(&"stone_vein", 0, {&"food": 10}, [&"stone", &"ore"] as Array[StringName])
+	_check_odds(seen[&"stone"], {10: 0.5, 30: 0.3, 50: 0.2}, "Stone")
+	_check_odds(seen[&"ore"], {0: 0.5, 20: 0.3, 30: 0.2}, "Ore")
+	var state := _state()
+	state.stockpile.add({&"food": 10})
+	var result := _resolve(state, &"stone_vein", 0)
+	check(result.changes.any(func(line: String) -> bool: return line.begins_with("Nhận:")), "Gain line: %s" % [result.changes])
+
+
+func test_hardwood_grove_rolls_wood_and_hardwood() -> void:
+	var seen := _rolled(&"hardwood_grove", 0, {&"food": 10}, [&"wood", &"hardwood"] as Array[StringName])
+	_check_odds(seen[&"wood"], {10: 0.5, 30: 0.3, 50: 0.2}, "Wood")
+	_check_odds(seen[&"hardwood"], {0: 0.5, 20: 0.3, 30: 0.2}, "Hardwood")
+	check_eq(_state().events.events[&"hardwood_grove"].min_terrain, {&"forest": 2} as Dictionary[StringName, int], "Needs forest")
+	check_eq(_state().events.events[&"wild_horses"].min_terrain, {&"grass": 3} as Dictionary[StringName, int], "Horses need grass")
+
+
+func test_wild_horses_trade_food_or_send_soldiers() -> void:
+	_check_odds(_rolled(&"wild_horses", 0, {&"food": 30}, [&"horses"] as Array[StringName])[&"horses"],
+			{10: 0.5, 15: 0.3, 20: 0.2}, "Villagers")
+	_check_odds(_rolled(&"wild_horses", 1, {}, [&"horses"] as Array[StringName])[&"horses"],
+			{0: 0.5, 10: 0.3, 15: 0.2}, "Soldiers")
+	for seed_value in 50:
+		var state := _state()
+		var result := _resolve(state, &"wild_horses", 1, &"", _rng(seed_value))
+		if state.stockpile.get_amount(&"horses") == 0:
+			check(&"Không thu được gì." in result.changes, "Empty-handed is said: %s" % [result.changes])
+			break
 
 
 func test_army_effects() -> void:

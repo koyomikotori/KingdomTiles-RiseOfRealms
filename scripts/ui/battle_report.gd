@@ -11,6 +11,8 @@ const LOSS_COLOR := UiPalette.WARNING
 ## Gap around the panel as a share of the screen: 15% left/right, 6% top/bottom.
 const PANEL_MARGIN := Vector2(0.15, 0.06)
 
+var _layout: VBoxContainer
+
 
 ## `raid` is the dictionary returned by RaidSystem.apply_outcome; `extra_lines` go after the losses.
 func show_raid(raid: Dictionary, resource_types: Array[ResourceTypeData], units: Dictionary[StringName, UnitData],
@@ -52,6 +54,7 @@ func show_battle(title_text: String, won: bool, intro: String, record: BattleRec
 	var layout := VBoxContainer.new()
 	layout.add_theme_constant_override("separation", 12)
 	margin.add_child(layout)
+	_layout = layout
 
 	var title := Label.new()
 	title.text = title_text
@@ -81,6 +84,16 @@ func show_battle(title_text: String, won: bool, intro: String, record: BattleRec
 	button.custom_minimum_size = Vector2(0, 40)
 	button.pressed.connect(close)
 	layout.add_child(button)
+
+
+## The counselors' words (Counsel.lines, M16i) under the title, outside the scrolling tables.
+func add_counsel(lines: Array[Dictionary]) -> void:
+	if lines.is_empty() or _layout == null:
+		return
+	var box := CounselBox.new()
+	box.setup(lines, get_viewport_rect().size.x * (1.0 - 2.0 * PANEL_MARGIN.x) - 60.0)
+	_layout.add_child(box)
+	_layout.move_child(box, 1)
 
 
 ## Lines for the kingdom's losses from a BattleOutcome.apply_to_army result.

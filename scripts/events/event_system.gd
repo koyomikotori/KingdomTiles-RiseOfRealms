@@ -320,7 +320,7 @@ func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int, genera
 		for entry in choice.outcomes:
 			weights.append(entry.weight)
 		outcome = choice.outcomes[rng.rand_weighted(weights)]
-	_apply(state, outcome, clan_id, changes)
+	_apply(state, outcome, clan_id, changes, rng)
 	_apply_war(state, rng, outcome, choice, clan_id, changes)
 	_apply_battle_effects(state, rng, outcome, clan_id, changes)
 	var result := {"text": fill(state, outcome.text, clan_id), "changes": changes}
@@ -333,11 +333,23 @@ func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int, genera
 	return result
 
 
-func _apply(state: KingdomState, outcome: EventOutcomeData, clan_id: StringName, changes: Array[String]) -> void:
+## One amount from {amount: weight} (EventOutcomeData.random_resources).
+static func roll_amount(table: Dictionary, rng: RandomNumberGenerator) -> int:
+	var weights := PackedFloat32Array()
+	for amount in table:
+		weights.append(float(table[amount]))
+	return int(table.keys()[rng.rand_weighted(weights)])
+
+
+func _apply(state: KingdomState, outcome: EventOutcomeData, clan_id: StringName, changes: Array[String],
+		rng: RandomNumberGenerator) -> void:
 	var gained: Dictionary[StringName, int] = {}
 	var lost: Dictionary[StringName, int] = {}
-	for resource_id in outcome.resources:
-		var amount := outcome.resources[resource_id]
+	var amounts := outcome.resources.duplicate()
+	for resource_id in outcome.random_resources:
+		amounts[resource_id] = amounts.get(resource_id, 0) + roll_amount(outcome.random_resources[resource_id], rng)
+	for resource_id in amounts:
+		var amount: int = amounts[resource_id]
 		if amount > 0:
 			gained[resource_id] = amount
 		elif amount < 0:
@@ -349,6 +361,8 @@ func _apply(state: KingdomState, outcome: EventOutcomeData, clan_id: StringName,
 	state.stockpile.spend(lost)
 	if not gained.is_empty():
 		changes.append("Nhận: %s" % _amounts(gained))
+	elif not outcome.random_resources.is_empty():
+		changes.append("Không thu được gì.")
 	if lost.values().any(func(amount: int) -> bool: return amount > 0):
 		changes.append("Mất: %s" % _amounts(lost))
 	if clan_id != &"" and outcome.relation != 0:

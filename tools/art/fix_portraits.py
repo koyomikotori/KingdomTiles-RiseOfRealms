@@ -8,9 +8,10 @@ brought back to its real pixels: the block size and offset are measured on each 
 edges, and every block takes the median color of its middle. The background is then removed:
 a flat key color (the corners' color, e.g. the #00FF00 asked for in the prompt) or a baked-in
 checkerboard. The figure is cropped, shrunk only if wider than 96 px, and placed 5 px below the
-top (a short figure sits on the bottom edge); whatever does not fit is cut at the bottom. Hard alpha, at most 48 colors.
+top (a short figure sits on the bottom edge); whatever does not fit is cut at the bottom. Hard alpha, at most 48 colors
+(or the given count: small faces such as the counselors' lose their lips to a gray robe at 48).
 
-    python tools/art/fix_portraits.py <source image> <output .png>
+    python tools/art/fix_portraits.py <source image> <output .png> [colors]
 """
 import sys
 from collections import deque
@@ -143,7 +144,7 @@ def remove_specks(im: Image.Image) -> Image.Image:
     return Image.fromarray(a)
 
 
-def fix(src: str, dst: str) -> None:
+def fix(src: str, dst: str, colors: int = COLORS) -> None:
     im = remove_gemini_sparkle(Image.open(src).convert("RGBA"))
     key = corner_color(im)
     im = to_real_pixels(im)
@@ -160,7 +161,7 @@ def fix(src: str, dst: str) -> None:
     alpha = im.getchannel("A")
     rgb = Image.new("RGB", im.size)
     rgb.paste(im.convert("RGB"), mask=alpha)
-    piece = rgb.quantize(COLORS, method=Image.Quantize.MEDIANCUT).convert("RGBA")
+    piece = rgb.quantize(colors, method=Image.Quantize.MEDIANCUT).convert("RGBA")
     piece.putalpha(alpha)
     out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     # 5 px below the top, cut at the bottom; a short figure sits on the bottom edge instead.
@@ -169,4 +170,4 @@ def fix(src: str, dst: str) -> None:
 
 
 if __name__ == "__main__":
-    fix(sys.argv[1], sys.argv[2])
+    fix(sys.argv[1], sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else COLORS)

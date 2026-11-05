@@ -6,15 +6,21 @@ extends RefCounted
 ## and before the events. Pure: built from the state, the end_turn() report and the result of the
 ## turn's raid or invasion (empty when there was none).
 
+## Which news the counselors talk about first (M16i).
+const COUNSEL_ORDER: Array[StringName] = [&"news_castle_danger", &"news_war", &"news_officer",
+		&"news_uprising", &"news_ally_left", &"news_deserted", &"news_agent"]
 
-## [{"title", "lines": Array[String]}]; empty when nothing important happened.
+
+## [{"title", "lines": Array[String], "topic": Counsel topic, "context"}]; empty when nothing
+## important happened.
 static func build(state: KingdomState, report: Dictionary, battle: Dictionary = {}) -> Array[Dictionary]:
 	var clans := state.diplomacy.clans
 	var result: Array[Dictionary] = []
 	var declared: Array[String] = []
 	for clan_id: StringName in report.get("war_declared", []):
 		declared.append("%s đã tuyên chiến với vương quốc!" % clans[clan_id].data.display_name)
-	_add(result, "Bị tuyên chiến", declared)
+	_add(result, "Bị tuyên chiến", declared, &"news_war",
+			{"clan": clans[report.war_declared[0]].data.display_name} if not declared.is_empty() else {})
 
 	var agents: Array[String] = []
 	for entry: Dictionary in report.get("agents", []):
@@ -25,7 +31,7 @@ static func build(state: KingdomState, report: Dictionary, battle: Dictionary = 
 						-Agents.CAUGHT_RELATION])
 			&"killed":
 				agents.append("Đặc vụ %s bị %s bắt và giết (quan hệ −%d)." % [entry.name, clan_name, -Agents.CAUGHT_RELATION])
-	_add(result, "Đặc vụ bị lộ", agents)
+	_add(result, "Đặc vụ bị lộ", agents, &"news_agent")
 
 	var officers: Array[String] = []
 	var general: Dictionary = battle.get("general", {})
@@ -37,19 +43,19 @@ static func build(state: KingdomState, report: Dictionary, battle: Dictionary = 
 	var advisor: Dictionary = battle.get("advisor", {})
 	if advisor.get("fate", &"none") == &"wounded":
 		officers.append("Mưu sĩ %s bị thương, nghỉ %d lượt." % [advisor.name, Advisors.WOUND_TURNS])
-	_add(result, "Tướng sĩ", officers)
+	_add(result, "Tướng sĩ", officers, &"news_officer")
 
 	var deserted: Array[String] = []
 	var gone: Dictionary = report.get("deserted", {})
 	for unit_id: StringName in gone:
 		deserted.append("%d %s bỏ đi vì thiếu lương thực." % [gone[unit_id], state.units[unit_id].display_name])
-	_add(result, "Lính đào ngũ", deserted)
+	_add(result, "Lính đào ngũ", deserted, &"news_deserted")
 
 	var allies: Array[String] = []
 	for entry: Dictionary in report.get("treaties", []):
 		if entry.event == &"alliance_broken":
 			allies.append("%s rời bỏ liên minh vì quan hệ đi xuống." % clans[entry.clan_id].data.display_name)
-	_add(result, "Đồng minh rời bỏ", allies)
+	_add(result, "Đồng minh rời bỏ", allies, &"news_ally_left")
 
 	var expedition: Dictionary = report.get("expedition", {})
 	var expedition_lines: Array[String] = []
@@ -61,14 +67,24 @@ static func build(state: KingdomState, report: Dictionary, battle: Dictionary = 
 			expedition_lines.append("Tướng dẫn đội thảo phạt đã tử trận!")
 		&"wounded":
 			expedition_lines.append("Tướng dẫn đội thảo phạt bị thương, nghỉ %d lượt." % Generals.WOUND_TURNS)
-	_add(result, "Nổi loạn", expedition_lines)
+	_add(result, "Nổi loạn", expedition_lines, &"news_uprising")
 
 	if report.get("castle_in_danger", false):
 		_add(result, "Thành chính nguy hiểm", ["Chỉ còn %d ô đất ngoài thành: mất hết là thua!" %
-				state.board.count_land_outside_castle()] as Array[String])
+				state.board.count_land_outside_castle()] as Array[String], &"news_castle_danger")
 	return result
 
 
-static func _add(result: Array[Dictionary], title: String, lines: Array[String]) -> void:
+## The counselors speak about the worst of the news (M16i): [topic, context] or [&"", {}].
+static func counsel_topic(news: Array[Dictionary]) -> Array:
+	for topic: StringName in COUNSEL_ORDER:
+		for entry in news:
+			if entry.get("topic", &"") == topic:
+				return [topic, entry.get("context", {})]
+	return [&"", {}]
+
+
+static func _add(result: Array[Dictionary], title: String, lines: Array[String], topic: StringName = &"",
+		context: Dictionary = {}) -> void:
 	if not lines.is_empty():
-		result.append({"title": title, "lines": lines})
+		result.append({"title": title, "lines": lines, "topic": topic, "context": context})

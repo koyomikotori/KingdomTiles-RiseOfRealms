@@ -4,9 +4,15 @@ extends ModalWindow
 ## with "OK" or Enter (Esc too), so it is never missed by clicking past it.
 
 
-func open(news: Array[Dictionary]) -> void:
+## `counsel`: the counselors' words on the worst news (Counsel.lines, M16i).
+func open(news: Array[Dictionary], counsel: Array[Dictionary] = []) -> void:
 	Sfx.play(&"horn")
 	var body := build_frame("Báo cáo quan trọng", UiPalette.WARNING, 0.42, false)
+	if not counsel.is_empty():
+		var box := CounselBox.new()
+		box.setup(counsel, get_viewport_rect().size.x * 0.42 - 60.0)
+		body.add_child(box)
+		body.add_child(HSeparator.new())
 	for entry in news:
 		var heading := _label(entry.title, 17)
 		heading.add_theme_color_override("font_color", WARNING_COLOR)

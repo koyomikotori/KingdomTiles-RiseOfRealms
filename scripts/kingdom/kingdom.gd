@@ -71,6 +71,8 @@ var _last_report: Dictionary = {}
 ## still has to be shown this turn (M14g).
 var _turn_battle: Dictionary = {}
 var _news_pending := false
+## A new game opens with the counselors' welcome (M16i).
+var _intro_pending := false
 ## The expedition's stages fought so far (KingdomState._advance_expedition), for their replays
 ## (M14i): each stage plays by itself at the start of the next turn, before its battle, and
 ## the expedition window can replay any of them while the expedition is out.
@@ -116,6 +118,7 @@ func _ready() -> void:
 		state.load_save(game)
 	else:
 		state.setup_new_game(GameLaunch.take_new_game_settings())
+		_intro_pending = true
 	KingdomState.shown_color = state.player_color
 	board_view.team_color = state.player_color
 	state.hand.changed.connect(_rebuild_piece_cards)
@@ -153,6 +156,8 @@ func _ready() -> void:
 		state.give_starting_army()
 		state.start()
 		_autosave()
+		# The counselors' welcome (M16i).
+		_continue_turn_start.call_deferred()
 	else:
 		state.resume()
 		_continue_turn_start.call_deferred()
@@ -418,7 +423,8 @@ func _play_raid(simulator: BattleSimulator) -> void:
 		placement_status.text += " %s" % ("Đã đánh lui." if result.won else "Thất thủ.")
 		var lines := _enemy_officer_lines(result, "Thủ lĩnh đạo tặc")
 		lines.append_array(_ally_lines(result))
-		_show_battle_report(result, lines))
+		_show_battle_report(result, lines)
+		_battle_report.add_counsel(_battle_counsel(result, &"raid_won", &"raid_lost")))
 
 
 func _play_invasion(clan_id: StringName, simulator: BattleSimulator) -> void:
@@ -447,6 +453,8 @@ func _play_invasion(clan_id: StringName, simulator: BattleSimulator) -> void:
 			lines.append("Không còn ô đất nào ngoài thành: quân %s chiếm thành chính." % _clan_name(clan_id))
 		report.show_battle(title_text,
 				result.won, "%s tấn công đầu lượt." % _clan_name(clan_id), record, BattleRecord.DEFENDER, lines)
+		if not result.castle_fallen:
+			report.add_counsel(_battle_counsel(result, &"invasion_won", &"invasion_lost", {"clan": _clan_name(clan_id)}))
 		_battle_report = report
 		report.closed.connect(_on_battle_report_closed)
 		placement_status.text += " %s" % ("Đã đẩy lui." if result.won else "Thất thủ, mất đất."))
@@ -490,6 +498,9 @@ func _show_attack_report(clan_id: StringName, result: Dictionary) -> void:
 		title_text = "%s đã bị sáp nhập!" % _clan_name(clan_id)
 	report.show_battle(title_text, result.won, "Vương quốc tấn công %s." % _clan_name(clan_id), record,
 			BattleRecord.ATTACKER, lines)
+	var context := {"clan": _clan_name(clan_id)}
+	report.add_counsel(_counsel(&"annexed", context) if result.annexed
+			else _battle_counsel(result, &"attack_won", &"attack_lost", context))
 	_battle_report = report
 	report.closed.connect(_on_battle_report_closed)
 
@@ -521,6 +532,11 @@ func _play_event_battle() -> void:
 		lines.append_array(_ally_lines(result))
 		report.show_battle("Chiến thắng!" if result.won else "Thất bại!", result.won,
 				EventBattles.title(state, battle), record, side, lines)
+		if battle.kind in [EventBattles.DUEL, EventBattles.BANDIT_DUEL]:
+			report.add_counsel(_counsel(&"duel_won" if result.won else &"duel_lost",
+					{"general": result.get("general", {}).get("name", "")}))
+		else:
+			report.add_counsel(_battle_counsel(result, &"battle_won", &"battle_lost"))
 		_battle_report = report
 		report.closed.connect(_on_battle_report_closed), battle.kind != EventBattles.DUEL)
 
@@ -627,6 +643,7 @@ func _play_expedition(index: int, after: Callable) -> void:
 	_clear_selection()
 	var stage := _expedition_stages[index]
 	var screen := ExpeditionScreen.new()
+	screen.counselor = state.counselor
 	$UI.add_child(screen)
 	screen.open(stage, stage.stages)
 	_map_life.ambient = false
@@ -666,6 +683,13 @@ func _on_battle_report_closed() -> void:
 ## then the black market on its visit turns (closing it sends the merchant away), then the end
 ## screen if the game was won or lost.
 func _continue_turn_start() -> void:
+	if _intro_pending:
+		_intro_pending = false
+		var intro := CounselWindow.new()
+		$UI.add_child(intro)
+		intro.open("Khởi nghiệp", _counsel(&"game_start"))
+		intro.closed.connect(_continue_turn_start)
+		return
 	if _news_pending:
 		_news_pending = false
 		var news := ImportantNews.build(state, _last_report, _turn_battle)
@@ -673,7 +697,8 @@ func _continue_turn_start() -> void:
 			_clear_selection()
 			var report_window := ImportantReportWindow.new()
 			$UI.add_child(report_window)
-			report_window.open(news)
+			var worst := ImportantNews.counsel_topic(news)
+			report_window.open(news, _counsel(worst[0], worst[1]) if worst[0] != &"" else [] as Array[Dictionary])
 			report_window.closed.connect(_continue_turn_start)
 			return
 	state.events.drop_stale(state)
@@ -714,6 +739,22 @@ func _show_end_game_if_any() -> void:
 	var window := EndGameWindow.new()
 	$UI.add_child(window)
 	window.open(state, Victory.NO_PATH if state.victory.lost else path, _save_system, $UI)
+
+
+## The counselors' lines on `topic` (Counsel, M16i), with the kingdom's name in the context.
+func _counsel(topic: StringName, context: Dictionary = {}) -> Array[Dictionary]:
+	var full := {"kingdom": state.kingdom_name}
+	full.merge(context, true)
+	return Counsel.lines(topic, state.counselor, full)
+
+
+## A battle's lines: the commander's death outweighs the result.
+func _battle_counsel(result: Dictionary, won_topic: StringName, lost_topic: StringName,
+		context: Dictionary = {}) -> Array[Dictionary]:
+	var general: Dictionary = result.get("general", {})
+	if general.get("fate", &"none") == &"dead":
+		return _counsel(&"commander_fallen", {"general": general.name})
+	return _counsel(won_topic if result.won else lost_topic, context)
 
 
 ## Saves into the autosave slot (start of a game and of every turn).
