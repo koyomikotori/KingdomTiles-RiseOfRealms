@@ -170,3 +170,63 @@ single white go stone between two raised fingers.
 Số `ruler_<số>` theo thứ tự mẫu trong game: 0 Thiên tử, 1 Nữ hoàng, 2 Bá vương, 3 Nữ tướng
 quân, 4 Mưu chủ, 5 Nữ mưu chủ. **Đã có đủ 6 ảnh** trong `assets/portraits/ruler/`; vẽ lại thì
 chạy `fix_portraits.py` và ghi đè đúng tên file.
+
+## 6. Cố vấn Linh Nhi và Tử Uyên (M16i, 4 biểu cảm mỗi người)
+
+Tính cách lấy từ bản thiết kế của bạn, nhưng ngoại hình là **thiết kế riêng**: prompt không ghi
+tên nhân vật hay game nào khác. Cách làm:
+
+1. Vẽ ảnh **bình thường** trước (gửi kèm ảnh mẫu chung + câu mở đầu ở mục 2 + prompt nhân vật +
+   phần biểu cảm "neutral" + khối phong cách).
+2. Ưng ý thì **gửi kèm chính ảnh bình thường đó** để vẽ 3 biểu cảm còn lại, mở đầu bằng:
+
+```
+Redraw the attached character exactly (same face, hair, outfit, colors, pixel size, framing and
+pose), changing only the facial expression and the hands as described below.
+```
+
+Lưu thành `assets/portraits/counselor/<tên>_<biểu cảm>.png` (hoặc bỏ vào thư mục `npc` như các
+lần trước, mình xử lý): `linh_nhi_neutral`, `linh_nhi_happy`, `linh_nhi_concerned`,
+`linh_nhi_surprised`, `tu_uyen_neutral`, `tu_uyen_happy`, `tu_uyen_concerned`,
+`tu_uyen_surprised`.
+
+### Linh Nhi (nữ, vui tươi)
+
+Prompt nhân vật:
+
+```
+A lively teenage girl advisor with a short dark-brown bob and two small side tails tied with
+red cords and tiny brass bells, big bright amber eyes, a small fang showing when she smiles.
+She wears a peach-pink short jacket with white cloud trim over a white robe, a red sash, and a
+small brush tucked behind one ear; a leather messenger bag strap crosses her chest with a few
+rolled scrolls peeking out.
+```
+
+Biểu cảm:
+
+| Ảnh | Thêm vào prompt |
+|---|---|
+| neutral | `Expression: a friendly attentive smile, eyes open and bright, one hand raised as if explaining something.` |
+| happy | `Expression: a huge delighted grin with eyes squeezed into happy arcs, cheeks blushing, both fists raised in excitement.` |
+| concerned | `Expression: worried eyebrows, eyes a little teary, lips pressed together, both hands clutching the strap of her bag.` |
+| surprised | `Expression: eyes wide open, mouth in a small round "oh", side tails flipped up, hands up near her face.` |
+
+### Tử Uyên (nam, điềm tĩnh)
+
+Prompt nhân vật:
+
+```
+A composed young man advisor in his twenties with long straight black hair, the top half tied
+back with a simple dark wooden hairpin, calm narrow dark-gray eyes, a neat clean-shaven face.
+He wears a slate-gray scholar robe with a dark-navy collar and thin silver trim over a white
+inner robe, and holds a small celadon tea cup in one hand.
+```
+
+Biểu cảm (kiềm chế hơn Linh Nhi):
+
+| Ảnh | Thêm vào prompt |
+|---|---|
+| neutral | `Expression: a calm neutral face, steady gaze at the viewer, mouth relaxed.` |
+| happy | `Expression: a faint restrained smile at one corner of the mouth, eyes slightly softened, lifting the tea cup a little as a quiet toast.` |
+| concerned | `Expression: eyebrows drawn slightly together, a serious frown, eyes looking down a little, the tea cup lowered.` |
+| surprised | `Expression: eyes slightly widened, eyebrows raised a little, lips parted, otherwise still composed.` |

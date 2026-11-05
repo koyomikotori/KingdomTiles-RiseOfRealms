@@ -85,6 +85,12 @@ func open(state: KingdomState) -> void:
 	_sell_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_sell_list.add_theme_constant_override("separation", 6)
 	_sell_page.add_child(_sell_list)
+	# The counselors' word on the visit (M16i), under the shelves.
+	var counsel := Counsel.lines(&"black_market", state.counselor)
+	if not counsel.is_empty():
+		var box := CounselBox.new()
+		box.setup(counsel, PAGE_SIZE.x + PortraitView.SIZE * PORTRAIT_SCALE)
+		body.add_child(box)
 	_close_button.text = "Rời đi (Esc)"
 	closed.connect(state.black_market.leave)
 	state.black_market.changed.connect(_refresh)

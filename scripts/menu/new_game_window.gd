@@ -2,17 +2,19 @@ class_name NewGameWindow
 extends ModalWindow
 ## Starting a new game (GDD §15, M14h): a picture of the kingdom at its greatest (the level-6
 ## castle and its soldiers) in the chosen color, the ruler ("Thay đổi" opens RulerWindow, M16h),
-## the kingdom's name, its color and, near the bottom, the difficulty; "Bắt đầu chơi" or back to
+## the leading counselor (M16i), the kingdom's name, its color and, near the bottom, the difficulty; "Bắt đầu chơi" or back to
 ## the main menu. Legendary stays locked until a
 ## game was won on Normal or Hard (GameSettings.legendary_unlocked).
 
-## The choices are made: {"difficulty", "name", "color", "ruler_preset", "ruler_name"} for
+## The choices are made: {"difficulty", "name", "color", "ruler_preset", "ruler_name", "counselor"} for
 ## KingdomState.setup_new_game.
 signal start_requested(settings: Dictionary)
 
 const SWATCH_SIZE := Vector2(44, 44)
-const CASTLE_SIZE := Vector2(160, 160)
-const PREVIEW_HEIGHT := 190.0
+## The counselors' faces next to their buttons.
+const COUNSELOR_SCALE := 0.5
+const CASTLE_SIZE := Vector2(128, 128)
+const PREVIEW_HEIGHT := 140.0
 const FIGURE_SCALE := 3
 ## The soldiers shown beside the castle: a new game's starting squads.
 const PREVIEW_UNITS: Array[StringName] = [&"swordsman", &"spearman", &"archer"]
@@ -26,6 +28,8 @@ var _figures: Array[OfficerFigure] = []
 var _commander: General
 var _ruler := Ruler.from_preset(0)
 var _ruler_label: Label
+var _counselor := Counselor.LINH_NHI
+var _counselor_row: HBoxContainer
 var _color_row: HBoxContainer
 var _difficulty_row: HBoxContainer
 var _description: Label
@@ -37,6 +41,9 @@ func open() -> void:
 	_ruler_label = _label("", 15, false)
 	_ruler_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(_row([_ruler_label, _button("Thay đổi", _open_ruler)]))
+	_counselor_row = HBoxContainer.new()
+	_counselor_row.add_theme_constant_override("separation", 8)
+	body.add_child(_counselor_row)
 	body.add_child(_label("Tên gia tộc của bạn:", 15, false))
 	_name_edit = LineEdit.new()
 	_name_edit.placeholder_text = KingdomState.DEFAULT_KINGDOM_NAME
@@ -105,7 +112,7 @@ func _refresh() -> void:
 			figure.setup_unit(figure.get_meta(&"unit"), FIGURE_SCALE, _color)
 		else:
 			figure.setup(_commander, 2, _color)
-	for row: Container in [_color_row, _difficulty_row]:
+	for row: Container in [_color_row, _difficulty_row, _counselor_row]:
 		for child in row.get_children():
 			row.remove_child(child)
 			child.queue_free()
@@ -135,6 +142,20 @@ func _refresh() -> void:
 		button.disabled = level == Difficulty.Level.LEGENDARY and not unlocked
 		_difficulty_row.add_child(button)
 	_ruler_label.text = "Chúa công: %s (%s)" % [_ruler.name, _ruler.describe()]
+	_counselor_row.add_child(_label("Cố vấn:", 15, false))
+	for id in Counselor.IDS:
+		var face := CounselorPortrait.new()
+		face.setup(id, Counselor.HAPPY if id == _counselor else Counselor.NEUTRAL, COUNSELOR_SCALE)
+		_counselor_row.add_child(face)
+		var button := _button(Counselor.NAMES[id], func() -> void:
+			_counselor = id
+			_refresh())
+		button.toggle_mode = true
+		button.button_pressed = id == _counselor
+		button.tooltip_text = Counselor.DESCRIPTIONS[id]
+		button.custom_minimum_size = Vector2(110, 44)
+		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_counselor_row.add_child(button)
 	_description.text = Difficulty.DESCRIPTIONS[_difficulty]
 	if not unlocked:
 		_description.text += "\nHuyền thoại mở sau khi thắng một ván Bình thường hoặc Khó."
@@ -151,7 +172,7 @@ func _open_ruler() -> void:
 
 func _start() -> void:
 	start_requested.emit({"difficulty": _difficulty, "name": _name_edit.text, "color": _color,
-			"ruler_preset": _ruler.preset, "ruler_name": _ruler.name})
+			"ruler_preset": _ruler.preset, "ruler_name": _ruler.name, "counselor": _counselor})
 
 
 ## Esc goes back to the main menu.

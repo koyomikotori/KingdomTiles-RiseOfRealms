@@ -8,6 +8,9 @@ extends Resource
 @export_multiline var text: String
 ## Resources gained (positive) or lost (negative, never more than the stockpile holds).
 @export var resources: Dictionary[StringName, int] = {}
+## Resources gained by luck: each listed resource rolls one amount by weight, on its own
+## ({resource: {amount: weight}}, e.g. {&"ore": {0: 0.5, 20: 0.3, 30: 0.2}}). Added to `resources`.
+@export var random_resources: Dictionary[StringName, Dictionary] = {}
 ## Share (0..1) of each listed resource's stock that is lost.
 @export var resource_loss: Dictionary[StringName, float] = {}
 ## Relation change with the event's clan, and with every clan.

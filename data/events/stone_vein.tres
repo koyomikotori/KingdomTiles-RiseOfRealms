@@ -6,22 +6,26 @@
 
 [sub_resource type="Resource" id="outcome_0_0"]
 script = ExtResource("3_outcome")
-weight = 0.6
-text = "Mạch đá dày, đào mãi chưa hết."
-resources = Dictionary[StringName, int]({&"stone": 30})
-
-[sub_resource type="Resource" id="outcome_0_1"]
-script = ExtResource("3_outcome")
-weight = 0.4
-text = "Mạch đá mỏng hơn tưởng."
-resources = Dictionary[StringName, int]({&"stone": 15})
+text = "Thợ đào lần theo mạch đá vào sâu trong đồi."
+random_resources = Dictionary[StringName, Dictionary]({
+&"ore": {
+0: 0.5,
+20: 0.3,
+30: 0.2
+},
+&"stone": {
+10: 0.5,
+30: 0.3,
+50: 0.2
+}
+})
 
 [sub_resource type="Resource" id="choice_0"]
 script = ExtResource("2_choice")
 text = "Khai thác ngay"
-hint = "Nuôi thợ đào vài ngày; đá nhiều hay ít tùy mạch."
+hint = "Nuôi thợ đào vài ngày; đá nhiều hay ít tùy mạch, may thì có cả khoáng sản."
 cost = Dictionary[StringName, int]({&"food": 10})
-outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1")])
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
 
 [sub_resource type="Resource" id="outcome_1_0"]
 script = ExtResource("3_outcome")
@@ -37,8 +41,8 @@ outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
 [resource]
 script = ExtResource("1_event")
 event_id = &"stone_vein"
-title = "Phát hiện mạch đá"
-text = "Thợ săn phát hiện một mạch đá lộ thiên trên đồi."
+title = "Phát hiện mạch khoáng"
+text = "Thợ săn phát hiện một mạch đá lộ thiên trên đồi, lấp lánh vài vệt quặng."
 category = 0
 weight = 2.0
 cooldown = 10

@@ -753,7 +753,12 @@ Thống kê trận thắng/thua và trạng thái thắng/thua được lưu cù
 - Hậu quả có thể là: được/mất tài nguyên (số cố định hoặc phần trăm), quan hệ với một gia tộc hoặc mọi gia tộc (nguồn "Sự kiện" trong chi tiết quan hệ, mờ dần), thêm đơn vị lính, mất một phần lính, bổ sung quân, thêm mảnh đất vào tay, gia tộc mạnh/yếu đi, gia tộc tuyên chiến.
 
 **Bộ sự kiện đầu tiên:**
-- Kinh tế: được mùa, sâu bệnh mất mùa, thương nhân lạ, cháy kho gỗ, phát hiện mạch đá.
+- Kinh tế: được mùa, sâu bệnh mất mùa, thương nhân lạ, cháy kho gỗ, phát hiện mạch khoáng, rừng gỗ tốt, bầy ngựa hoang. Lượng tài nguyên của ba sự kiện tài nguyên được tung ngẫu nhiên, mỗi loại tung riêng (M16i):
+  - **Mạch khoáng** (≥2 ô đồi, tốn 10 lương): đá 10 / 30 / 50 và khoáng sản 0 / 20 / 30, mỗi thứ 50 / 30 / 20%.
+  - **Rừng gỗ tốt** (≥2 ô rừng, tốn 10 lương): gỗ 10 / 30 / 50 và gỗ cứng 0 / 20 / 30, mỗi thứ 50 / 30 / 20%.
+  - **Bầy ngựa hoang** (≥3 ô cỏ): đổi 30 lương với dân làng → ngựa 10 / 15 / 20; cho lính tự bắt (miễn phí) → ngựa 0 / 10 / 15; mỗi mức 50 / 30 / 20%. Hoặc để chúng đi.
+  - **Thương nhân lạ**: trả 20 lương, 20 gỗ hoặc 10 đá (cùng giá trị), hoặc đuổi đi. 40% được hàng xịn (khoáng sản 5 / 10 / 15, gỗ cứng 8 / 15 / 20 hoặc ngựa 5 / 10 / 15), 30% đổi ngang sang tài nguyên cơ bản khác, 20% lỗ một nửa, 10% bị lừa trắng tay.
+  - Tung ra toàn số 0 thì báo "Không thu được gì.".
 - Ngoại giao: gia tộc gặp nạn đói xin viện trợ, sứ giả mang quà, gia tộc mạnh đòi cống nạp, đồng minh nhờ giúp.
 - Quân sự: người tình nguyện đầu quân, lính đòi tăng lương, dịch bệnh trong doanh trại, bọn cướp bị bắt xin tha (chỉ khi lượt trước vừa đánh thắng cướp).
 - Việc trong vương quốc: lễ hội mùa, nông dân xin khai hoang, thầy thuốc ghé qua.
@@ -1134,3 +1139,16 @@ Mọi bảng thông tin / nâng cấp trình bày điều kiện bằng hình th
 - **Chỉ hiện chân dung** (ảnh vẽ bằng Gemini riêng cho từng mẫu, khung vàng; không lấy ảnh trong kho tướng): ở cửa sổ chọn chúa công và ở đầu tab Thông tin của Thành chính (to bằng chân dung trong Chiêu hiền). Chúa công không đứng trên tường thành trong trận. Prompt trong `docs/gemini_prompts.md`.
 - **Sprite đi bộ** (4 khung mỗi tư thế, 5 tư thế) cho chúa công nam / nữ theo 3 trang phục, và cho tướng nam / nữ theo 3 bậc sao × loại vũ khí. Chỉ dùng cho mini game tỉ thí (M16j).
 - **Sau này:** có thể thêm xuất thân ngẫu nhiên, người chơi trả lời vài lựa chọn để chúa công nhận một ít lợi thế nhỏ.
+
+## 25. Cố vấn Linh Nhi và Tử Uyên (M16i, đã chốt)
+
+M16i chia hai phần: **M16i-a** (hệ thoại, chân dung, các báo cáo) và **M16i-b** (thoại cho mọi sự kiện, cố vấn kể thay phần mô tả).
+
+- **Chọn một trong hai cố vấn** ở màn Ván mới (lưu cùng ván); đều gọi người chơi là "Chúa công". **Chỉ cố vấn đã chọn nói**, mỗi chỗ một câu (sau playtest: hai người cùng nói làm các bảng dài ra không cần thiết).
+  - **Linh Nhi** (nữ): vui tươi, nhiều năng lượng, bộc lộ cảm xúc, đôi khi hấp tấp, rất trung thành. Xưng "tiểu nữ" hoặc "Linh Nhi". Khen nhiệt tình (hơi quá đà) khi thành công; khi thất bại thì an ủi, không làm Chúa công thấy mình dại, rồi gợi ý nhẹ. Gặp chuyện hiếm thì tò mò, háo hức.
+  - **Tử Uyên** (nam): điềm tĩnh, nghiêm túc, lý trí, nói thẳng và gọn, không phóng đại. Xưng "thuộc hạ". Khen ít lời khi thành công; khi thất bại thì chỉ ra chỗ sai, cứng rắn nhưng lễ độ. Gặp chuyện hiếm thì nghi ngờ, cảnh giác. Sự quan tâm thể hiện qua việc làm (pha trà, chuẩn bị sẵn) hơn là lời lẽ.
+  - Hai người có giọng riêng: cùng một tình huống thì nói khác nhau, đôi khi đánh giá khác nhau.
+- **Biểu cảm:** bình thường, vui, lo lắng, ngạc nhiên (4 ảnh mỗi người; Linh Nhi biểu cảm mạnh, Tử Uyên kiềm chế). Chưa có ảnh thì dùng chân dung ghép bằng script.
+- **Cách hiện:** khung thoại ngay trong cửa sổ (chân dung, tên, câu nói), không thêm lần bấm.
+- **Luật thoại:** chỉ nói điều người chơi đã biết (không biết trước kết quả bị giấu); thoại theo **kết quả thật**, không khen một quyết định có kết quả xấu; mỗi tình huống có vài câu khác nhau để ít lặp; thoại lưu thành dữ liệu theo tình huống, thêm tình huống mới không phải sửa code.
+- **M16i-a nói ở:** lời mở đầu ván mới, báo cáo trận (bị cướp, bị xâm lược, tấn công, sáp nhập, trận của sự kiện; thắng / thua, tổng tướng tử trận), kết quả thảo phạt, báo cáo quan trọng, chợ đen, chiến thắng / thất bại cả ván.

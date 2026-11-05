@@ -47,7 +47,7 @@ func _ready() -> void:
 	paper.add_child(margin)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
-	column.custom_minimum_size = Vector2(420, 0)
+	column.custom_minimum_size = Vector2(520, 0)
 	margin.add_child(column)
 	var castle := TextureRect.new()
 	castle.texture = GameArt.castle(6)
