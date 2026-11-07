@@ -1175,3 +1175,13 @@ Mini game cho tướng luyện võ, lấy kinh nghiệm. Người chơi điều 
 - **Thắng / thua:** ai hết máu trước thì thua. Hết 5 hiệp mà chưa ai gục thì bên còn nhiều máu hơn thắng; bằng nhau thì tính tướng thua.
 - **Độ khó theo sao của tướng** (3★ dễ → 6★ khó): kim chạy một lượt 1,4 / 1,15 / 0,95 / 0,8 giây; vùng chuẩn (đỏ) rộng ±5 / 4 / 3 / 2,5%, vùng khá (vàng) ±15 / 12 / 10 / 8%; vòng né kéo dài 1,2 / 1,05 / 0,9 / 0,8 giây, mỗi điểm Thống suất cho thêm 0,02 giây (tối đa +0,3); vòng xanh (lúc bắt đầu né được) nhỏ dần: né được trong 50 / 40 / 32 / 25% cuối của thời gian vòng.
 - **Thưởng:** thắng nhận kinh nghiệm bằng **40%** số cần để lên cấp hiện tại, thua **15%** (làm tròn lên). Cố vấn nói một câu ở bảng kết quả.
+
+## 27. Đấu trí lật thẻ với mưu sĩ (M16k, đã chốt)
+
+Mini game cho mưu sĩ lấy kinh nghiệm, thay cho giải đố cờ tướng (quá khó). Người chơi là **Chúa công**, máy là **mưu sĩ**. Chỉ là đấu trí: không ai bị thương.
+
+- **Điều kiện:** như tỉ thí: mưu sĩ từ 3★, đang ở nhà, không bị thương, chưa đạt cấp tối đa, đã qua **5 lượt** kể từ lần đấu trí trước của chính mưu sĩ đó (lưu cùng ván). Nút "Đấu trí" nằm dưới chân dung trong cửa sổ mưu sĩ, khóa kèm lý do khi chưa đủ điều kiện.
+- **Bảng thẻ theo sao của mưu sĩ:** 3★ 4×4 (8 cặp), 4★ 5×4 (10 cặp), 5★ 6×5 (15 cặp), 6★ 6×6 (18 cặp). Thẻ úp, xáo ngẫu nhiên; mặt thẻ là icon có sẵn trong game (6 tài nguyên, 12 trang bị).
+- **Luật:** Chúa công lật trước; mưu sĩ lật mỗi thẻ cách nhau 1 giây. Mỗi lượt lật 2 thẻ: trùng nhau thì giữ cặp và **được lật tiếp**; khác nhau thì úp lại và đến lượt bên kia. Lật hết thì bên nhiều cặp hơn thắng; bằng nhau tính Chúa công thua.
+- **Máy nhớ thẻ theo sao:** mỗi thẻ được lật (bởi bất kỳ ai), mưu sĩ nhớ được với xác suất 30 / 40 / 50 / 60% (3★ → 6★). Đến lượt, mưu sĩ lật ngay cặp đã nhớ nếu có; không thì lật một thẻ chưa biết rồi tìm thẻ đôi trong trí nhớ.
+- **Thưởng (cho mưu sĩ):** Chúa công thắng thì mưu sĩ nhận **40%** số kinh nghiệm cần để lên cấp hiện tại (học được nhiều), thua **15%** (làm tròn lên). Có nút "Bỏ cuộc" (tính là thua). Cố vấn nói một câu ở bảng kết quả.

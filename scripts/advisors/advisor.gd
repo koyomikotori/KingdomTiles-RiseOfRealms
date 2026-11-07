@@ -12,6 +12,8 @@ var strategy: int
 var stratagems: Array[StringName] = []
 ## Advisors.POSTS entry, or NO_POST.
 var post: StringName = NO_POST
+## Turn of the last memory match with the Chúa công (MemoryMatch, M16k); far back = never.
+var last_memory_turn := -100
 
 
 ## The stat a post uses, worn items included: &"admin" → admin, &"diplomacy" → diplomacy,
@@ -46,7 +48,7 @@ func to_save() -> Dictionary:
 	for id in stratagems:
 		ids.append(String(id))
 	data.merge({"kind": "advisor", "admin": admin, "diplomacy": diplomacy, "strategy": strategy,
-			"stratagems": ids, "post": String(post)})
+			"stratagems": ids, "post": String(post), "last_memory_turn": last_memory_turn})
 	return data
 
 
@@ -59,4 +61,5 @@ static func from_save(data: Dictionary) -> Advisor:
 	for id: String in data.stratagems:
 		advisor.stratagems.append(StringName(id))
 	advisor.post = StringName(data.post)
+	advisor.last_memory_turn = int(data.get("last_memory_turn", -100))
 	return advisor

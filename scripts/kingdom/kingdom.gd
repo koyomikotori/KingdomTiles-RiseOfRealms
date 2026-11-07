@@ -945,6 +945,7 @@ func _open_officer(officer: Officer) -> void:
 	window.open(state, officer)
 	window.forge_requested.connect(_open_forge)
 	window.spar_requested.connect(_open_spar)
+	window.memory_requested.connect(_open_memory)
 
 
 ## The sparring mini game (M16j); the general's window opens again afterwards to show the XP.
@@ -961,6 +962,20 @@ func _open_spar(general: General) -> void:
 		Sfx.music(&"kingdom")
 		_autosave()
 		_open_officer(general))
+
+
+## The memory card mini game (M16k); the advisor's window opens again afterwards to show the XP.
+func _open_memory(advisor: Advisor) -> void:
+	if state.check_memory(advisor) != MemoryMatch.Result.OK:
+		return
+	var screen := MemoryScreen.new()
+	$UI.add_child(screen)
+	screen.start(state, advisor)
+	_map_life.ambient = false
+	screen.finished.connect(func(_result: Dictionary) -> void:
+		_map_life.ambient = true
+		_autosave()
+		_open_officer(advisor))
 
 
 ## The forge's Rèn tab over the officer window, set to `kind`'s `slot` (M14h).

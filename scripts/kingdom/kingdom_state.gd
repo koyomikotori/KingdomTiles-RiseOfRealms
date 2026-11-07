@@ -1051,7 +1051,7 @@ func limit_break(officer: Officer) -> LimitBreak.Result:
 	return result
 
 
-## Whether `general` may spar with the Chúa công this turn (Spar, M16j); also false for a
+## Whether `general` may spar this turn (Spar, M16j); also false for a
 ## general no longer in the kingdom.
 func check_spar(general: General) -> Spar.Result:
 	if not generals.generals.has(general):
@@ -1068,6 +1068,26 @@ func finish_spar(general: General, won: bool) -> Dictionary:
 	general.last_spar_turn = turn
 	var levels := general.gain_xp(xp)
 	generals.changed.emit()
+	return {"xp": xp, "levels": levels}
+
+
+## Whether `advisor` may play the memory match this turn (MemoryMatch, M16k); also false for an
+## advisor no longer in the kingdom.
+func check_memory(advisor: Advisor) -> MemoryMatch.Result:
+	if not advisors.advisors.has(advisor):
+		return MemoryMatch.Result.AWAY
+	return MemoryMatch.check(advisor, turn)
+
+
+## A finished memory match: the cooldown starts and the advisor gains MemoryMatch.xp_reward.
+## Returns {"xp", "levels"}, or {} when the advisor could not play (nothing changes then).
+func finish_memory(advisor: Advisor, ruler_won: bool) -> Dictionary:
+	if check_memory(advisor) != MemoryMatch.Result.OK:
+		return {}
+	var xp := MemoryMatch.xp_reward(advisor, ruler_won)
+	advisor.last_memory_turn = turn
+	var levels := advisor.gain_xp(xp)
+	advisors.changed.emit()
 	return {"xp": xp, "levels": levels}
 
 

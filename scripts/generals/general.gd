@@ -8,7 +8,7 @@ const NO_TRAIT: StringName = &""
 var might: int
 var command: int
 var trait_id: StringName = NO_TRAIT
-## Turn of the last sparring match with the Chúa công (Spar, M16j); far back = never.
+## Turn of the last sparring match (Spar, M16j); far back = never.
 var last_spar_turn := -100
 
 

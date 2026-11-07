@@ -19,6 +19,9 @@ signal forge_requested(kind: StringName, slot: StringName)
 ## "Tỉ thí" under a general's portrait (Spar, M16j): the kingdom scene closes this window and
 ## opens the SparScreen.
 signal spar_requested(general: General)
+## "Đấu trí" under an advisor's portrait (MemoryMatch, M16k): the kingdom scene closes this
+## window and opens the MemoryScreen.
+signal memory_requested(advisor: Advisor)
 
 var _state: KingdomState
 var _officer: Officer
@@ -69,12 +72,16 @@ func open(state: KingdomState, officer: Officer) -> void:
 		var switcher := _row([previous, place, next])
 		switcher.custom_minimum_size = Vector2(PortraitView.SIZE * 2, 0)
 		left.add_child(switcher)
-	if officer is General:
-		_spar_button = _button("Tỉ thí", func() -> void:
+	if officer is General or officer is Advisor:
+		var general := officer is General
+		_spar_button = _button("Tỉ thí" if general else "Đấu trí", func() -> void:
 			close()
-			spar_requested.emit(_officer as General))
+			if _officer is General:
+				spar_requested.emit(_officer as General)
+			else:
+				memory_requested.emit(_officer as Advisor))
 		_spar_button.custom_minimum_size = Vector2(PortraitView.SIZE * 2, 40)
-		_spar_button.tooltip_text = "Tỉ thí võ công với Chúa công để lấy kinh nghiệm."
+		_spar_button.tooltip_text = "Tỉ thí võ công với một võ nhân giang hồ để lấy kinh nghiệm." if general 				else "Đấu trí lật thẻ với Chúa công để lấy kinh nghiệm."
 		left.add_child(_spar_button)
 		_spar_reason = _label("", 12)
 		_spar_reason.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -119,7 +126,7 @@ func _switch(step: int) -> void:
 	window.open(_state, officers[posmod(index + step, officers.size())])
 	window._tabs.current_tab = _tabs.current_tab
 	# The new window answers the kingdom scene's requests too.
-	for signal_name in [&"forge_requested", &"spar_requested"]:
+	for signal_name in [&"forge_requested", &"spar_requested", &"memory_requested"]:
 		for connection in get_signal_connection_list(signal_name):
 			window.connect(signal_name, connection.callable)
 	queue_free()
@@ -161,7 +168,12 @@ func _refresh() -> void:
 	else:
 		_fill_advisor(_officer as Advisor)
 	_stats.add_child(_muted(_officer.level_text()))
-	if _spar_button != null:
+	if _spar_button != null and _officer is Advisor:
+		var advisor := _officer as Advisor
+		var memory := _state.check_memory(advisor)
+		_spar_button.disabled = memory != MemoryMatch.Result.OK
+		_spar_reason.text = MemoryMatch.describe(memory, advisor, _state.turn) if memory != MemoryMatch.Result.OK 				else "Chúa công thắng +%d KN, thua +%d KN" % [MemoryMatch.xp_reward(advisor, true), MemoryMatch.xp_reward(advisor, false)]
+	elif _spar_button != null:
 		var spar := _state.check_spar(_officer as General)
 		_spar_button.disabled = spar != Spar.Result.OK
 		_spar_reason.text = Spar.describe(spar, _officer as General, _state.turn) if spar != Spar.Result.OK \

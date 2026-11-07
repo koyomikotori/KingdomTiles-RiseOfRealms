@@ -400,5 +400,29 @@
 			["neutral", "Thua trong luyện tập không mất gì, chỉ cần nhớ chỗ sai. {general} vẫn có thêm kinh nghiệm."],
 			["concerned", "Ra đòn vội quá, {general}. Đợi kim vào giữa rồi hãy đánh. {rival} đã nhìn ra sơ hở đó."]
 		]
+	},
+	"memory_won": {
+		"linh_nhi": [
+			["happy", "Chúa công nhớ giỏi quá đi! {advisor} thua tâm phục khẩu phục luôn!"],
+			["surprised", "Oa, Chúa công lật trúng liền mấy cặp! Tiểu nữ còn chưa kịp nhìn thẻ nữa!"],
+			["happy", "Thắng rồi! {advisor} chắc về nhà luyện trí nhớ cả đêm cho xem, hì hì!"]
+		],
+		"tu_uyen": [
+			["neutral", "Chúa công thắng gọn. {advisor} đã học được thêm từ ván này."],
+			["happy", "Trí nhớ của Chúa công rất tốt. Thuộc hạ đã cho người pha trà mời {advisor} ở lại bàn thêm."],
+			["neutral", "Một ván hay. Thua Chúa công, {advisor} sẽ biết mình còn thiếu ở đâu."]
+		]
+	},
+	"memory_lost": {
+		"linh_nhi": [
+			["concerned", "Tiếc quá Chúa công ơi! Nhưng {advisor} giỏi thật đó, thẻ nào lật qua cũng nhớ hết!"],
+			["happy", "Không sao đâu ạ! Lần sau mình thắng lại {advisor} là được mà!"],
+			["surprised", "{advisor} nhớ hết các thẻ luôn sao? Trí nhớ gì mà đáng sợ vậy!"]
+		],
+		"tu_uyen": [
+			["neutral", "{advisor} thắng ván này. Chúa công nên để ý cả những thẻ đối phương đã lật."],
+			["neutral", "Thua một ván cờ trí không mất gì. {advisor} vẫn có thêm kinh nghiệm."],
+			["concerned", "Chúa công lật vội quá. Nhớ chỗ từng thẻ trước rồi hãy chọn."]
+		]
 	}
 }
