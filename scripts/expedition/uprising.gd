@@ -23,6 +23,9 @@ var grow_timer := 0
 var next_allowed_turn := FIRST_TURN
 ## Zones cleared so far: later expeditions meet more and stronger bandits.
 var cleared := 0
+## M16i: an event's outcome (Dân xin giảm sưu thuế): a zone starts at the next end of turn if
+## none is active, without waiting for or changing next_allowed_turn.
+var forced := false
 var rng := RandomNumberGenerator.new()
 
 
@@ -52,6 +55,9 @@ func end_turn(board: BoardData, turn: int, paused: bool) -> StringName:
 			if spread(board):
 				return &"spread"
 		return &""
+	if forced:
+		forced = false
+		return &"started" if start(board) else &""
 	if turn >= next_allowed_turn and rng.randf() < SPAWN_CHANCE:
 		return &"started" if start(board) else &""
 	return &""
@@ -162,7 +168,7 @@ func _around(board: BoardData, center: Vector2i, radius: int) -> Array[Vector2i]
 
 func to_save() -> Dictionary:
 	return {"cells": cells.map(func(c: Vector2i) -> Array: return [c.x, c.y]), "grow_timer": grow_timer,
-			"next_allowed_turn": next_allowed_turn, "cleared": cleared}
+			"next_allowed_turn": next_allowed_turn, "cleared": cleared, "forced": forced}
 
 
 func load_save(data: Dictionary, board: BoardData) -> void:
@@ -172,4 +178,5 @@ func load_save(data: Dictionary, board: BoardData) -> void:
 	grow_timer = int(data.get("grow_timer", 0))
 	next_allowed_turn = int(data.get("next_allowed_turn", FIRST_TURN))
 	cleared = int(data.get("cleared", 0))
+	forced = bool(data.get("forced", false))
 	apply(board)

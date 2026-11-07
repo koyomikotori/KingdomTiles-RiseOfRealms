@@ -35,7 +35,7 @@ func spend(cost: Dictionary[StringName, int]) -> bool:
 	if not can_afford(cost):
 		return false
 	for resource_id in cost:
-		_amounts[resource_id] -= cost[resource_id]
+		_amounts[resource_id] = _amounts.get(resource_id, 0) - cost[resource_id]
 	changed.emit()
 	return true
 

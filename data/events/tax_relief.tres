@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Dân chúng reo hò, rủ nhau khai khẩn thêm đất mới."
+extra_pieces = 1
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Đồng ý"
+hint = "Kho hao hụt đủ thứ, nhưng dân vui lòng khai hoang thêm đất."
+cost = Dictionary[StringName, int]({&"food": 20, &"wood": 10, &"stone": 10, &"ore": 5, &"hardwood": 5})
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+weight = 0.5
+text = "Dân nổi loạn, lôi kéo cả lính đào ngũ theo, kéo nhau chiếm đất."
+force_uprising = true
+squads_lost_min = 1
+squads_lost_max = 2
+
+[sub_resource type="Resource" id="outcome_1_1"]
+script = ExtResource("3_outcome")
+weight = 0.5
+text = "Dân bất bình bỏ đi, lôi kéo cả lính đào ngũ theo."
+squads_lost_min = 1
+squads_lost_max = 2
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Từ chối"
+hint = "Dân sẽ bất bình: mất 1–2 đơn vị lính, có thể nổi loạn chiếm đất."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"tax_relief"
+title = "Dân xin giảm sưu thuế"
+text = "Dân chúng kéo đến cổng thành, xin giảm sưu thuế sau mấy mùa khó khăn."
+category = 3
+weight = 1.0
+cooldown = 15
+min_turn = 10
+min_squads = 2
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

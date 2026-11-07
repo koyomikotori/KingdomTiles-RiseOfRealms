@@ -76,3 +76,13 @@ extends Resource
 ## The chance of a bandit raid is multiplied by this for `raid_chance_turns` turns (RaidPressure).
 @export var raid_chance_factor: float = 1.0
 @export var raid_chance_turns: int = 0
+@export_group("M16i")
+## Rebels seize land at the end of this turn (Uprising.forced) if no zone is active; the usual
+## spawn countdown stays as it was.
+@export var force_uprising: bool = false
+## Between squads_lost_min and squads_lost_max random squads at home are lost for good.
+@export var squads_lost_min: int = 0
+@export var squads_lost_max: int = 0
+## Up to hurt_squads random squads at home each lose hurt_share (0..1) of their soldiers.
+@export var hurt_squads: int = 0
+@export var hurt_share: float = 0.0

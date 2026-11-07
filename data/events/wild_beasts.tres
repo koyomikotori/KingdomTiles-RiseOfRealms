@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Lính lùng sục khắp rừng, mang về mấy xe thịt thú."
+hurt_squads = 3
+hurt_share = 0.1
+random_resources = Dictionary[StringName, Dictionary]({
+&"food": {
+10: 0.4,
+20: 0.4,
+30: 0.2
+}
+})
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Cho lính đi săn"
+hint = "Ba đơn vị đi săn có thể bị thương, nhưng săn được thú thì có thêm thịt."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Bầy sói no nê rồi mới chịu bỏ đi."
+resource_loss = Dictionary[StringName, float]({&"food": 0.15})
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Mặc kệ"
+hint = "Không tốn gì, nhưng bầy sói sẽ còn phá kho lương."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"wild_beasts"
+title = "Thú dữ quấy phá"
+text = "Một bầy sói từ rừng sâu kéo về, đêm đêm lẻn vào làng tha mất lương thực."
+category = 0
+weight = 1.5
+cooldown = 10
+min_terrain = Dictionary[StringName, int]({&"forest": 3})
+min_squads = 1
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

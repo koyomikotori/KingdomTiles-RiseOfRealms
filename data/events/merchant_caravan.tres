@@ -1,0 +1,100 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Thương đoàn cảm tạ rồi lên đường, hẹn lần sau ghé lại."
+relation = 10
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Miễn thuế"
+hint = "Tỏ lòng hiếu khách, {clan} sẽ quý mến."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Thương đoàn miễn cưỡng nộp thuế."
+relation = -5
+random_resources = Dictionary[StringName, Dictionary]({
+&"food": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+},
+&"wood": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+},
+&"stone": {
+5: 0.4,
+10: 0.4,
+15: 0.2
+}
+})
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Thu thuế"
+hint = "Thu một ít lương thực, gỗ và đá; {clan} hơi phật ý."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[sub_resource type="Resource" id="outcome_2_0"]
+script = ExtResource("3_outcome")
+text = "Lính ập tới, thương đoàn mất trắng hàng hóa."
+relation = -20
+relation_all = -5
+random_resources = Dictionary[StringName, Dictionary]({
+&"food": {
+15: 0.4,
+25: 0.4,
+35: 0.2
+},
+&"wood": {
+15: 0.4,
+25: 0.4,
+35: 0.2
+},
+&"stone": {
+10: 0.4,
+15: 0.4,
+20: 0.2
+},
+&"ore": {
+8: 0.4,
+12: 0.4,
+18: 0.2
+},
+&"hardwood": {
+8: 0.4,
+12: 0.4,
+18: 0.2
+},
+&"horses": {
+8: 0.4,
+12: 0.4,
+18: 0.2
+}
+})
+
+[sub_resource type="Resource" id="choice_2"]
+script = ExtResource("2_choice")
+text = "Tịch thu hàng"
+hint = "Được đủ loại tài nguyên, nhưng {clan} căm giận và các gia tộc khác cũng dè chừng."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_2_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"merchant_caravan"
+title = "Thương đoàn {clan}"
+text = "Một thương đoàn của {clan} chở đầy hàng đi ngang qua lãnh thổ, xin được miễn thuế."
+category = 1
+weight = 1.5
+cooldown = 10
+min_turn = 5
+needs_clan = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1"), SubResource("choice_2")])

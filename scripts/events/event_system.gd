@@ -357,13 +357,17 @@ func _apply(state: KingdomState, outcome: EventOutcomeData, clan_id: StringName,
 	for resource_id in outcome.resource_loss:
 		var amount := floori(state.stockpile.get_amount(resource_id) * outcome.resource_loss[resource_id])
 		lost[resource_id] = lost.get(resource_id, 0) + amount
+	# A resource never stocked has no entry to take from: drop the zero losses.
+	for resource_id in lost.keys():
+		if lost[resource_id] <= 0:
+			lost.erase(resource_id)
 	state.stockpile.add(gained)
 	state.stockpile.spend(lost)
 	if not gained.is_empty():
 		changes.append("Nhận: %s" % _amounts(gained))
 	elif not outcome.random_resources.is_empty():
 		changes.append("Không thu được gì.")
-	if lost.values().any(func(amount: int) -> bool: return amount > 0):
+	if not lost.is_empty():
 		changes.append("Mất: %s" % _amounts(lost))
 	if clan_id != &"" and outcome.relation != 0:
 		state.diplomacy.change_relation(clan_id, outcome.relation, Diplomacy.MEMORY_EVENT)
@@ -449,6 +453,31 @@ func _apply_war(state: KingdomState, rng: RandomNumberGenerator, outcome: EventO
 	if outcome.force_raid and state.raid != null:
 		raid_forced = true
 		changes.append("Đạo tặc sẽ kéo đến ở lượt sau")
+	if outcome.force_uprising and state.uprising != null:
+		if state.uprising.is_active():
+			changes.append("Dân bất bình, nhưng quân nổi loạn đã chiếm đất từ trước")
+		else:
+			state.uprising.forced = true
+			changes.append("Dân nổi loạn sẽ chiếm đất ở lượt sau")
+	if outcome.squads_lost_max > 0:
+		var home: Array[Army.Squad] = []
+		home.assign(state.army.squads.filter(func(squad: Army.Squad) -> bool: return not squad.away))
+		var count := mini(rng.randi_range(outcome.squads_lost_min, outcome.squads_lost_max), home.size())
+		for i in count:
+			var squad: Army.Squad = home.pop_at(rng.randi_range(0, home.size() - 1))
+			state.army.remove_squad(squad)
+			changes.append("Mất 1 đơn vị %s" % state.units[squad.unit_id].display_name)
+	if outcome.hurt_squads > 0 and outcome.hurt_share > 0.0:
+		var home: Array[Army.Squad] = []
+		home.assign(state.army.squads.filter(func(squad: Army.Squad) -> bool: return not squad.away))
+		var hurt := 0
+		for i in mini(outcome.hurt_squads, home.size()):
+			var squad: Army.Squad = home.pop_at(rng.randi_range(0, home.size() - 1))
+			var loss := mini(squad.soldiers, ceili(squad.soldiers * outcome.hurt_share))
+			state.army.set_soldiers(squad, squad.soldiers - loss)
+			hurt += loss
+		if hurt > 0:
+			changes.append("Mất %d lính" % hurt)
 	if outcome.peasant_max > 0:
 		for i in rng.randi_range(outcome.peasant_min, outcome.peasant_max):
 			if state.army.count_squads() >= state.get_squad_capacity():
