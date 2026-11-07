@@ -43,11 +43,14 @@ var _turn_label: Label
 var _hint: Label
 var _scores: Array[Label] = []
 var _result: Dictionary = {}
+## XP multiplier (EventSystem.REQUEST_BONUS when the officer asked for the match).
+var _bonus := 1.0
 var _forfeit_button: Button
 
 
-func start(state: KingdomState, advisor: Advisor, seed_value: int = 0) -> void:
+func start(state: KingdomState, advisor: Advisor, seed_value: int = 0, bonus: float = 1.0) -> void:
 	_state = state
+	_bonus = bonus
 	_match = MemoryMatch.new(advisor, seed_value)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -194,7 +197,7 @@ func _forfeit() -> void:
 
 func _finish(ruler_won: bool, forfeited: bool = false) -> void:
 	_forfeit_button.visible = false
-	var reward := _state.finish_memory(_match.advisor, ruler_won)
+	var reward := _state.finish_memory(_match.advisor, ruler_won, _bonus)
 	_result = {"won": ruler_won, "xp": reward.get("xp", 0), "levels": reward.get("levels", 0), "forfeited": forfeited}
 	_update_texts()
 	Sfx.play(&"level_up" if ruler_won else &"complete")
@@ -228,7 +231,7 @@ func _show_result() -> void:
 	box.add_child(title)
 	var lines: Array[String] = ["Số cặp: %s %d · %s %d" % [_state.ruler.name, _match.scores[MemoryMatch.Side.RULER],
 			advisor.name, _match.scores[MemoryMatch.Side.ADVISOR]]]
-	lines.append("%s nhận %d kinh nghiệm." % [advisor.name, _result.xp])
+	lines.append("%s nhận %d kinh nghiệm%s." % [advisor.name, _result.xp, _bonus_text()])
 	if _result.levels > 0:
 		lines.append("Lên %d cấp! (cấp %d)" % [_result.levels, advisor.level])
 	lines.append("Lần đấu trí sau: %d lượt nữa." % MemoryMatch.COOLDOWN_TURNS)
@@ -249,6 +252,10 @@ func _show_result() -> void:
 	done.size_flags_horizontal = Control.SIZE_SHRINK_END
 	done.pressed.connect(_close)
 	box.add_child(done)
+
+
+func _bonus_text() -> String:
+	return " (tâm nguyện riêng: +%d%%)" % roundi((_bonus - 1.0) * 100) if _bonus > 1.0 else ""
 
 
 func _close() -> void:

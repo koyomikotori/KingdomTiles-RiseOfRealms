@@ -104,8 +104,8 @@ static func describe(result: Result, playing: Advisor = null, turn: int = 0) -> 
 
 
 ## XP for the advisor: a share of their next level, more when the Chúa công won.
-static func xp_reward(playing: Advisor, ruler_won: bool) -> int:
-	return ceili(playing.xp_to_next() * (WIN_SHARE if ruler_won else LOSS_SHARE))
+static func xp_reward(playing: Advisor, ruler_won: bool, bonus: float = 1.0) -> int:
+	return ceili(playing.xp_to_next() * (WIN_SHARE if ruler_won else LOSS_SHARE) * bonus)
 
 
 func _tier() -> int:

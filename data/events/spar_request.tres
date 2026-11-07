@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "{officer} mừng rỡ, dẫn cao thủ ra sân luyện võ."
+starts_request = true
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Cho phép tỉ thí"
+hint = "{officer} vào tỉ thí ngay. Vì là tâm nguyện riêng, kinh nghiệm nhận được tăng 50%."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "{officer} cúi đầu lui ra, hẹn dịp khác."
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Để lúc khác"
+hint = "Không mất gì; {officer} vẫn có thể xin lại sau."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"spar_request"
+title = "{officer} xin tỉ thí võ công"
+text = "{officer} mời được một cao thủ giang hồ về thành, xin Chúa công cho phép tỉ thí để rèn luyện võ công."
+category = 3
+weight = 1.0
+cooldown = 6
+min_turn = 3
+officer_request = &"spar"
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

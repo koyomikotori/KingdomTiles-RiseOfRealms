@@ -214,5 +214,5 @@ func won() -> bool:
 	return hp > rival_hp
 
 
-static func xp_reward(general: General, won_match: bool) -> int:
-	return ceili(general.xp_to_next() * (WIN_SHARE if won_match else LOSS_SHARE))
+static func xp_reward(general: General, won_match: bool, bonus: float = 1.0) -> int:
+	return ceili(general.xp_to_next() * (WIN_SHARE if won_match else LOSS_SHARE) * bonus)

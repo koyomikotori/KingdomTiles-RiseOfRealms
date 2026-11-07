@@ -65,11 +65,14 @@ var _popups: Array[Dictionary] = []
 var _round_label: Label
 var _hint: Label
 var _result: Dictionary = {}
+## XP multiplier (EventSystem.REQUEST_BONUS when the officer asked for the match).
+var _bonus := 1.0
 var _forfeit_button: Button
 
 
-func start(state: KingdomState, general: General, seed_value: int = 0) -> void:
+func start(state: KingdomState, general: General, seed_value: int = 0, bonus: float = 1.0) -> void:
 	_state = state
+	_bonus = bonus
 	_spar = Spar.new(general, seed_value)
 	_general_sprite = GameArt.foot_sprite(general.look, general.weapon_type(), general.stars)
 	_rival_sprite = _spar.rival.sprite
@@ -218,7 +221,7 @@ func _forfeit() -> void:
 
 func _finish(won: bool, forfeited: bool = false) -> void:
 	_forfeit_button.visible = false
-	var reward := _state.finish_spar(_spar.general, won)
+	var reward := _state.finish_spar(_spar.general, won, _bonus)
 	_result = {"won": won, "xp": reward.get("xp", 0), "levels": reward.get("levels", 0), "forfeited": forfeited}
 	_hint.text = ""
 	Sfx.play(&"level_up" if won else &"horn")
@@ -250,7 +253,7 @@ func _show_result() -> void:
 	title.add_theme_color_override("font_color", UiPalette.GOOD if won else UiPalette.WARNING)
 	box.add_child(title)
 	var lines: Array[String] = ["Máu còn lại: %s %d · %s %d" % [_spar.general.name, _spar.hp, _spar.rival_label(), _spar.rival_hp]]
-	lines.append("%s nhận %d kinh nghiệm." % [_spar.general.name, _result.xp])
+	lines.append("%s nhận %d kinh nghiệm%s." % [_spar.general.name, _result.xp, _bonus_text()])
 	if _result.levels > 0:
 		lines.append("Lên %d cấp! (cấp %d)" % [_result.levels, _spar.general.level])
 	lines.append("Lần tỉ thí sau: %d lượt nữa." % Spar.COOLDOWN_TURNS)
@@ -271,6 +274,10 @@ func _show_result() -> void:
 	done.size_flags_horizontal = Control.SIZE_SHRINK_END
 	done.pressed.connect(_close)
 	box.add_child(done)
+
+
+func _bonus_text() -> String:
+	return " (tâm nguyện riêng: +%d%%)" % roundi((_bonus - 1.0) * 100) if _bonus > 1.0 else ""
 
 
 func _close() -> void:

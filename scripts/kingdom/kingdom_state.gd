@@ -1060,11 +1060,12 @@ func check_spar(general: General) -> Spar.Result:
 
 
 ## A finished match: the cooldown starts and the general gains Spar.xp_reward. Returns
-## {"xp", "levels"}, or {} when the general could not spar (nothing changes then).
-func finish_spar(general: General, won: bool) -> Dictionary:
+## {"xp", "levels"}, or {} when the general could not spar (nothing changes then). `bonus`
+## multiplies the XP (EventSystem.REQUEST_BONUS for the general's own request).
+func finish_spar(general: General, won: bool, bonus: float = 1.0) -> Dictionary:
 	if check_spar(general) != Spar.Result.OK:
 		return {}
-	var xp := Spar.xp_reward(general, won)
+	var xp := Spar.xp_reward(general, won, bonus)
 	general.last_spar_turn = turn
 	var levels := general.gain_xp(xp)
 	generals.changed.emit()
@@ -1081,10 +1082,10 @@ func check_memory(advisor: Advisor) -> MemoryMatch.Result:
 
 ## A finished memory match: the cooldown starts and the advisor gains MemoryMatch.xp_reward.
 ## Returns {"xp", "levels"}, or {} when the advisor could not play (nothing changes then).
-func finish_memory(advisor: Advisor, ruler_won: bool) -> Dictionary:
+func finish_memory(advisor: Advisor, ruler_won: bool, bonus: float = 1.0) -> Dictionary:
 	if check_memory(advisor) != MemoryMatch.Result.OK:
 		return {}
-	var xp := MemoryMatch.xp_reward(advisor, ruler_won)
+	var xp := MemoryMatch.xp_reward(advisor, ruler_won, bonus)
 	advisor.last_memory_turn = turn
 	var levels := advisor.gain_xp(xp)
 	advisors.changed.emit()
