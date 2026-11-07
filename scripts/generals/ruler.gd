@@ -7,8 +7,8 @@ extends Officer
 
 const DEFAULT_NAME := "Chúa công"
 const MAX_NAME_LENGTH := 24
-## Outfits (portrait parts body_ruler_<outfit> / ruler_hat_<outfit>_<m|f>, sprites
-## ruler_<m|f>_<outfit>, tools/art/portrait_art.py and foot_art.py).
+## Outfits (portrait parts body_ruler_<outfit> / ruler_hat_<outfit>_<m|f>,
+## tools/art/portrait_art.py).
 const OUTFIT_NAMES: Dictionary[StringName, String] = {&"dragon": "Long bào", &"armor": "Chiến bào",
 		&"brocade": "Nho phục"}
 ## Blond hair (no officer color is this light).

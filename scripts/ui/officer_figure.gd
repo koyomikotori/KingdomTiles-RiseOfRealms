@@ -20,9 +20,6 @@ func setup(officer: Officer, scale: int = 2, team: Color = KingdomState.shown_co
 	_stars = officer.stars
 	_sprite_id = GameArt.officer_sprite(kind, officer.look, (officer as General).weapon_type() if officer is General else &"",
 			_stars)
-	if officer is Ruler:
-		_stars = 0
-		_sprite_id = GameArt.ruler_sprite(officer)
 	_tints = GameArt.unit_tints(team, officer.look)
 	_fit()
 

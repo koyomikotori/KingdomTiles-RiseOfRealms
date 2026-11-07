@@ -189,15 +189,10 @@ static func foot_sprite(look: OfficerLook, weapon_type: StringName = &"", stars:
 	return StringName(String(officer_sprite(&"general", look, weapon_type, stars)).replace("general_", "general_foot_"))
 
 
-## The ruler on foot in their outfit (M16h): ruler_<m|f>_<outfit>.
-static func ruler_sprite(ruler: Ruler) -> StringName:
-	return StringName("ruler_%s_%s" % ["f" if ruler.look.is_female() else "m", ruler.outfit()])
-
-
 ## Frames per state in this sprite's sheet.
 static func frames_of(sprite_id: StringName) -> int:
 	var id := String(sprite_id)
-	return OFFICER_FRAMES if id.right(3) in OFFICER_TIER_SUFFIXES or id.begins_with("ruler_") else UNIT_FRAMES
+	return OFFICER_FRAMES if id.right(3) in OFFICER_TIER_SUFFIXES or id.begins_with("npc_") else UNIT_FRAMES
 
 
 ## The frame to show `beat` beats into a loop, a beat being one soldier frame (callers count

@@ -1051,6 +1051,26 @@ func limit_break(officer: Officer) -> LimitBreak.Result:
 	return result
 
 
+## Whether `general` may spar with the Chúa công this turn (Spar, M16j); also false for a
+## general no longer in the kingdom.
+func check_spar(general: General) -> Spar.Result:
+	if not generals.generals.has(general):
+		return Spar.Result.AWAY
+	return Spar.check(general, turn)
+
+
+## A finished match: the cooldown starts and the general gains Spar.xp_reward. Returns
+## {"xp", "levels"}, or {} when the general could not spar (nothing changes then).
+func finish_spar(general: General, won: bool) -> Dictionary:
+	if check_spar(general) != Spar.Result.OK:
+		return {}
+	var xp := Spar.xp_reward(general, won)
+	general.last_spar_turn = turn
+	var levels := general.gain_xp(xp)
+	generals.changed.emit()
+	return {"xp": xp, "levels": levels}
+
+
 ## Clearing the bandits pleases every clan still standing (M16a).
 func _thank_for_expedition() -> void:
 	for clan_id in diplomacy.clans:

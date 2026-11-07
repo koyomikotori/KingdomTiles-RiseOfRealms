@@ -1142,7 +1142,7 @@ Mọi bảng thông tin / nâng cấp trình bày điều kiện bằng hình th
   - Chiến binh (Chiến bào, tóc vàng): Bá vương, Nữ tướng quân.
   - Mưu sĩ (Nho phục, tóc bạc): Mưu chủ, Nữ mưu chủ.
 - **Chỉ hiện chân dung** (ảnh vẽ bằng Gemini riêng cho từng mẫu, khung vàng; không lấy ảnh trong kho tướng): ở cửa sổ chọn chúa công và ở đầu tab Thông tin của Thành chính (to bằng chân dung trong Chiêu hiền). Chúa công không đứng trên tường thành trong trận. Prompt trong `docs/gemini_prompts.md`.
-- **Sprite đi bộ** (4 khung mỗi tư thế, 5 tư thế) cho chúa công nam / nữ theo 3 trang phục, và cho tướng nam / nữ theo 3 bậc sao × loại vũ khí. Chỉ dùng cho mini game tỉ thí (M16j).
+- **Sprite đi bộ** (4 khung mỗi tư thế, 5 tư thế) cho tướng nam / nữ theo 3 bậc sao × loại vũ khí, và cho các đối thủ giang hồ của mini game tỉ thí (M16j). Chúa công không có sprite đi bộ (sau M16j: đối thủ tỉ thí là NPC).
 - **Sau này:** có thể thêm xuất thân ngẫu nhiên, người chơi trả lời vài lựa chọn để chúa công nhận một ít lợi thế nhỏ.
 
 ## 25. Cố vấn Linh Nhi và Tử Uyên (M16i, đã chốt)
@@ -1161,3 +1161,17 @@ M16i chia hai phần: **M16i-a** (hệ thoại, chân dung, các báo cáo) và 
   - Bảng sự kiện: cố vấn **kể thay hẳn đoạn mô tả** (khung chân dung + câu kể ngay dưới tiêu đề). Mỗi sự kiện có 2 câu kể cho mỗi cố vấn, chỉ nói điều người chơi đã biết. Sự kiện chưa có thoại thì hiện mô tả cũ.
   - Bảng kết quả: kết quả và danh sách thay đổi vẫn như cũ, cố vấn thêm **một câu phản ứng theo kết quả thật**: được lợi / bị thiệt / được và mất / không gì thay đổi. Câu dùng chung cho mọi sự kiện. Kết quả dẫn vào trận thì không nói (báo cáo trận đã có thoại).
   - Cố vấn luôn gọi người chơi là "Chúa công", không bao giờ "bạn". Tên vương quốc mặc định ("Vương quốc của bạn") được nói thành "vương quốc ta".
+
+## 26. Tỉ thí võ công (M16j, đã chốt)
+
+Mini game cho tướng luyện võ, lấy kinh nghiệm. Người chơi điều khiển **tướng của ta**; đối thủ là **một võ nhân giang hồ ngẫu nhiên** (NPC), mỗi trận chọn lại. Chỉ là luyện công: không ai bị thương hay chết.
+
+- **Đối thủ:** 5 kiểu, mỗi kiểu một sprite đi bộ riêng (màu áo cố định), chỉ gọi bằng danh xưng ngắn: Kiếm sĩ nón tre (kiếm), Võ sư cầm chùy (chùy), Lão võ sư (tay không), Nữ hiệp (kiếm), Thương Lãng Khách (thương). Kiểu đối thủ chỉ khác hình, luật và độ khó như nhau.
+
+- **Điều kiện:** tướng từ 3★, đang ở nhà (không đi thảo phạt), không bị thương, chưa đạt cấp tối đa, và đã qua **5 lượt** kể từ lần tỉ thí trước của chính tướng đó (lưu cùng ván). Nút "Tỉ thí" nằm dưới chân dung trong cửa sổ tướng; không đủ điều kiện thì nút bị khóa và ghi lý do.
+- **Một trận:** tối đa **5 hiệp**, hai bên đều 100 máu. Mỗi hiệp:
+  1. **Tấn công:** kim chạy qua lại trên thanh ngang; bấm **Space** hoặc **chuột trái**. Kim vào vùng giữa (chuẩn) gây 20 sát thương, vùng hai bên (khá) 12, ngoài ra trượt. Sát thương × (1 + 4% × Võ lực của tướng, tính cả trang bị).
+  2. **Phòng thủ:** đối thủ ra đòn theo một hướng (mũi tên lên / trái / xuống / phải), một vòng tròn thu hẹp dần. Bấm đúng **W / A / S / D** (hoặc phím mũi tên) khi vòng đã thu vào trong vòng xanh thì né được; bấm sai hướng, bấm quá sớm hoặc để vòng đóng thì trúng đòn, mất 20 máu.
+- **Thắng / thua:** ai hết máu trước thì thua. Hết 5 hiệp mà chưa ai gục thì bên còn nhiều máu hơn thắng; bằng nhau thì tính tướng thua.
+- **Độ khó theo sao của tướng** (3★ dễ → 6★ khó): kim chạy một lượt 1,4 / 1,15 / 0,95 / 0,8 giây; vùng chuẩn (đỏ) rộng ±5 / 4 / 3 / 2,5%, vùng khá (vàng) ±15 / 12 / 10 / 8%; vòng né kéo dài 1,2 / 1,05 / 0,9 / 0,8 giây, mỗi điểm Thống suất cho thêm 0,02 giây (tối đa +0,3); vòng xanh (lúc bắt đầu né được) nhỏ dần: né được trong 50 / 40 / 32 / 25% cuối của thời gian vòng.
+- **Thưởng:** thắng nhận kinh nghiệm bằng **40%** số cần để lên cấp hiện tại, thua **15%** (làm tròn lên). Cố vấn nói một câu ở bảng kết quả.
