@@ -24,7 +24,7 @@ func open(state: KingdomState, path: int, system: SaveSystem, host: Node) -> voi
 	var body := build_frame(title, VICTORY_COLOR if won else DEFEAT_COLOR, 0.42, false)
 	var story := _label(_story(path), 16)
 	body.add_child(story)
-	var counsel := Counsel.lines(&"victory" if won else &"defeat", state.counselor, {"kingdom": state.kingdom_name})
+	var counsel := Counsel.lines(&"victory" if won else &"defeat", state.counselor, Counsel.context(state))
 	if not counsel.is_empty():
 		var box := CounselBox.new()
 		box.setup(counsel, get_viewport_rect().size.x * 0.42 - 60.0)

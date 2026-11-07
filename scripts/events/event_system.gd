@@ -323,7 +323,8 @@ func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int, genera
 	_apply(state, outcome, clan_id, changes, rng)
 	_apply_war(state, rng, outcome, choice, clan_id, changes)
 	_apply_battle_effects(state, rng, outcome, clan_id, changes)
-	var result := {"text": fill(state, outcome.text, clan_id), "changes": changes}
+	var result := {"text": fill(state, outcome.text, clan_id), "changes": changes,
+			"tone": &"" if outcome.battle != &"" else tone(outcome, changes)}
 	if outcome.battle != &"":
 		pending_battle = {"kind": outcome.battle, "clan_id": clan_id, "event_id": event.event_id}
 		if choice.pick_general:
@@ -331,6 +332,35 @@ func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int, genera
 			pending_battle["general"] = general if general in ready else ready[0]
 		result["battle"] = outcome.battle
 	return result
+
+
+## The counsel topic for what an outcome really did (M16i-b): &"event_good", &"event_bad",
+## &"event_mixed" or &"event_neutral". Gains and losses are read from `changes` (a roll can come
+## up empty; the paid cost is a choice, not a loss); the other effects from the outcome itself.
+static func tone(outcome: EventOutcomeData, changes: Array[String]) -> StringName:
+	var good := false
+	var bad := false
+	for line in changes:
+		if line.begins_with("Nhận") or line.begins_with("Thêm") or line.begins_with("Bổ sung") \
+				or line.contains("gia nhập"):
+			good = true
+		if line.begins_with("Mất") or line.contains("bỏ đi") or line.contains("phe địch") or line.contains("bỏ hoang"):
+			bad = true
+	# Morale: our army up or the enemy down is good, the other way round bad.
+	var morale_good := outcome.morale_amount != 0 and (outcome.morale_amount > 0) != outcome.morale_enemy
+	var morale_bad := outcome.morale_amount != 0 and not morale_good
+	if outcome.relation > 0 or outcome.relation_all > 0 or outcome.clan_strength < 0 or outcome.assassinate \
+			or outcome.raid_chance_factor < 1.0 or morale_good:
+		good = true
+	if outcome.relation < 0 or outcome.relation_all < 0 or outcome.clan_strength > 0 or outcome.declare_war \
+			or outcome.force_raid or outcome.force_uprising or outcome.force_invasion or outcome.commander_dies \
+			or outcome.commander_wounded or outcome.agent_exposed or outcome.raid_chance_factor > 1.0 or morale_bad:
+		bad = true
+	if good and bad:
+		return &"event_mixed"
+	if good:
+		return &"event_good"
+	return &"event_bad" if bad else &"event_neutral"
 
 
 ## One amount from {amount: weight} (EventOutcomeData.random_resources).

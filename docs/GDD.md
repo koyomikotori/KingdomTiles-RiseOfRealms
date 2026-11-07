@@ -1157,3 +1157,7 @@ M16i chia hai phần: **M16i-a** (hệ thoại, chân dung, các báo cáo) và 
 - **Cách hiện:** khung thoại ngay trong cửa sổ (chân dung, tên, câu nói), không thêm lần bấm.
 - **Luật thoại:** chỉ nói điều người chơi đã biết (không biết trước kết quả bị giấu); thoại theo **kết quả thật**, không khen một quyết định có kết quả xấu; mỗi tình huống có vài câu khác nhau để ít lặp; thoại lưu thành dữ liệu theo tình huống, thêm tình huống mới không phải sửa code.
 - **M16i-a nói ở:** lời mở đầu ván mới, báo cáo trận (bị cướp, bị xâm lược, tấn công, sáp nhập, trận của sự kiện; thắng / thua, tổng tướng tử trận), kết quả thảo phạt, báo cáo quan trọng, chợ đen, chiến thắng / thất bại cả ván.
+- **M16i-b sự kiện (đã chốt):**
+  - Bảng sự kiện: cố vấn **kể thay hẳn đoạn mô tả** (khung chân dung + câu kể ngay dưới tiêu đề). Mỗi sự kiện có 2 câu kể cho mỗi cố vấn, chỉ nói điều người chơi đã biết. Sự kiện chưa có thoại thì hiện mô tả cũ.
+  - Bảng kết quả: kết quả và danh sách thay đổi vẫn như cũ, cố vấn thêm **một câu phản ứng theo kết quả thật**: được lợi / bị thiệt / được và mất / không gì thay đổi. Câu dùng chung cho mọi sự kiện. Kết quả dẫn vào trận thì không nói (báo cáo trận đã có thoại).
+  - Cố vấn luôn gọi người chơi là "Chúa công", không bao giờ "bạn". Tên vương quốc mặc định ("Vương quốc của bạn") được nói thành "vương quốc ta".

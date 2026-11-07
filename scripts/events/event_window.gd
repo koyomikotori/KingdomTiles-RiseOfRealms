@@ -1,7 +1,8 @@
 class_name EventWindow
 extends ModalWindow
-## Shows the oldest pending event (GDD §9c): its story, the stockpile, and its choices with their
-## cost and a hint. After a choice the window shows what actually happened. It cannot be closed
+## Shows the oldest pending event (GDD §9c): the counselor telling it (Counsel.event_lines, M16i-b;
+## the event's own text when it has no lines), the stockpile, and its choices with their
+## cost and a hint. The result gets one line of the counselor by its tone (EventSystem.tone). After a choice the window shows what actually happened. It cannot be closed
 ## without answering. An answer that leads to a battle (M16e) closes with "Vào trận"; the kingdom
 ## scene then plays EventSystem.pending_battle.
 
@@ -13,6 +14,8 @@ var _state: KingdomState
 var _rng: RandomNumberGenerator
 var _resource_types: Array[ResourceTypeData] = ResourceTypeData.load_all()
 var _body: VBoxContainer
+## The counselor's telling, picked once so going back from the general picker keeps it.
+var _narration: Array[Dictionary] = []
 
 
 func open(state: KingdomState, rng: RandomNumberGenerator) -> void:
@@ -21,6 +24,7 @@ func open(state: KingdomState, rng: RandomNumberGenerator) -> void:
 	var event := state.events.current_event()
 	var clan_id := state.events.current_clan()
 	_body = build_frame(state.events.fill(state, event.title, clan_id), ACCENT, 0.45, false)
+	_narration = Counsel.event_lines(event.event_id, state.counselor, _context(clan_id))
 	open_body()
 
 
@@ -32,8 +36,11 @@ func open_body() -> void:
 	var category := _label("Sự kiện · %s" % EventData.CATEGORY_NAMES[event.category], 13)
 	category.add_theme_color_override("font_color", CATEGORY_COLORS[event.category])
 	_body.add_child(category)
-	_body.add_child(_label(state.events.fill(state, event.text, clan_id), 16))
-	var stock := _label("Kho của bạn: " + _stock_text(), 13)
+	if _narration.is_empty():
+		_body.add_child(_label(state.events.fill(state, event.text, clan_id), 16))
+	else:
+		_body.add_child(_counsel_box(_narration))
+	var stock := _label("Kho hiện có: " + _stock_text(), 13)
 	stock.add_theme_color_override("font_color", MUTED_COLOR)
 	_body.add_child(stock)
 	_body.add_child(HSeparator.new())
@@ -99,6 +106,7 @@ func _show_general_picker(index: int) -> void:
 
 
 func _answer(index: int, general: General) -> void:
+	var clan_id := _state.events.current_clan()
 	var result := _state.events.resolve(_state, _rng, index, general)
 	if result.is_empty():
 		return
@@ -106,7 +114,23 @@ func _answer(index: int, general: General) -> void:
 	_body.add_child(_label(result.text, 16))
 	if not result.changes.is_empty():
 		_body.add_child(_label("\n".join(result.changes.map(func(line: String) -> String: return "• " + line)), 14))
+	var tone: StringName = result.get("tone", &"")
+	if tone != &"":
+		var reaction := Counsel.lines(tone, _state.counselor, _context(clan_id))
+		if not reaction.is_empty():
+			_body.add_child(_counsel_box(reaction))
 	add_action("Vào trận" if result.has("battle") else "Tiếp tục", close)
+
+
+func _context(clan_id: StringName) -> Dictionary:
+	var clan_name := _state.diplomacy.clans[clan_id].data.display_name if clan_id != &"" else ""
+	return Counsel.context(_state, {"clan": clan_name})
+
+
+func _counsel_box(lines: Array[Dictionary]) -> CounselBox:
+	var box := CounselBox.new()
+	box.setup(lines, get_viewport_rect().size.x * 0.45 - 60.0)
+	return box
 
 
 func _clear_body() -> void:
