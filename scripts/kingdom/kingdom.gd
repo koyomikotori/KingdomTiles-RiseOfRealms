@@ -743,9 +743,7 @@ func _show_end_game_if_any() -> void:
 
 ## The counselors' lines on `topic` (Counsel, M16i), with the kingdom's name in the context.
 func _counsel(topic: StringName, context: Dictionary = {}) -> Array[Dictionary]:
-	var full := {"kingdom": state.kingdom_name}
-	full.merge(context, true)
-	return Counsel.lines(topic, state.counselor, full)
+	return Counsel.lines(topic, state.counselor, Counsel.context(state, context))
 
 
 ## A battle's lines: the commander's death outweighs the result.

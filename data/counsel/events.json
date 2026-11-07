@@ -1,0 +1,422 @@
+{
+	"agent_assassin": {
+		"linh_nhi": [
+			["surprised", "Chúa công! Đặc vụ của ta ở {clan} báo về: họ đã tìm được đường tiếp cận người cầm quân bên đó! Mình... có ra tay không ạ?"],
+			["concerned", "Tin mật từ {clan}: đặc vụ của ta đã áp sát được người cầm quân của họ. Tiểu nữ hồi hộp quá, Chúa công định thế nào ạ?"]
+		],
+		"tu_uyen": [
+			["neutral", "Đặc vụ ở {clan} báo: đã có đường tiếp cận người cầm quân của họ. Ra tay hay chờ, xin Chúa công định đoạt."],
+			["concerned", "Chúa công, người của ta trong {clan} đã đến đủ gần tướng địch. Cơ hội như vậy không nhiều, nhưng lộ thì mất người."]
+		]
+	},
+	"agent_warning": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, đặc vụ của ta ở {clan} gửi tin khẩn: họ sắp kéo quân sang đánh mình! Nhưng... tin này chưa chắc đúng đâu ạ."],
+			["surprised", "Tin khẩn từ {clan}! Đặc vụ nói quân họ sắp tràn sang. Tiểu nữ không biết có phải tin thật không nữa, Chúa công tính sao ạ?"]
+		],
+		"tu_uyen": [
+			["concerned", "Đặc vụ ở {clan} báo tin: chúng sắp xuất quân đánh ta. Tin chưa được kiểm chứng, Chúa công nên cân nhắc."],
+			["neutral", "Chúa công, có tin {clan} chuẩn bị tấn công. Nguồn tin là người của ta, nhưng chưa thể khẳng định là thật."]
+		]
+	},
+	"ally_request": {
+		"linh_nhi": [
+			["neutral", "Chúa công, {clan} đang sửa thành mà thiếu gỗ, họ gửi thư nhờ mình giúp một ít ạ. Bạn bè lúc khó mà!"],
+			["happy", "Đồng minh {clan} nhờ mình giúp ít gỗ để sửa thành đó Chúa công! Giúp họ thì tình nghĩa càng thêm bền ạ."]
+		],
+		"tu_uyen": [
+			["neutral", "{clan} đang sửa thành, xin ta giúp ít gỗ. Đồng minh cần được giữ, nhưng kho của ta cũng phải tính."],
+			["neutral", "Chúa công, đồng minh {clan} xin gỗ để sửa thành. Thuộc hạ đã kiểm kho, đủ để giúp nếu Chúa công muốn."]
+		]
+	},
+	"ancient_shrine": {
+		"linh_nhi": [
+			["surprised", "Chúa công! Thợ săn tìm thấy một ngôi miếu bỏ hoang trên núi, người ta đồn trong đó giấu báu vật của một vị tướng xưa! Mình đi xem đi ạ!"],
+			["happy", "Có miếu cổ trên núi, nghe nói cất báu vật của tướng quân đời trước! Tiểu nữ tò mò quá, Chúa công cho người lên xem nhé?"]
+		],
+		"tu_uyen": [
+			["concerned", "Thợ săn báo có miếu cổ bỏ hoang trên núi, dân đồn có báu vật của một vị tướng xưa. Lời đồn thường quá sự thật, thưa Chúa công."],
+			["neutral", "Một ngôi miếu cổ trên núi, tương truyền giấu báu vật. Thuộc hạ không tin lời đồn lắm, nhưng xem qua cũng không hại gì."]
+		]
+	},
+	"bandit_challenge": {
+		"linh_nhi": [
+			["concerned", "Chúa công! Thủ lĩnh đạo tặc kéo lâu la đến tận cổng thành, la lối thách tướng của ta ra đấu tay đôi! Hắn láo quá đi mất!"],
+			["surprised", "Tên thủ lĩnh đạo tặc đang đứng trước cổng thách đấu kìa Chúa công! Mình có cho tướng ra dạy hắn một bài học không ạ?"]
+		],
+		"tu_uyen": [
+			["neutral", "Thủ lĩnh đạo tặc đến trước cổng thành, thách bất kỳ tướng nào của ta ra đấu tay đôi. Thắng thì uy danh tăng, thua thì mất mặt."],
+			["concerned", "Chúa công, tên đầu sỏ đạo tặc đang thách đấu ngoài cổng. Cổng thành vững, không ra cũng được. Ra thì phải chọn đúng người."]
+		]
+	},
+	"bandit_mercy": {
+		"linh_nhi": [
+			["neutral", "Chúa công, mấy tên cướp bị bắt trong trận vừa rồi đang quỳ xin tha mạng kìa. Trông cũng tội tội ạ..."],
+			["concerned", "Đám cướp bị ta bắt sống đang khóc lóc xin tha đó Chúa công. Tha hay giữ lại làm việc, tùy người quyết ạ."]
+		],
+		"tu_uyen": [
+			["neutral", "Tù binh từ trận vừa rồi xin tha mạng. Tha thì được tiếng nhân từ, giữ lại thì có thêm sức người."],
+			["neutral", "Chúa công, bọn cướp bị bắt đang chờ phán quyết. Thuộc hạ thấy dùng được thì nên dùng."]
+		]
+	},
+	"bandit_surrender": {
+		"linh_nhi": [
+			["surprised", "Chúa công ơi, một nhóm đạo tặc sai người đến xin đầu hàng, còn hứa dâng cả của cải nữa! Có thật không vậy ta?"],
+			["happy", "Đạo tặc xin quy thuận kìa Chúa công! Chắc nghe danh ta nên sợ rồi ạ! Nhưng... mình có tin họ được không nhỉ?"]
+		],
+		"tu_uyen": [
+			["concerned", "Một nhóm đạo tặc xin đầu hàng, nguyện dâng của cải. Lời hứa của đạo tặc, thuộc hạ không dám tin trọn."],
+			["neutral", "Chúa công, đạo tặc cầu hòa và xin quy thuận. Nhận thì bớt một mối lo, nhưng cần đề phòng."]
+		]
+	},
+	"bumper_harvest": {
+		"linh_nhi": [
+			["happy", "Chúa công! Năm nay được mùa to rồi, ruộng đồng trĩu hạt luôn! Dân làng hỏi số thóc dư nên làm gì đó ạ!"],
+			["happy", "Lúa chín vàng khắp đồng luôn Chúa công ơi! Thóc dư nhiều lắm, mình cất kho hay bán đi đây ạ?"]
+		],
+		"tu_uyen": [
+			["neutral", "Trời thuận, mùa này được. Dân hỏi xử lý số thóc dư thế nào: cất kho hay bán cho thương lái."],
+			["happy", "Chúa công, ruộng đồng năm nay bội thu. Thóc dư cần quyết định trước khi thương lái ép giá."]
+		]
+	},
+	"camp_plague": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, trong doanh trại có bệnh lạ, nhiều lính sốt cao lắm! Tiểu nữ lo quá..."],
+			["concerned", "Lính trong trại lần lượt lên cơn sốt rồi Chúa công! Mình phải làm gì đó nhanh lên ạ!"]
+		],
+		"tu_uyen": [
+			["concerned", "Bệnh lạ lan trong doanh trại, nhiều lính lên cơn sốt. Để lâu sẽ mất quân, thưa Chúa công."],
+			["concerned", "Chúa công, dịch trong trại đang lan. Mời thầy thuốc thì tốn kém, cách ly thì phải chấp nhận thiệt hại."]
+		]
+	},
+	"crop_blight": {
+		"linh_nhi": [
+			["concerned", "Chúa công! Một đàn sâu kéo đến cắn phá ruộng lúa ngoài thành rồi! Lúa của dân mình..."],
+			["surprised", "Sâu! Sâu nhiều lắm Chúa công ơi, chúng đang ăn lúa ngoài đồng kìa! Mình có thuê người diệt không ạ?"]
+		],
+		"tu_uyen": [
+			["concerned", "Sâu bệnh đang phá ruộng lúa ngoài thành. Diệt thì tốn công, để mặc thì mất mùa."],
+			["neutral", "Chúa công, ruộng ngoài thành bị sâu cắn phá. Thuộc hạ đã cho người khoanh vùng, chờ lệnh."]
+		]
+	},
+	"enemy_duel": {
+		"linh_nhi": [
+			["surprised", "Chúa công! Tướng của {clan} cưỡi ngựa đến tận cổng, thách tổng tướng của ta ra đấu tay đôi! Quân hai bên đang nhìn cả kìa!"],
+			["concerned", "Tướng {clan} đứng ngoài cổng thách đấu tổng tướng nhà mình đó Chúa công! Tiểu nữ hồi hộp muốn rớt tim luôn..."]
+		],
+		"tu_uyen": [
+			["neutral", "Tướng của {clan} thách tổng tướng ta đấu tay đôi trước cổng thành. Cả hai quân đều đang dõi theo, sĩ khí phụ thuộc vào trận này."],
+			["concerned", "Chúa công, {clan} cử tướng ra thách đấu. Không ra thì quân ta mất nhuệ khí, ra mà thua thì còn tệ hơn."]
+		]
+	},
+	"enemy_leak": {
+		"linh_nhi": [
+			["surprised", "Chúa công, một tên lính đào ngũ của {clan} báo doanh trại bên đó đang lơi lỏng lắm! Mình đánh úp được không ạ?"],
+			["concerned", "Có lính {clan} bỏ trốn sang mách nước, nói trại họ phòng thủ sơ sài. Nhưng lỡ là bẫy thì sao hả Chúa công?"]
+		],
+		"tu_uyen": [
+			["concerned", "Lính đào ngũ của {clan} báo doanh trại chúng phòng vệ lơi lỏng. Cũng có thể đây là bẫy, thưa Chúa công."],
+			["neutral", "Chúa công, có tin trại {clan} đang sơ hở. Nguồn tin là kẻ phản chủ, không thể tin hoàn toàn."]
+		]
+	},
+	"enemy_offer": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, {clan} lén gửi thư dụ dỗ tướng sĩ nhà mình, hứa vàng bạc với chức tước nữa! Xấu tính quá đi!"],
+			["surprised", "Tiểu nữ bắt được tin {clan} đang mua chuộc người của ta đó Chúa công! Mình phải giữ chân mọi người ạ!"]
+		],
+		"tu_uyen": [
+			["concerned", "{clan} bí mật mời chào tướng sĩ của ta bằng vàng bạc và chức tước. Lòng người khó đoán, thưa Chúa công."],
+			["neutral", "Chúa công, địch đang dụ hàng. Tăng đãi ngộ thì tốn kém, nhưng mất người thì còn tốn hơn."]
+		]
+	},
+	"envoy_gift": {
+		"linh_nhi": [
+			["happy", "Chúa công! {clan} cử sứ giả mang quà sang làm quen kìa! Quà đẹp lắm ạ!"],
+			["surprised", "Có sứ giả {clan} đến tặng quà đó Chúa công! Mình nhận luôn hay đáp lễ cho thật lịch sự ạ?"]
+		],
+		"tu_uyen": [
+			["neutral", "{clan} cử sứ giả mang quà sang làm quen. Đáp lễ hậu thì được lòng họ, nhận không cũng chẳng sao."],
+			["neutral", "Chúa công, sứ giả {clan} đã đến cùng lễ vật. Thuộc hạ đã cho người tiếp đãi."]
+		]
+	},
+	"famine_aid": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, sứ giả {clan} quỳ ngoài sân xin cứu giúp. Bên đó mất mùa, dân đói khổ lắm ạ..."],
+			["concerned", "{clan} đang bị nạn đói, họ xin mình gửi lương thực. Tiểu nữ thương dân bên đó quá Chúa công..."]
+		],
+		"tu_uyen": [
+			["neutral", "{clan} mất mùa, dân đói, sứ giả đến xin cứu trợ. Giúp lúc khó, họ sẽ nhớ lâu."],
+			["concerned", "Chúa công, sứ giả {clan} xin lương thực cứu đói. Kho ta có thể chia, nhưng đừng để quân mình thiếu ăn."]
+		]
+	},
+	"flood": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, mưa mấy ngày liền, nước sông dâng cao lắm rồi! Sắp tràn vào kho lương với bãi gỗ đó ạ!"],
+			["surprised", "Nước lên nhanh quá Chúa công! Phải đắp đê ngay, không thì kho lương với kho gỗ ngập mất!"]
+		],
+		"tu_uyen": [
+			["concerned", "Mưa liên tục, nước sông dâng cao, kho lương và bãi gỗ có nguy cơ bị ngập. Đắp đê tốn nhiều vật liệu."],
+			["neutral", "Chúa công, nước sông đang lên. Thuộc hạ đã tính số gỗ đá cần để đắp đê, chờ lệnh."]
+		]
+	},
+	"general_ambushed": {
+		"linh_nhi": [
+			["concerned", "Chúa công! Tổng tướng đi tuần biên giới bị quân {clan} phục kích rồi! Vòng vây đang siết lại, phải cứu ngay ạ!"],
+			["surprised", "Tin dữ Chúa công ơi! Tổng tướng với một toán quân bị {clan} vây chặt ngoài biên giới!"]
+		],
+		"tu_uyen": [
+			["concerned", "Tổng tướng cùng một toán quân bị {clan} phục kích ở biên giới, vòng vây đang siết. Phá vây thì phải đánh."],
+			["concerned", "Chúa công, tổng tướng đang bị vây. Không cứu thì có thể mất người, cứu thì phải liều một trận."]
+		]
+	},
+	"general_discontent": {
+		"linh_nhi": [
+			["concerned", "Chúa công, có một vị tướng buồn lắm, nói công lao của mình không ai ghi nhận, muốn bỏ đi đó ạ..."],
+			["surprised", "Ơ, một vị tướng nhà mình đòi ra đi kìa Chúa công! Chắc là thấy tủi thân... mình thưởng cho người ta đi ạ?"]
+		],
+		"tu_uyen": [
+			["neutral", "Một vị tướng cho rằng công lao chưa được ghi nhận, có ý muốn ra đi. Ban thưởng thì giữ được người."],
+			["concerned", "Chúa công, trong hàng tướng có người bất mãn. Phớt lờ thì có thể mất một người dùng được."]
+		]
+	},
+	"granary_raid": {
+		"linh_nhi": [
+			["concerned", "Chúa công! Quân {clan} lẻn vào đánh úp kho lương của mình rồi! Lương thực của dân đó ạ!"],
+			["surprised", "Có giặc {clan} trong kho lương kìa Chúa công! Mình có xuất quân đuổi chúng đi không ạ?"]
+		],
+		"tu_uyen": [
+			["concerned", "Một toán quân {clan} đang đánh úp kho lương. Đánh trả thì phải ra khỏi thành, giữ quân thì mất lương."],
+			["neutral", "Chúa công, kho lương bị tập kích. Quân địch không đông, nhưng ra đánh vẫn có rủi ro."]
+		]
+	},
+	"hardwood_grove": {
+		"linh_nhi": [
+			["happy", "Chúa công! Tiều phu tìm được một cánh rừng già, cây thẳng tắp, có cả gỗ lim quý nữa! Mình khai thác đi ạ!"],
+			["surprised", "Rừng gỗ tốt kìa Chúa công! Nghe nói có cả mấy gốc lim, may mắn thì được gỗ cứng đó ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Tiều phu báo có rừng già, cây tốt, vài gốc gỗ lim. Khai thác cần nuôi người vài ngày; được bao nhiêu còn tùy."],
+			["neutral", "Chúa công, có một cánh rừng gỗ tốt. Gỗ chắc chắn có, gỗ cứng thì phải xem vận."]
+		]
+	},
+	"harvest_festival": {
+		"linh_nhi": [
+			["happy", "Chúa công ơi, dân chúng muốn mở lễ hội mừng mùa màng! Có múa lân, có đèn lồng... mình mở hội đi mà!"],
+			["happy", "Mùa màng xong rồi, dân xin mở hội đó Chúa công! Tiểu nữ cũng muốn đi chơi hội lắm ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Dân chúng xin mở lễ hội mừng mùa. Tốn lương, nhưng lòng dân vui thì việc gì cũng dễ hơn."],
+			["neutral", "Chúa công, dân muốn mở hội mùa. Thuộc hạ đã tính chi phí, quyết định là của Chúa công."]
+		]
+	},
+	"healer": {
+		"linh_nhi": [
+			["happy", "Chúa công, có một thầy thuốc giang hồ ghé qua, nhận chữa cho thương binh nhà mình đó ạ! May quá đi!"],
+			["surprised", "Thầy thuốc đi ngang qua kìa Chúa công! Mời ông ấy chữa cho mấy anh lính bị thương đi ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Một thầy thuốc giang hồ ghé qua, nhận chữa thương binh. Chi phí không lớn."],
+			["neutral", "Chúa công, có thầy thuốc xin chữa cho thương binh. Quân ta đang có người bị thương."]
+		]
+	},
+	"important_prisoner": {
+		"linh_nhi": [
+			["surprised", "Chúa công! Quân ta bắt được một nhân vật quan trọng của {clan} đó ạ! Mình xử trí sao đây?"],
+			["happy", "Bắt được người quan trọng của {clan} rồi Chúa công ơi! Đây là con bài hay lắm đó ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Quân ta bắt được một nhân vật có giá trị của {clan}. Dùng thế nào cho lợi, xin Chúa công định đoạt."],
+			["neutral", "Chúa công, có tù binh quan trọng từ {clan}. Người này có thể đổi được nhiều thứ."]
+		]
+	},
+	"marriage_alliance": {
+		"linh_nhi": [
+			["happy", "Chúa công ơi! Sứ giả {clan} đến ngỏ ý kết thông gia đó ạ! Hai nhà thành người một nhà luôn, vui quá đi!"],
+			["surprised", "Hôn ước! {clan} muốn kết thông gia với mình kìa Chúa công! Sính lễ phải thật hậu mới xứng ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "{clan} ngỏ ý kết thông gia. Sính lễ không rẻ, nhưng tình đồng minh sẽ bền hơn nhiều."],
+			["neutral", "Chúa công, sứ giả {clan} đến bàn hôn ước. Từ chối thì phải khéo, họ là đồng minh."]
+		]
+	},
+	"merchant_caravan": {
+		"linh_nhi": [
+			["surprised", "Chúa công ơi, có cả một đoàn xe hàng của {clan} đi ngang qua đất mình kìa! Họ xin được miễn thuế đó ạ."],
+			["happy", "Thương đoàn {clan} chở đầy hàng luôn Chúa công! Họ xin miễn thuế... hàng nhiều thế, tiểu nữ nhìn mà thèm!"]
+		],
+		"tu_uyen": [
+			["neutral", "Thương đoàn {clan} đi qua lãnh thổ ta, xin miễn thuế. Thu thuế hay tịch thu đều được lợi, nhưng phải trả giá về ngoại giao."],
+			["neutral", "Chúa công, một đoàn buôn của {clan} chở đầy hàng. Họ xin đi qua không phải nộp thuế."]
+		]
+	},
+	"official_kidnapped": {
+		"linh_nhi": [
+			["concerned", "Chúa công! Đạo tặc phục kích đoàn tuần thú, bắt mất một quan huyện của mình rồi, còn đòi tiền chuộc nữa!"],
+			["surprised", "Bọn đạo tặc dám bắt cả quan huyện đó Chúa công! Mình cứu ra hay chuộc về đây ạ?"]
+		],
+		"tu_uyen": [
+			["concerned", "Đạo tặc bắt sống một quan huyện, đòi tiền chuộc. Cứu thì phải đánh, chuộc thì tốn của, bỏ mặc thì mất lòng người."],
+			["neutral", "Chúa công, một quan huyện bị đạo tặc bắt giữ. Thuộc hạ chờ lệnh."]
+		]
+	},
+	"pay_demand": {
+		"linh_nhi": [
+			["concerned", "Chúa công, binh lính kêu khẩu phần ít quá, họ đòi được thưởng đó ạ. Mấy anh ấy cũng vất vả lắm..."],
+			["neutral", "Lính nhà mình đang phàn nàn chuyện ăn uống, đòi thưởng đó Chúa công. Thưởng một chút cho vui lòng đi ạ?"]
+		],
+		"tu_uyen": [
+			["neutral", "Binh lính phàn nàn khẩu phần ít, đòi thưởng. Mặc kệ thì lòng quân dao động."],
+			["concerned", "Chúa công, quân sĩ đang bất bình về khẩu phần. Việc nhỏ nhưng không nên để lâu."]
+		]
+	},
+	"settlers": {
+		"linh_nhi": [
+			["happy", "Chúa công, mấy gia đình nông dân xin khai hoang đất mới quanh vương quốc đó ạ! Đất mình sắp rộng thêm rồi!"],
+			["happy", "Có người muốn đến khai hoang kìa Chúa công! Chỉ cần ít gỗ dựng nhà thôi ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Vài gia đình nông dân xin khai hoang quanh vương quốc. Cấp gỗ dựng nhà thì có thêm đất."],
+			["neutral", "Chúa công, có dân xin khai hoang. Đất mới là lợi lâu dài, chi phí không lớn."]
+		]
+	},
+	"stolen_letter": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, gián điệp {clan} đánh cắp mất mật thư có kế hoạch hành quân của mình rồi! Làm sao đây ạ?"],
+			["surprised", "Mật thư bị lấy mất rồi Chúa công! Trong đó có cả kế hoạch hành quân nữa... tiểu nữ sơ suất quá..."]
+		],
+		"tu_uyen": [
+			["concerned", "Gián điệp {clan} đã lấy được mật thư chứa kế hoạch hành quân. Kế hoạch cũ coi như đã lộ."],
+			["neutral", "Chúa công, mật thư bị đánh cắp trên đường chuyển. Đổi kế hoạch thì tốn công, giữ nguyên thì địch biết trước."]
+		]
+	},
+	"stone_vein": {
+		"linh_nhi": [
+			["happy", "Chúa công! Thợ săn thấy một mạch đá lộ thiên trên đồi, còn lấp lánh vệt quặng nữa! Mình đào đi ạ!"],
+			["surprised", "Mạch khoáng trên đồi kìa Chúa công! Biết đâu đào ra cả khoáng sản thì sao ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Có một mạch đá lộ thiên trên đồi, vài vệt quặng. Khai thác cần nuôi thợ; đá chắc có, quặng thì chưa biết."],
+			["neutral", "Chúa công, thợ săn báo có mạch khoáng. Thuộc hạ không dám hứa trước sản lượng."]
+		]
+	},
+	"surrendered_general": {
+		"linh_nhi": [
+			["happy", "Chúa công! Gia tộc kia vừa về với mình, một vị tướng cũ của họ xin được phục vụ Chúa công đó ạ!"],
+			["surprised", "Có hàng tướng xin quy thuận kìa Chúa công! Thêm người tài thì tốt quá còn gì ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Sau cuộc sáp nhập, một viên tướng cũ của họ xin phục vụ Chúa công. Người hàng thì phải xem lòng."],
+			["neutral", "Chúa công, hàng tướng xin quy thuận. Thu nhận thì có thêm tướng, thả về thì được tiếng khoan dung."]
+		]
+	},
+	"suspicious_group": {
+		"linh_nhi": [
+			["concerned", "Chúa công, có mấy người lạ mặt cứ lảng vảng trong lãnh thổ mình. Người ta nói là tai mắt của đạo tặc đó ạ!"],
+			["surprised", "Tiểu nữ thấy mấy kẻ khả nghi quanh đây đó Chúa công! Mình cho người điều tra không ạ?"]
+		],
+		"tu_uyen": [
+			["concerned", "Một nhóm người lạ lảng vảng trong lãnh thổ, có tin là tai mắt của đạo tặc. Điều tra thì biết, bỏ qua thì có thể bị dò đường."],
+			["neutral", "Chúa công, có kẻ khả nghi trong vùng. Thuộc hạ nghi đạo tặc đang thăm dò."]
+		]
+	},
+	"tax_relief": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, dân chúng kéo đến cổng thành xin giảm sưu thuế. Mấy mùa nay họ khó khăn lắm ạ..."],
+			["surprised", "Dân kéo đến đông lắm Chúa công! Họ xin giảm thuế... Từ chối thì tiểu nữ sợ họ làm loạn mất."]
+		],
+		"tu_uyen": [
+			["concerned", "Dân kéo đến cổng thành xin giảm sưu thuế sau mấy mùa khó khăn. Đồng ý thì kho hao hụt, từ chối thì lòng dân bất ổn."],
+			["neutral", "Chúa công, dân xin giảm thuế. Thuộc hạ thấy việc này không nên xem nhẹ."]
+		]
+	},
+	"traveling_merchant": {
+		"linh_nhi": [
+			["surprised", "Chúa công! Có đoàn thương nhân phương xa ghé qua, họ chịu đổi hàng lạ lấy lương, gỗ hay đá đó ạ! Hàng lạ là hàng gì ta?"],
+			["happy", "Thương nhân lạ đến rồi Chúa công ơi! Đổi thử một chuyến đi ạ, biết đâu trúng hàng quý!"]
+		],
+		"tu_uyen": [
+			["concerned", "Một đoàn thương nhân lạ muốn đổi hàng lấy lương, gỗ hoặc đá. Người lạ, hàng lạ; có thể lời, có thể bị lừa."],
+			["neutral", "Chúa công, thương nhân phương xa xin đổi hàng. Thuộc hạ không bảo đảm được chất lượng."]
+		]
+	},
+	"tribute_demand": {
+		"linh_nhi": [
+			["concerned", "Chúa công! Sứ giả {clan} vênh váo đòi mình nộp cống, không thì họ kéo quân đến cổng thành! Tức quá đi!"],
+			["surprised", "{clan} đòi cống nạp kìa Chúa công! Họ mạnh hơn mình thật... nhưng tiểu nữ không cam lòng chút nào!"]
+		],
+		"tu_uyen": [
+			["concerned", "{clan} đòi cống nạp, đe dọa kéo quân đến. Họ mạnh hơn ta lúc này, khước từ là chấp nhận rủi ro chiến tranh."],
+			["neutral", "Chúa công, sứ giả {clan} đến đòi cống. Thuộc hạ đã ước lượng quân họ, không thể coi thường."]
+		]
+	},
+	"volunteers": {
+		"linh_nhi": [
+			["happy", "Chúa công! Trai tráng trong vùng xin gia nhập quân đội đó ạ! Ai cũng khỏe mạnh hết!"],
+			["happy", "Có người tình nguyện đầu quân kìa Chúa công! Mình nhận họ đi ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Một nhóm trai tráng xin gia nhập quân đội. Nhận thì cần nuôi, không nhận thì họ về làm ruộng."],
+			["neutral", "Chúa công, có người tình nguyện đầu quân. Thêm quân là thêm miệng ăn."]
+		]
+	},
+	"wandering_general": {
+		"linh_nhi": [
+			["surprised", "Chúa công! Có một người mang thanh kiếm lạ đến trước cổng, xin phò tá vương quốc mình đó ạ!"],
+			["happy", "Có tướng lạ xin đầu quân kìa Chúa công! Trông oai lắm ạ!"]
+		],
+		"tu_uyen": [
+			["concerned", "Một người mang kiếm lạ xin phò tá. Lai lịch chưa rõ, tài năng cũng chưa rõ."],
+			["neutral", "Chúa công, có người xin đầu quân làm tướng. Thu nhận hay không, xin Chúa công quyết."]
+		]
+	},
+	"wandering_smith": {
+		"linh_nhi": [
+			["surprised", "Chúa công, có ông lão vác cả lò rèn trên vai xin dừng chân! Ông ấy nói rèn được binh khí cho tướng sĩ nếu có quặng với gỗ đó ạ!"],
+			["happy", "Thợ rèn giang hồ ghé qua kìa Chúa công! Rèn cho tướng nhà mình món gì xịn đi ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Một thợ rèn già xin dừng chân, nhận rèn binh khí nếu có đủ quặng và gỗ. Tay nghề chưa kiểm chứng."],
+			["neutral", "Chúa công, có thợ rèn lưu động. Thuộc hạ đã kiểm kho quặng và gỗ."]
+		]
+	},
+	"war_refugees": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, dân vùng giáp chiến tuyến khổ lắm, họ kéo về xin triều đình cứu trợ..."],
+			["concerned", "Chiến tranh làm dân biên giới tan nhà hết rồi Chúa công... Mình giúp họ đi ạ."]
+		],
+		"tu_uyen": [
+			["concerned", "Dân vùng giáp chiến tuyến khốn khổ vì chiến tranh, kéo về xin cứu trợ. Bỏ qua thì lòng dân sẽ nguội."],
+			["neutral", "Chúa công, dân chạy loạn xin cứu trợ. Đây là cái giá của chiến tranh."]
+		]
+	},
+	"warehouse_fire": {
+		"linh_nhi": [
+			["surprised", "Cháy! Chúa công ơi, kho gỗ cháy rồi, lửa lan nhanh lắm!"],
+			["concerned", "Đêm qua kho gỗ bốc cháy Chúa công! Phải gọi dân chữa cháy ngay ạ!"]
+		],
+		"tu_uyen": [
+			["concerned", "Kho gỗ bốc cháy, lửa đang lan. Cứu hỏa thì tốn công dân, để tự tắt thì mất nhiều gỗ."],
+			["concerned", "Chúa công, kho gỗ cháy. Cần quyết định ngay."]
+		]
+	},
+	"wild_beasts": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, bầy sói từ rừng sâu kéo về, đêm nào cũng lẻn vào làng tha mất lương thực!"],
+			["surprised", "Sói! Cả một bầy sói đó Chúa công! Chúng ăn trộm lương của dân mình hoài..."]
+		],
+		"tu_uyen": [
+			["concerned", "Một bầy sói đêm đêm vào làng tha lương thực. Cho lính đi săn thì có người bị thương, để mặc thì mất lương."],
+			["neutral", "Chúa công, sói từ rừng sâu đang phá kho lương. Thuộc hạ đề nghị xử lý sớm."]
+		]
+	},
+	"wild_horses": {
+		"linh_nhi": [
+			["happy", "Chúa công! Một bầy ngựa hoang kéo về đồng cỏ gần biên giới đó ạ! Dân làng quen bắt ngựa, nhưng họ đòi lương thực mới giúp."],
+			["surprised", "Ngựa hoang kìa Chúa công! Đẹp quá đi! Mình bắt về cho kỵ binh đi ạ!"]
+		],
+		"tu_uyen": [
+			["neutral", "Bầy ngựa hoang về đồng cỏ gần biên giới. Dân làng bắt giỏi nhưng đòi lương; lính tự bắt thì không chắc được."],
+			["neutral", "Chúa công, có ngựa hoang gần biên giới. Ngựa tốt cho kỵ binh."]
+		]
+	}
+}

@@ -7,7 +7,7 @@
 			["neutral", "Tiểu nữ sẽ nhắc Chúa công nghỉ ngơi đúng bữa! Đánh trận cũng phải ăn cơm chứ ạ."]
 		],
 		"tu_uyen": [
-			["neutral", "Thuộc hạ Tử Uyên, xin theo hầu Chúa công. {kingdom} còn nhỏ: lương thực, gỗ, đá đều phải tính từng phần. Đất tự nó không sinh lợi, phải có người và công trình."],
+			["neutral", "Thuộc hạ Tử Uyên, xin theo hầu Chúa công. Lúc này {kingdom} còn nhỏ: lương thực, gỗ, đá đều phải tính từng phần. Đất tự nó không sinh lợi, phải có người và công trình."],
 			["neutral", "Chúa công, cờ của {kingdom} đã dựng. Việc trước mắt là giữ đủ lương nuôi quân, rồi mới bàn đến chuyện thiên hạ."],
 			["neutral", "Thuộc hạ sẽ ghi chép sổ sách, báo cáo những gì nhìn thấy. Còn quyết định, vẫn là của Chúa công."],
 			["neutral", "Quân cướp quanh vùng sớm muộn cũng đến. Đừng để kho trống, Chúa công."]
@@ -323,6 +323,58 @@
 		"tu_uyen": [
 			["concerned", "Thành chính thất thủ. Thuộc hạ không bảo vệ được Chúa công đến cùng, xin chịu tội."],
 			["neutral", "Ván cờ này đã hết. Nhưng Chúa công đã học được nhiều. Lần sau, ta sẽ đi khác."]
+		]
+	},
+	"event_good": {
+		"linh_nhi": [
+			["happy", "Tuyệt quá Chúa công ơi! Lần này mình được lợi to rồi!"],
+			["happy", "Chúa công quyết đúng quá đi! Tiểu nữ biết ngay mà!"],
+			["happy", "Hay quá hay quá! Linh Nhi phải ghi ngay vào sổ mới được!"],
+			["surprised", "Ơ, thuận lợi vậy luôn ạ? Chúa công đúng là có phúc!"]
+		],
+		"tu_uyen": [
+			["happy", "Kết quả tốt, thưa Chúa công."],
+			["neutral", "Việc thuận. Thuộc hạ đã ghi vào sổ sách."],
+			["neutral", "Lựa chọn hợp lý. Ta được lợi mà không tốn thêm gì."],
+			["happy", "Chúa công quyết đúng. Thuộc hạ không có gì phải bàn thêm."]
+		]
+	},
+	"event_bad": {
+		"linh_nhi": [
+			["concerned", "Hu hu, lần này mình bị thiệt rồi... Không sao đâu Chúa công, lần sau sẽ khá hơn ạ!"],
+			["concerned", "Tiếc quá Chúa công ơi... Nhưng mình còn nhiều cơ hội mà, đừng buồn nhé!"],
+			["concerned", "Xui thật đó... Tiểu nữ sẽ đi kiểm lại kho ngay, Chúa công đừng lo quá ạ."],
+			["surprised", "Sao lại thành ra thế này chứ! Chúa công, mình phải tính cách bù lại thôi!"]
+		],
+		"tu_uyen": [
+			["concerned", "Ta chịu thiệt lần này, thưa Chúa công. Cần tính cách bù lại."],
+			["concerned", "Kết quả không như mong muốn. Thuộc hạ sẽ rà lại kho và quân."],
+			["neutral", "Đã mất thì không lấy lại được. Lần sau nên cân nhắc kỹ hơn, thưa Chúa công."],
+			["concerned", "Thiệt hại đã ghi nhận. Thuộc hạ đã pha trà, Chúa công nghỉ một lát rồi hẵng tính tiếp."]
+		]
+	},
+	"event_mixed": {
+		"linh_nhi": [
+			["neutral", "Được cái này mất cái kia, Chúa công ạ. Nhưng tính ra cũng không tệ đâu!"],
+			["concerned", "Có lời mà cũng có lỗ... Tiểu nữ hơi rối, nhưng chắc là ổn ạ!"],
+			["neutral", "Hừm, nửa vui nửa lo. Chúa công để ý phần thiệt giúp tiểu nữ nha!"]
+		],
+		"tu_uyen": [
+			["neutral", "Có được, có mất. Cái giá này sẽ còn ảnh hưởng về sau, thưa Chúa công."],
+			["neutral", "Lợi trước mắt đã có. Phần thiệt, thuộc hạ sẽ theo dõi."],
+			["concerned", "Được việc, nhưng không trọn vẹn. Chúa công nên nhớ phần đã mất."]
+		]
+	},
+	"event_neutral": {
+		"linh_nhi": [
+			["neutral", "Vậy là xong chuyện rồi Chúa công! Không được gì nhưng cũng không mất gì ạ."],
+			["neutral", "Mọi việc lại yên ổn như cũ rồi ạ. Tiểu nữ đi làm việc tiếp đây!"],
+			["neutral", "Thôi thì cứ để vậy, Chúa công nhỉ? Biết đâu lần sau có dịp khác!"]
+		],
+		"tu_uyen": [
+			["neutral", "Việc đã xong, không được không mất."],
+			["neutral", "Mọi thứ giữ nguyên, thưa Chúa công."],
+			["neutral", "Thuộc hạ đã ghi lại. Không có gì thay đổi."]
 		]
 	}
 }
