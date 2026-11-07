@@ -16,6 +16,8 @@ const PRISONER_STARS: Array[Vector2i] = [Vector2i(1, 2), Vector2i(2, 3), Vector2
 ## needs_bandit_activity: a raid beaten within this many turns counts.
 const BANDIT_RECENT_TURNS := 3
 ## Peasant squads that bandits who give up can become.
+## XP multiplier when an officer's own request (EventData.officer_request) is accepted (M16k-b).
+const REQUEST_BONUS := 1.5
 const PEASANT_UNITS: Array[StringName] = [&"swordsman", &"spearman", &"archer"]
 
 var events: Dictionary[StringName, EventData] = EventData.load_all()
@@ -34,6 +36,9 @@ var invasion_forced: StringName = &""
 ## M16e: the battle an answer led to, waiting to be fought ({"kind", "clan_id", "event_id"};
 ## EventBattles), or {}. Not saved: the autosave comes after the battle.
 var pending_battle: Dictionary = {}
+## The officer request accepted this turn (M16k-b): {"kind": &"spar" / &"memory", "officer", "bonus"};
+## the kingdom scene opens the mini game after the event window and clears it.
+var pending_request: Dictionary = {}
 var _resource_types: Array[ResourceTypeData] = ResourceTypeData.load_all()
 
 
@@ -60,6 +65,9 @@ func roll(state: KingdomState, rng: RandomNumberGenerator) -> Array[Dictionary]:
 			candidates = candidates.filter(func(other: EventData) -> bool: return not uses_battle(other))
 		last_turn[event.event_id] = state.turn
 		var entry := {"event_id": event.event_id, "clan_id": clan_id}
+		if event.officer_request != &"":
+			var asking := request_candidates(state, event.officer_request)
+			entry["officer"] = asking[rng.randi_range(0, asking.size() - 1)].name
 		pending.append(entry)
 		added.append(entry)
 	return added
@@ -89,14 +97,53 @@ static func uses_battle(event: EventData) -> bool:
 func drop_stale(state: KingdomState) -> void:
 	while not pending.is_empty():
 		var event: EventData = events.get(pending[0].event_id)
-		if event == null or not uses_battle(event) or _still_holds(state, event, pending[0].clan_id):
+		if event == null or (not uses_battle(event) and event.officer_request == &"") \
+				or _still_holds(state, event, pending[0]):
 			return
 		last_turn.erase(event.event_id)
 		pending.pop_front()
 
 
-func _still_holds(state: KingdomState, event: EventData, clan_id: StringName) -> bool:
-	return _conditions_hold(state, event) and (not event.needs_clan or clan_id in _matching_clans(state, event))
+func _still_holds(state: KingdomState, event: EventData, entry: Dictionary) -> bool:
+	if event.officer_request != &"" and _officer_named(state, event.officer_request, entry.get("officer", "")) == null:
+		return false
+	return _conditions_hold(state, event) and (not event.needs_clan or entry.clan_id in _matching_clans(state, event))
+
+
+## M16k-b: the generals who may spar (&"spar") or advisors who may play the memory match
+## (&"memory") right now: at home, not wounded, below their top level, past their cooldown.
+static func request_candidates(state: KingdomState, kind: StringName) -> Array[Officer]:
+	var result: Array[Officer] = []
+	if kind == &"spar":
+		for general in state.generals.generals:
+			if state.check_spar(general) == Spar.Result.OK:
+				result.append(general)
+	elif kind == &"memory":
+		for advisor in state.advisors.advisors:
+			if state.check_memory(advisor) == MemoryMatch.Result.OK:
+				result.append(advisor)
+	return result
+
+
+## The request candidate called `officer_name`, or null when they may no longer play.
+static func _officer_named(state: KingdomState, kind: StringName, officer_name: String) -> Officer:
+	for officer in request_candidates(state, kind):
+		if officer.name == officer_name:
+			return officer
+	return null
+
+
+## The officer the oldest pending event is about (M16k-b), or null.
+func current_officer(state: KingdomState) -> Officer:
+	var event := current_event()
+	if event == null or event.officer_request == &"":
+		return null
+	return _officer_named(state, event.officer_request, pending[0].get("officer", ""))
+
+
+## The name the oldest pending event's "{officer}" stands for ("" for none).
+func current_officer_name() -> String:
+	return pending[0].get("officer", "") if not pending.is_empty() else ""
 
 
 func _conditions_hold(state: KingdomState, event: EventData) -> bool:
@@ -134,6 +181,8 @@ func _conditions_hold(state: KingdomState, event: EventData) -> bool:
 	if event.needs_commander and state.generals.active_commander() == null:
 		return false
 	if event.needs_bandit_leader and state.clan_officers.bandit_leader(state.turn) == null:
+		return false
+	if event.officer_request != &"" and request_candidates(state, event.officer_request).is_empty():
 		return false
 	return not event.needs_clan or not _matching_clans(state, event).is_empty()
 
@@ -238,8 +287,9 @@ func current_clan() -> StringName:
 	return pending[0].clan_id if not pending.is_empty() else &""
 
 
-## The event's text with its clan's name filled in.
+## The event's text with its clan's name and (M16k-b) its officer's name filled in.
 func fill(state: KingdomState, text: String, clan_id: StringName) -> String:
+	text = text.replace("{officer}", current_officer_name())
 	return text.replace("{clan}", state.diplomacy.clans[clan_id].data.display_name) if clan_id != &"" else text
 
 
@@ -304,6 +354,8 @@ func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int, genera
 	var choice := event.choices[index]
 	if not can_choose(state, choice, clan_id):
 		return {}
+	var officer := current_officer(state)
+	var officer_name := current_officer_name()
 	pending.pop_front()
 	var changes: Array[String] = []
 	if not choice.cost.is_empty():
@@ -323,8 +375,11 @@ func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int, genera
 	_apply(state, outcome, clan_id, changes, rng)
 	_apply_war(state, rng, outcome, choice, clan_id, changes)
 	_apply_battle_effects(state, rng, outcome, clan_id, changes)
-	var result := {"text": fill(state, outcome.text, clan_id), "changes": changes,
-			"tone": &"" if outcome.battle != &"" else tone(outcome, changes)}
+	var result := {"text": fill(state, outcome.text.replace("{officer}", officer_name), clan_id), "changes": changes,
+			"tone": &"" if outcome.battle != &"" or outcome.starts_request else tone(outcome, changes)}
+	if outcome.starts_request and officer != null:
+		pending_request = {"kind": event.officer_request, "officer": officer, "bonus": REQUEST_BONUS}
+		result["request"] = event.officer_request
 	if outcome.battle != &"":
 		pending_battle = {"kind": outcome.battle, "clan_id": clan_id, "event_id": event.event_id}
 		if choice.pick_general:
@@ -605,7 +660,10 @@ func to_save() -> Dictionary:
 		turns[String(event_id)] = last_turn[event_id]
 	var waiting: Array = []
 	for entry in pending:
-		waiting.append({"event_id": String(entry.event_id), "clan_id": String(entry.clan_id)})
+		var saved := {"event_id": String(entry.event_id), "clan_id": String(entry.clan_id)}
+		if entry.has("officer"):
+			saved["officer"] = entry.officer
+		waiting.append(saved)
 	return {"last_turn": turns, "pending": waiting, "raid_won_turn": raid_won_turn, "annexed_turn": annexed_turn,
 			"raid_forced": raid_forced, "invasion_forced": String(invasion_forced)}
 
@@ -631,7 +689,10 @@ func load_save(data: Dictionary) -> void:
 	pending.clear()
 	for entry: Dictionary in data.pending:
 		if events.has(StringName(entry.event_id)):
-			pending.append({"event_id": StringName(entry.event_id), "clan_id": StringName(entry.clan_id)})
+			var loaded := {"event_id": StringName(entry.event_id), "clan_id": StringName(entry.clan_id)}
+			if entry.has("officer"):
+				loaded["officer"] = String(entry.officer)
+			pending.append(loaded)
 	raid_won_turn = int(data.raid_won_turn)
 	annexed_turn = int(data.get("annexed_turn", -100))
 	raid_forced = bool(data.get("raid_forced", false))

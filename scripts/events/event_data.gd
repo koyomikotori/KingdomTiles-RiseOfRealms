@@ -51,6 +51,11 @@ const CATEGORY_NAMES: Array[String] = ["Kinh tế", "Ngoại giao", "Quân sự"
 ## M16e: the bandits have a leader able to fight (ClanOfficers.bandit_leader, from turn 20).
 @export var needs_bandit_leader: bool = false
 
+@export_group("Officer request (M16k-b)")
+## &"spar" / &"memory": the event is one officer's own request for their mini game, picked among
+## the generals who may spar / advisors who may play now (EventSystem.request_candidates). "{officer}"
+## in the texts is their name.
+@export var officer_request: StringName = &""
 @export_group("Clan")
 ## The event is about one clan, picked among those that match the filters below.
 @export var needs_clan: bool = false

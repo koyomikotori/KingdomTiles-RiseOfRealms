@@ -413,3 +413,96 @@ func test_pending_events_and_cooldowns_are_saved() -> void:
 			"Pending event kept, unknown one dropped")
 	check_eq(loaded.events.last_turn, {&"stone_vein": 4} as Dictionary[StringName, int], "Cooldowns")
 	check_eq(loaded.events.raid_won_turn, 3, "Raid flag")
+
+
+# --- Officer requests (M16k-b) --------------------------------------------------------------
+
+func _officer(general: bool, stars: int, name: String) -> Officer:
+	var officer: Officer = General.new() if general else Advisor.new()
+	officer.name = name
+	officer.stars = stars
+	officer.look = OfficerLook.from_seed(name)
+	return officer
+
+
+func test_requests_come_only_from_officers_who_may_play() -> void:
+	var state := _state()
+	state.turn = 10
+	for officer in state.generals.generals.duplicate():
+		state.generals.generals.erase(officer)
+	for officer in state.advisors.advisors.duplicate():
+		state.advisors.advisors.erase(officer)
+	check(not _can(state, &"spar_request") and not _can(state, &"memory_request"), "Nobody to ask")
+	var low := _officer(true, 2, "Thấp")
+	state.generals.add(low)
+	check(not _can(state, &"spar_request"), "2★ may not spar")
+	var general := _officer(true, 4, "Hùng") as General
+	state.generals.add(general)
+	check(_can(state, &"spar_request"), "A 4★ general may ask")
+	general.last_spar_turn = 8
+	check(not _can(state, &"spar_request"), "Not while resting")
+	general.last_spar_turn = -100
+	general.away = true
+	check(not _can(state, &"spar_request"), "Not while away")
+	general.away = false
+	general.level = general.max_level()
+	check(not _can(state, &"spar_request"), "Not at the top level")
+	general.level = 1
+	var advisor := _officer(false, 3, "Trí") as Advisor
+	state.advisors.add(advisor)
+	check(_can(state, &"memory_request"), "A 3★ advisor may ask")
+	advisor.last_memory_turn = 9
+	check(not _can(state, &"memory_request"), "Not while resting")
+	advisor.last_memory_turn = -100
+	check_eq(EventSystem.request_candidates(state, &"spar"), [general] as Array[Officer], "Only the one who may")
+	# Rolled: the entry names the officer and the texts use the name.
+	state.events.pending.clear()
+	var rolled := false
+	for seed_value in range(1, 400):
+		state.events.last_turn.clear()
+		state.events.pending.clear()
+		for entry in state.events.roll(state, _rng(seed_value)):
+			if entry.event_id == &"spar_request":
+				check_eq(entry.officer, "Hùng", "The asking general")
+				rolled = true
+		if rolled:
+			break
+	check(rolled, "The spar request comes up")
+	state.events.pending = [{"event_id": &"spar_request", "clan_id": &"", "officer": "Hùng"}] as Array[Dictionary]
+	check(state.events.fill(state, state.events.current_event().title, &"").begins_with("Hùng"), "Title names him")
+	check_eq(state.events.current_officer(state), general, "Found again by name")
+	general.wounded_turns = 2
+	state.events.drop_stale(state)
+	check(state.events.pending.is_empty(), "Dropped once he may no longer spar")
+
+
+func test_accepting_a_request_opens_the_game_with_more_xp() -> void:
+	var state := _state()
+	state.turn = 10
+	var advisor := _officer(false, 4, "Trí") as Advisor
+	state.advisors.add(advisor)
+	state.events.pending = [{"event_id": &"memory_request", "clan_id": &"", "officer": "Trí"}] as Array[Dictionary]
+	var refused := state.events.resolve(state, _rng(), 1)
+	check(state.events.pending_request.is_empty() and not refused.has("request"), "Refusing changes nothing")
+	check(refused.text.contains("Trí"), "Named in the result")
+	check_eq(state.check_memory(advisor), MemoryMatch.Result.OK, "May still play")
+	state.events.pending = [{"event_id": &"memory_request", "clan_id": &"", "officer": "Trí"}] as Array[Dictionary]
+	var accepted := state.events.resolve(state, _rng(), 0)
+	check_eq(accepted.get("request"), &"memory", "The game follows")
+	check_eq(accepted.tone, &"", "No reaction: the game has its own")
+	check_eq(state.events.pending_request.officer, advisor, "For the asking advisor")
+	check_eq(state.events.pending_request.bonus, EventSystem.REQUEST_BONUS, "With the bonus")
+	check_eq(MemoryMatch.xp_reward(advisor, true, 1.5), ceili(advisor.xp_to_next() * 0.4 * 1.5), "60% on a win")
+	var expected := MemoryMatch.xp_reward(advisor, false, EventSystem.REQUEST_BONUS)
+	check_eq(state.finish_memory(advisor, false, EventSystem.REQUEST_BONUS).xp, expected, "Paid with the bonus")
+	var general := _officer(true, 3, "Hùng") as General
+	check_eq(Spar.xp_reward(general, true, 1.5), ceili(general.xp_to_next() * 0.4 * 1.5), "Spar: 60% on a win")
+
+
+func test_request_officers_are_saved() -> void:
+	var state := _state()
+	state.events.pending = [{"event_id": &"spar_request", "clan_id": &"", "officer": "Hùng"}] as Array[Dictionary]
+	var data: Dictionary = JSON.parse_string(JSON.stringify(state.events.to_save()))
+	var loaded := EventSystem.new()
+	loaded.load_save(data)
+	check_eq(loaded.pending[0].get("officer"), "Hùng", "The asking officer is kept")

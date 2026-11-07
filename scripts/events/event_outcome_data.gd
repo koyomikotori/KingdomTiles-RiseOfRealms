@@ -86,3 +86,7 @@ extends Resource
 ## Up to hurt_squads random squads at home each lose hurt_share (0..1) of their soldiers.
 @export var hurt_squads: int = 0
 @export var hurt_share: float = 0.0
+@export_group("Officer request (M16k-b)")
+## The event's officer starts their mini game (EventData.officer_request) with
+## EventSystem.REQUEST_BONUS XP: the kingdom scene opens it after the event window.
+@export var starts_request: bool = false

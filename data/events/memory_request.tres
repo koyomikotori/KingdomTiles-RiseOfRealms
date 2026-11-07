@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "{officer} xếp bộ thẻ, mời Chúa công ngồi vào bàn."
+starts_request = true
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Nhận lời đấu trí"
+hint = "Vào ván lật thẻ ngay. Vì là tâm nguyện riêng, {officer} nhận thêm 50% kinh nghiệm."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "{officer} cất bộ thẻ, hẹn dịp khác."
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Để lúc khác"
+hint = "Không mất gì; {officer} vẫn có thể xin lại sau."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"memory_request"
+title = "{officer} xin đấu trí"
+text = "{officer} bày sẵn bộ thẻ, xin được đấu trí lật thẻ với Chúa công để luyện trí nhớ."
+category = 3
+weight = 1.0
+cooldown = 6
+min_turn = 3
+officer_request = &"memory"
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

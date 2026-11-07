@@ -85,7 +85,7 @@ func test_every_event_is_told_by_both() -> void:
 	for event_id in events:
 		var event := events[event_id]
 		check(Counsel.events().has(String(event_id)), "%s has lines" % event_id)
-		var context := {"kingdom": "Z", "clan": "X"}
+		var context := {"kingdom": "Z", "clan": "X", "officer": "W"}
 		for speaker in Counselor.IDS:
 			var options: Array = Counsel.events().get(String(event_id), {}).get(String(speaker), [])
 			check(options.size() >= 2, "%s: %s has two lines" % [event_id, speaker])
@@ -93,6 +93,7 @@ func test_every_event_is_told_by_both() -> void:
 				var text := String(line[1])
 				check(StringName(line[0]) in Counselor.EXPRESSIONS, "%s: expression %s" % [event_id, line[0]])
 				check(not "{clan}" in text or event.needs_clan, "%s: {clan} only for clan events" % event_id)
+				check(not "{officer}" in text or event.officer_request != &"", "%s: {officer} only for requests" % event_id)
 				check(not text.format(context).contains("{"), "%s: every placeholder is known" % event_id)
 				check(not _calls_ruler_ban(text), "%s: %s calls the ruler Chúa công: %s" % [event_id, speaker, text])
 			var lines := Counsel.event_lines(event_id, speaker, context)

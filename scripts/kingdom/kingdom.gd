@@ -725,8 +725,25 @@ func _continue_turn_start() -> void:
 		if not state.events.pending_battle.is_empty():
 			_play_event_battle()
 			return
+		if not state.events.pending_request.is_empty():
+			_play_event_request()
+			return
 		_autosave()
 		_continue_turn_start())
+
+
+## An officer's own request accepted in an event (M16k-b): their mini game with the XP bonus, then
+## the next event.
+func _play_event_request() -> void:
+	var request := state.events.pending_request
+	state.events.pending_request = {}
+	var after := func() -> void:
+		_autosave()
+		_continue_turn_start()
+	if request.kind == &"spar":
+		_open_spar(request.officer, request.bonus, after)
+	else:
+		_open_memory(request.officer, request.bonus, after)
 
 
 ## Shows the defeat screen once the castle has fallen, or the victory screen for a path just won.
@@ -949,31 +966,41 @@ func _open_officer(officer: Officer) -> void:
 
 
 ## The sparring mini game (M16j); the general's window opens again afterwards to show the XP.
-func _open_spar(general: General) -> void:
+func _open_spar(general: General, bonus: float = 1.0, after: Callable = Callable()) -> void:
 	if state.check_spar(general) != Spar.Result.OK:
+		if after.is_valid():
+			after.call()
 		return
 	var screen := SparScreen.new()
 	$UI.add_child(screen)
-	screen.start(state, general)
+	screen.start(state, general, 0, bonus)
 	Sfx.music(&"battle")
 	_map_life.ambient = false
 	screen.finished.connect(func(_result: Dictionary) -> void:
 		_map_life.ambient = true
 		Sfx.music(&"kingdom")
+		if after.is_valid():
+			after.call()
+			return
 		_autosave()
 		_open_officer(general))
 
 
 ## The memory card mini game (M16k); the advisor's window opens again afterwards to show the XP.
-func _open_memory(advisor: Advisor) -> void:
+func _open_memory(advisor: Advisor, bonus: float = 1.0, after: Callable = Callable()) -> void:
 	if state.check_memory(advisor) != MemoryMatch.Result.OK:
+		if after.is_valid():
+			after.call()
 		return
 	var screen := MemoryScreen.new()
 	$UI.add_child(screen)
-	screen.start(state, advisor)
+	screen.start(state, advisor, 0, bonus)
 	_map_life.ambient = false
 	screen.finished.connect(func(_result: Dictionary) -> void:
 		_map_life.ambient = true
+		if after.is_valid():
+			after.call()
+			return
 		_autosave()
 		_open_officer(advisor))
 

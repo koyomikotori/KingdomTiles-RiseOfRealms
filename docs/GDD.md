@@ -1185,3 +1185,15 @@ Mini game cho mưu sĩ lấy kinh nghiệm, thay cho giải đố cờ tướng 
 - **Luật:** Chúa công lật trước; mưu sĩ lật mỗi thẻ cách nhau 1 giây. Mỗi lượt lật 2 thẻ: trùng nhau thì giữ cặp và **được lật tiếp**; khác nhau thì úp lại và đến lượt bên kia. Lật hết thì bên nhiều cặp hơn thắng; bằng nhau tính Chúa công thua.
 - **Máy nhớ thẻ theo sao:** mỗi thẻ được lật (bởi bất kỳ ai), mưu sĩ nhớ được với xác suất 30 / 40 / 50 / 60% (3★ → 6★). Đến lượt, mưu sĩ lật ngay cặp đã nhớ nếu có; không thì lật một thẻ chưa biết rồi tìm thẻ đôi trong trí nhớ.
 - **Thưởng (cho mưu sĩ):** Chúa công thắng thì mưu sĩ nhận **40%** số kinh nghiệm cần để lên cấp hiện tại (học được nhiều), thua **15%** (làm tròn lên). Có nút "Bỏ cuộc" (tính là thua). Cố vấn nói một câu ở bảng kết quả.
+
+## 28. Tướng / mưu sĩ xin tỉ thí, đấu trí (M16k-b, đã chốt)
+
+Hai sự kiện ngẫu nhiên (nhóm "Trong vương quốc"), mỗi sự kiện là **tâm nguyện riêng** của một người:
+
+- **"{tướng} xin tỉ thí võ công":** tướng mời được một cao thủ giang hồ về thành, xin được tỉ thí.
+- **"{mưu sĩ} xin đấu trí":** mưu sĩ bày sẵn bộ thẻ, xin đấu trí lật thẻ với Chúa công.
+- **Chỉ xảy ra khi có người làm được ngay:** từ 3★, đang ở nhà, không bị thương, chưa đạt cấp tối đa, đã hết thời gian nghỉ 5 lượt. Người xin được chọn ngẫu nhiên trong số đó. Nếu đến lúc hiện sự kiện mà người đó không còn đủ điều kiện (vừa bị thương, vừa đi thảo phạt...) thì sự kiện bị bỏ.
+- **Tần suất:** trọng số như sự kiện thường; mỗi loại nghỉ 6 lượt sau khi xảy ra.
+- **Cố vấn kể** rằng đây là yêu cầu riêng của tướng / mưu sĩ đó.
+- **Đồng ý:** vào mini game ngay sau bảng sự kiện, kinh nghiệm nhận được **+50%** (thắng 60%, thua 22,5% số cần để lên cấp). Thời gian nghỉ 5 lượt bắt đầu như bình thường.
+- **Để lúc khác:** không mất gì; người đó vẫn bấm nút tỉ thí / đấu trí được như thường.

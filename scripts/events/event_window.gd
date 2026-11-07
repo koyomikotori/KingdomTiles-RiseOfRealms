@@ -107,6 +107,7 @@ func _show_general_picker(index: int) -> void:
 
 func _answer(index: int, general: General) -> void:
 	var clan_id := _state.events.current_clan()
+	var officer_name := _state.events.current_officer_name()
 	var result := _state.events.resolve(_state, _rng, index, general)
 	if result.is_empty():
 		return
@@ -116,15 +117,17 @@ func _answer(index: int, general: General) -> void:
 		_body.add_child(_label("\n".join(result.changes.map(func(line: String) -> String: return "• " + line)), 14))
 	var tone: StringName = result.get("tone", &"")
 	if tone != &"":
-		var reaction := Counsel.lines(tone, _state.counselor, _context(clan_id))
+		var reaction := Counsel.lines(tone, _state.counselor, _context(clan_id, officer_name))
 		if not reaction.is_empty():
 			_body.add_child(_counsel_box(reaction))
-	add_action("Vào trận" if result.has("battle") else "Tiếp tục", close)
+	add_action("Vào trận" if result.has("battle") else "Bắt đầu" if result.has("request") else "Tiếp tục", close)
 
 
-func _context(clan_id: StringName) -> Dictionary:
+func _context(clan_id: StringName, officer_name: String = "") -> Dictionary:
 	var clan_name := _state.diplomacy.clans[clan_id].data.display_name if clan_id != &"" else ""
-	return Counsel.context(_state, {"clan": clan_name})
+	if officer_name == "":
+		officer_name = _state.events.current_officer_name()
+	return Counsel.context(_state, {"clan": clan_name, "officer": officer_name})
 
 
 func _counsel_box(lines: Array[Dictionary]) -> CounselBox:
