@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+text = "Hôn lễ linh đình, hai nhà nay đã là thông gia."
+relation = 20
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Gửi sính lễ"
+hint = "Quà cưới hậu hĩnh, tình giao hảo bền chặt hơn nhiều."
+cost = Dictionary[StringName, int]({&"ore": 15, &"hardwood": 15, &"food": 30})
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+text = "Sứ giả cúi chào rồi lui về, nét mặt không vui."
+relation = -8
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Từ chối khéo"
+hint = "Không tốn gì, nhưng {clan} sẽ phật lòng."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"marriage_alliance"
+title = "Hôn ước liên minh"
+text = "Sứ giả {clan} đến ngỏ ý kết thông gia, mong hai nhà gắn bó lâu dài."
+category = 1
+weight = 1.5
+cooldown = 12
+min_turn = 6
+needs_clan = true
+clan_must_be_allied = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

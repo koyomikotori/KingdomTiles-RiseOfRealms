@@ -49,6 +49,9 @@ func test_every_event_is_complete() -> void:
 				check(outcome.add_unit == &"" or units.has(outcome.add_unit), "%s: unit %s exists" % [event_id, outcome.add_unit])
 				for resource_id in outcome.resources:
 					check(resources.has(resource_id), "%s: resource %s exists" % [event_id, resource_id])
+					# A fixed price belongs in the cost, which locks the choice when it cannot be paid.
+					check(outcome.resources[resource_id] > 0 or choice.outcomes.size() > 1,
+							"%s: '%s' takes %s outside its cost" % [event_id, choice.text, resource_id])
 				for resource_id in outcome.random_resources:
 					check(resources.has(resource_id), "%s: resource %s exists" % [event_id, resource_id])
 					check(not outcome.random_resources[resource_id].is_empty(), "%s: %s has amounts" % [event_id, resource_id])
@@ -242,6 +245,122 @@ func test_wild_horses_trade_food_or_send_soldiers() -> void:
 		if state.stockpile.get_amount(&"horses") == 0:
 			check(&"Không thu được gì." in result.changes, "Empty-handed is said: %s" % [result.changes])
 			break
+
+
+func test_marriage_needs_an_ally_and_a_rich_gift() -> void:
+	var state := _state()
+	check(not _can(state, &"marriage_alliance"), "No ally yet")
+	state.diplomacy.clans[&"south_farmers"].alliance_turns = 10
+	state.turn = 6
+	check(_can(state, &"marriage_alliance"), "An ally")
+	check(not state.events.block_reason(state, state.events.events[&"marriage_alliance"].choices[0]).is_empty(),
+			"Locked without the gift")
+	state.stockpile.add({&"ore": 15 - state.stockpile.get_amount(&"ore"), &"hardwood": 15 - state.stockpile.get_amount(&"hardwood"),
+			&"food": 30})
+	var relation := state.diplomacy.clans[&"south_farmers"].relation
+	_resolve(state, &"marriage_alliance", 0, &"south_farmers")
+	check_eq(state.diplomacy.clans[&"south_farmers"].relation, relation + 20, "+20 for the wedding")
+	check_eq(state.stockpile.get_amount(&"hardwood"), 0, "Gift paid")
+	check_eq(state.stockpile.get_amount(&"ore"), 0, "Ore too")
+	_resolve(state, &"marriage_alliance", 1, &"south_farmers")
+	check_eq(state.diplomacy.clans[&"south_farmers"].relation, relation + 12, "-8 for refusing")
+
+
+func test_caravan_tax_or_seize() -> void:
+	var small := {5: 0.4, 10: 0.4, 15: 0.2}
+	var taxed := _rolled(&"merchant_caravan", 1, {}, [&"food", &"wood", &"stone", &"ore"] as Array[StringName])
+	for resource_id in [&"food", &"wood", &"stone"]:
+		_check_odds(taxed[resource_id], small, "Tax %s" % resource_id)
+	check_eq(taxed[&"ore"].keys(), [0], "Tax brings basics only")
+	var seized := _rolled(&"merchant_caravan", 2, {},
+			[&"food", &"wood", &"stone", &"ore", &"hardwood", &"horses"] as Array[StringName])
+	_check_odds(seized[&"food"], {15: 0.4, 25: 0.4, 35: 0.2}, "Seized food")
+	_check_odds(seized[&"stone"], {10: 0.4, 15: 0.4, 20: 0.2}, "Seized stone")
+	for resource_id in [&"ore", &"hardwood", &"horses"]:
+		_check_odds(seized[resource_id], {8: 0.4, 12: 0.4, 18: 0.2}, "Seized %s" % resource_id)
+	var state := _state()
+	var farmers := state.diplomacy.clans[&"south_farmers"].relation
+	var wolves := state.diplomacy.clans[&"north_wolves"].relation
+	_resolve(state, &"merchant_caravan", 2, &"south_farmers")
+	check_eq(state.diplomacy.clans[&"south_farmers"].relation, farmers - 25, "The caravan's clan: -20 and -5")
+	check_eq(state.diplomacy.clans[&"north_wolves"].relation, wolves - 5, "Every other clan -5")
+
+
+func test_wild_beasts_hunt_or_lose_food() -> void:
+	var state := _state()
+	for i in 5:
+		state.army.add_squad(&"swordsman", 20)
+	check(_can(state, &"wild_beasts") == (state.board.count_owned_terrain(&"forest") >= 3), "Needs 3 forest")
+	var result := _resolve(state, &"wild_beasts", 0)
+	check_eq(state.army.count_soldiers(), 94, "3 squads lose 10% each")
+	check_eq(state.army.squads.filter(func(squad: Army.Squad) -> bool: return squad.soldiers == 18).size(), 3, "Three hurt")
+	check(state.stockpile.get_amount(&"food") in [10, 20, 30], "Meat brought home")
+	check(result.changes.any(func(line: String) -> bool: return line.begins_with("Nhận:")), "Gain line")
+	state = _state()
+	state.stockpile.add({&"food": 100 - state.stockpile.get_amount(&"food")})
+	_resolve(state, &"wild_beasts", 1)
+	check_eq(state.stockpile.get_amount(&"food"), 85, "15% of the food eaten")
+
+
+func test_flood_dike_or_risk_the_stores() -> void:
+	var state := _state()
+	check(not state.events.block_reason(state, state.events.events[&"flood"].choices[0]).is_empty(), "Locked when poor")
+	state.stockpile.add({&"wood": 50, &"stone": 50, &"hardwood": 10})
+	var wood := state.stockpile.get_amount(&"wood")
+	var food := state.stockpile.get_amount(&"food")
+	_resolve(state, &"flood", 0)
+	check_eq(state.stockpile.get_amount(&"wood"), wood - 50, "Dike paid")
+	check_eq(state.stockpile.get_amount(&"food"), food, "Stores kept")
+	var flooded := 0
+	for seed_value in 1000:
+		state = _state()
+		state.stockpile.add({&"food": 100 - state.stockpile.get_amount(&"food")})
+		_resolve(state, &"flood", 1, &"", _rng(seed_value))
+		if state.stockpile.get_amount(&"food") == 80:
+			flooded += 1
+	check(absf(flooded / 1000.0 - 0.7) < 0.05, "The flood comes 70%% of the time: %d" % flooded)
+
+
+func test_tax_relief_costs_stores_or_squads() -> void:
+	var state := _state()
+	var agree: EventChoiceData = state.events.events[&"tax_relief"].choices[0]
+	state.stockpile.spend({&"ore": state.stockpile.get_amount(&"ore")} as Dictionary[StringName, int])
+	check(not state.events.block_reason(state, agree).is_empty(), "Locked without the ore")
+	state.stockpile.add({&"food": 20, &"wood": 10, &"stone": 10, &"ore": 5, &"hardwood": 5})
+	var before := state.stockpile.get_amount(&"food")
+	var pieces := state.hand.pieces.size()
+	_resolve(state, &"tax_relief", 0)
+	check_eq(state.stockpile.get_amount(&"food"), before - 20, "20 food given up")
+	check_eq(state.stockpile.get_amount(&"ore"), 0, "5 ore given up")
+	check_eq(state.hand.pieces.size(), pieces + 1, "One more piece of land")
+	var forced := 0
+	var lost := {1: 0, 2: 0}
+	for seed_value in 400:
+		state = _state()
+		for i in 4:
+			state.army.add_squad(&"swordsman", 20)
+		state.army.squads[0].away = true
+		_resolve(state, &"tax_relief", 1, &"", _rng(seed_value))
+		var gone := 4 - state.army.count_squads()
+		lost[gone] = lost.get(gone, 0) + 1
+		check(state.army.squads.any(func(squad: Army.Squad) -> bool: return squad.away), "Squads away are safe")
+		if state.uprising.forced:
+			forced += 1
+	check_eq(lost.keys().size(), 2, "1 or 2 squads lost: %s" % lost)
+	check(absf(forced / 400.0 - 0.5) < 0.08, "Rebels about half the time: %d" % forced)
+
+
+func test_a_forced_uprising_skips_the_countdown() -> void:
+	var state := _state()
+	var allowed := state.uprising.next_allowed_turn
+	state.uprising.forced = true
+	var data: Dictionary = JSON.parse_string(JSON.stringify(state.uprising.to_save()))
+	var loaded := Uprising.new()
+	loaded.load_save(data, state.board)
+	check(loaded.forced, "Saved")
+	check_eq(state.uprising.end_turn(state.board, 5, false), &"started", "Starts before FIRST_TURN")
+	check(state.uprising.is_active() and not state.uprising.forced, "Zone up, flag used")
+	check_eq(state.uprising.next_allowed_turn, allowed, "Countdown untouched")
 
 
 func test_army_effects() -> void:

@@ -52,7 +52,7 @@ func _choice_row(choice: EventChoiceData, index: int) -> Control:
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	var column := VBoxContainer.new()
 	column.add_child(button)
-	var hint_text := choice.hint
+	var hint_text := _state.events.fill(_state, choice.hint, clan_id)
 	var chance := _state.events.choice_chance(_state, choice, clan_id)
 	if chance >= 0.0:
 		hint_text += " Khả năng thành công: %d%%." % roundi(chance * 100)

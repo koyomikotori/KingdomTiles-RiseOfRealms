@@ -747,8 +747,8 @@ Thống kê trận thắng/thua và trạng thái thắng/thua được lưu cù
 - Mỗi sự kiện có **điều kiện** ghi trong dữ liệu (`data/events/*.tres`): lượt tối thiểu, kho tài nguyên, có công trình, có quân, đang chiến tranh, có đồng minh, có gia tộc ở mức quan hệ phù hợp, vừa đánh thắng cướp ở lượt trước… Sự kiện ngoại giao tự chọn một gia tộc phù hợp. Thêm sự kiện mới chỉ cần thêm file.
 - Sự kiện hiện lần lượt ở **bảng giữa màn hình**, phải chọn mới đi tiếp. Sự kiện chưa giải quyết được lưu cùng ván (tải lại vẫn còn).
 
-**Lựa chọn, hậu quả ẩn một phần:** mỗi sự kiện có 1–3 lựa chọn.
-- **Cái giá** (tài nguyên bỏ ra) luôn hiện rõ; không đủ thì lựa chọn bị khóa.
+**Lựa chọn, hậu quả ẩn một phần:** mỗi sự kiện có 1–4 lựa chọn.
+- **Cái giá** (tài nguyên bỏ ra) luôn hiện rõ; không đủ thì lựa chọn bị khóa. Mọi khoản trừ cố định của một lựa chọn đều phải là cái giá (test kiểm tra), không để trong kết quả.
 - **Kết quả** chỉ ghi gợi ý; có thể ngẫu nhiên giữa vài kết quả. Chọn xong mới hiện kết quả thật và danh sách thay đổi.
 - Hậu quả có thể là: được/mất tài nguyên (số cố định hoặc phần trăm), quan hệ với một gia tộc hoặc mọi gia tộc (nguồn "Sự kiện" trong chi tiết quan hệ, mờ dần), thêm đơn vị lính, mất một phần lính, bổ sung quân, thêm mảnh đất vào tay, gia tộc mạnh/yếu đi, gia tộc tuyên chiến.
 
@@ -759,9 +759,14 @@ Thống kê trận thắng/thua và trạng thái thắng/thua được lưu cù
   - **Bầy ngựa hoang** (≥3 ô cỏ): đổi 30 lương với dân làng → ngựa 10 / 15 / 20; cho lính tự bắt (miễn phí) → ngựa 0 / 10 / 15; mỗi mức 50 / 30 / 20%. Hoặc để chúng đi.
   - **Thương nhân lạ**: trả 20 lương, 20 gỗ hoặc 10 đá (cùng giá trị), hoặc đuổi đi. 40% được hàng xịn (khoáng sản 5 / 10 / 15, gỗ cứng 8 / 15 / 20 hoặc ngựa 5 / 10 / 15), 30% đổi ngang sang tài nguyên cơ bản khác, 20% lỗ một nửa, 10% bị lừa trắng tay.
   - Tung ra toàn số 0 thì báo "Không thu được gì.".
+  - **Thú dữ quấy phá** (M16i, ≥3 ô rừng, có quân): cho lính đi săn → 3 đơn vị ngẫu nhiên (đang ở nhà) mỗi đơn vị mất 10% lính, được lương 10 / 20 / 30 (40 / 40 / 20%); mặc kệ → mất 15% lương.
+  - **Mưa lũ** (M16i, từ lượt 5): đắp đê tốn 50 gỗ + 50 đá + 10 gỗ cứng, giữ nguyên kho; mặc kệ → 70% mất 20% lương và 15% gỗ, 30% nước rút sớm không sao.
 - Ngoại giao: gia tộc gặp nạn đói xin viện trợ, sứ giả mang quà, gia tộc mạnh đòi cống nạp, đồng minh nhờ giúp.
+  - **Hôn ước liên minh** (M16i, chỉ đồng minh, từ lượt 6): gửi sính lễ 15 khoáng sản + 15 gỗ cứng + 30 lương → quan hệ +20; từ chối khéo → −8.
+  - **Thương đoàn {gia tộc}** (M16i, từ lượt 5): miễn thuế → quan hệ +10; thu thuế → lương, gỗ, đá mỗi thứ 5 / 10 / 15 (40 / 40 / 20%), quan hệ −5; tịch thu → lương và gỗ 15 / 25 / 35, đá 10 / 15 / 20, khoáng sản, gỗ cứng và ngựa 8 / 12 / 18 (mỗi thứ 40 / 40 / 20%), quan hệ với gia tộc đó −20 và mọi gia tộc −5.
 - Quân sự: người tình nguyện đầu quân, lính đòi tăng lương, dịch bệnh trong doanh trại, bọn cướp bị bắt xin tha (chỉ khi lượt trước vừa đánh thắng cướp).
 - Việc trong vương quốc: lễ hội mùa, nông dân xin khai hoang, thầy thuốc ghé qua.
+  - **Dân xin giảm sưu thuế** (M16i, từ lượt 10, ≥2 đơn vị): đồng ý → trả 20 lương, 10 gỗ, 10 đá, 5 khoáng sản, 5 gỗ cứng (không đủ thì không bấm được), thêm 1 mảnh đất vào tay; từ chối → mất 1–2 đơn vị lính ngẫu nhiên đang ở nhà, và 50% dân nổi loạn chiếm đất ngay cuối lượt (vùng đạo tặc như M14i, không cần chờ và không đổi bộ đếm xuất hiện; đã có vùng nổi loạn thì thôi).
 
 **Để sau (cần tướng, quân sư):** chiêu mộ tướng / quân sư của gia tộc vừa bị đánh bại; nhặt được trang bị tốt (chỉ tướng và quân sư dùng được).
 
