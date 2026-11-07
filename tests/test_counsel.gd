@@ -11,7 +11,7 @@ const TOPICS := {
 	&"news_officer": {}, &"news_deserted": {}, &"news_ally_left": {}, &"news_uprising": {},
 	&"news_castle_danger": {}, &"black_market": {}, &"victory": {}, &"defeat": {},
 	&"event_good": {}, &"event_bad": {}, &"event_mixed": {}, &"event_neutral": {},
-	&"spar_won": {"general": "Y", "rival": "Z"}, &"spar_lost": {"general": "Y", "rival": "Z"},
+	&"spar_won": {"general": "Y", "rival": "Z"}, &"spar_lost": {"general": "Y", "rival": "Z"}, &"memory_won": {"advisor": "Y"}, &"memory_lost": {"advisor": "Y"},
 }
 
 
