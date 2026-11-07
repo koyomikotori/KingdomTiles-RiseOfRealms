@@ -376,5 +376,29 @@
 			["neutral", "Mọi thứ giữ nguyên, thưa Chúa công."],
 			["neutral", "Thuộc hạ đã ghi lại. Không có gì thay đổi."]
 		]
+	},
+	"spar_won": {
+		"linh_nhi": [
+			["happy", "Oa! {general} hạ được {rival} rồi! Tiểu nữ vỗ tay đến đỏ cả tay đây ạ!"],
+			["surprised", "{rival} nổi danh giang hồ mà cũng phải chịu thua {general}! Chúa công thấy chưa, tướng của ta giỏi ghê!"],
+			["happy", "Trận đấu đẹp quá Chúa công ơi! {general} tiến bộ nhanh thật đó!"]
+		],
+		"tu_uyen": [
+			["neutral", "{general} ra đòn chuẩn, né đúng lúc. Võ công đã tiến thêm một bậc."],
+			["happy", "{rival} đã tâm phục khẩu phục. Thuộc hạ đã cho người tiễn khách và chuẩn bị trà cho {general}."],
+			["neutral", "Thắng được {rival} là có thực lực. Nhưng {general} chớ vì thế mà kiêu, thưa Chúa công."]
+		]
+	},
+	"spar_lost": {
+		"linh_nhi": [
+			["concerned", "{general} thua mất rồi... Nhưng không sao đâu Chúa công, đánh với {rival} thì thua cũng học được nhiều lắm!"],
+			["happy", "{rival} lợi hại quá đi! {general} đừng buồn nha, lần sau mình phục thù!"],
+			["concerned", "Tiểu nữ đi lấy thuốc xoa bóp cho {general} đây! Ai bảo {rival} ra tay mạnh quá chứ..."]
+		],
+		"tu_uyen": [
+			["neutral", "{general} còn chậm một nhịp khi né. Luyện thêm sẽ khá hơn, thưa Chúa công."],
+			["neutral", "Thua trong luyện tập không mất gì, chỉ cần nhớ chỗ sai. {general} vẫn có thêm kinh nghiệm."],
+			["concerned", "Ra đòn vội quá, {general}. Đợi kim vào giữa rồi hãy đánh. {rival} đã nhìn ra sơ hở đó."]
+		]
 	}
 }

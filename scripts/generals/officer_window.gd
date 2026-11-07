@@ -16,6 +16,9 @@ const TABS_RESERVED := 260
 ## "Đến xưởng rèn" in the Trang bị tab: the kingdom scene opens the forge's Rèn tab for this
 ## officer's kind and the slot shown (M14h).
 signal forge_requested(kind: StringName, slot: StringName)
+## "Tỉ thí" under a general's portrait (Spar, M16j): the kingdom scene closes this window and
+## opens the SparScreen.
+signal spar_requested(general: General)
 
 var _state: KingdomState
 var _officer: Officer
@@ -32,6 +35,8 @@ var _slot: StringName = &"weapon"
 var _dismantling: Item
 ## "Đột phá" was pressed once and waits for the second press.
 var _break_armed := false
+var _spar_button: Button
+var _spar_reason: Label
 
 
 func open(state: KingdomState, officer: Officer) -> void:
@@ -64,6 +69,19 @@ func open(state: KingdomState, officer: Officer) -> void:
 		var switcher := _row([previous, place, next])
 		switcher.custom_minimum_size = Vector2(PortraitView.SIZE * 2, 0)
 		left.add_child(switcher)
+	if officer is General:
+		_spar_button = _button("Tỉ thí", func() -> void:
+			close()
+			spar_requested.emit(_officer as General))
+		_spar_button.custom_minimum_size = Vector2(PortraitView.SIZE * 2, 40)
+		_spar_button.tooltip_text = "Tỉ thí võ công với Chúa công để lấy kinh nghiệm."
+		left.add_child(_spar_button)
+		_spar_reason = _label("", 12)
+		_spar_reason.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_spar_reason.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_spar_reason.custom_minimum_size = Vector2(PortraitView.SIZE * 2, 0)
+		_spar_reason.add_theme_color_override("font_color", MUTED_COLOR)
+		left.add_child(_spar_reason)
 	var tabs := TabContainer.new()
 	_tabs = tabs
 	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -100,6 +118,10 @@ func _switch(step: int) -> void:
 	get_parent().add_child(window)
 	window.open(_state, officers[posmod(index + step, officers.size())])
 	window._tabs.current_tab = _tabs.current_tab
+	# The new window answers the kingdom scene's requests too.
+	for signal_name in [&"forge_requested", &"spar_requested"]:
+		for connection in get_signal_connection_list(signal_name):
+			window.connect(signal_name, connection.callable)
 	queue_free()
 
 
@@ -139,6 +161,11 @@ func _refresh() -> void:
 	else:
 		_fill_advisor(_officer as Advisor)
 	_stats.add_child(_muted(_officer.level_text()))
+	if _spar_button != null:
+		var spar := _state.check_spar(_officer as General)
+		_spar_button.disabled = spar != Spar.Result.OK
+		_spar_reason.text = Spar.describe(spar, _officer as General, _state.turn) if spar != Spar.Result.OK \
+				else "Thắng +%d KN, thua +%d KN" % [Spar.xp_reward(_officer as General, true), Spar.xp_reward(_officer as General, false)]
 	_add_limit_break()
 	if _officer.points > 0:
 		var points := _label("Còn %d điểm cộng: bấm +1 cạnh một chỉ số." % _officer.points, 13)

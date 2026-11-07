@@ -16,8 +16,8 @@ Bản mobile (M15) vẫn để cuối cùng. Các milestone dưới đây đặt
 | M16f (xong, chờ chơi thử) | Thêm loại lính mới (GDD §22): Kỵ cung, Võ tăng, Chùa, chợ nâng cấp, giảm sức mưu sĩ, gia hạn hợp đồng giao thương | C4 | Vừa | Dữ liệu `.tres` + sprite vẽ bằng script |
 | M16g (xong, chờ chơi thử) | Hình tướng 3 bậc theo sao, 4 khung hình, hào quang 5–6★; sự kiện đấu tướng ×3 trọng số (GDD §23) | A1 | Vừa–khó | Nhiều hình vẽ (mỗi mức sao, mỗi loại vũ khí, nam / nữ) |
 | M16h (xong, chờ chơi thử) | Chúa công: 6 mẫu + tên ở màn Ván mới, chân dung ở Thành chính; sprite tướng và chúa công đi bộ cho M16j; prompt Gemini (GDD §24) | A4, A5 | Vừa–khó | Vẽ sprite mới; là nền cho mini game tỉ thí |
-| M16i | Cố vấn Linh Nhi / Tử Uyên: chọn ở Ván mới, portrait 4 biểu cảm, thoại riêng ở báo cáo / sự kiện / thắng thua | A3 | Khó | M16i-a xong (hệ thống, portrait dự phòng, thoại báo cáo / tin / chợ đen / thảo phạt / thắng thua); M16i-b xong: cố vấn kể thay mô tả cho cả 42 sự kiện, thêm câu phản ứng theo kết quả |
-| M16j | Mini game tỉ thí võ công (tướng) | D2 | Khó | Màn chơi mới theo thời điểm bấm; cần sprite đi bộ từ M16h |
+| M16i (xong, chờ chơi thử) | Cố vấn Linh Nhi / Tử Uyên: chọn ở Ván mới, portrait 4 biểu cảm, thoại riêng ở báo cáo / sự kiện / thắng thua | A3 | Khó | M16i-a xong (hệ thống, portrait dự phòng, thoại báo cáo / tin / chợ đen / thảo phạt / thắng thua); M16i-b xong: cố vấn kể thay mô tả cho cả 42 sự kiện, thêm câu phản ứng theo kết quả |
+| M16j (xong, chờ chơi thử) | Mini game tỉ thí võ công (tướng) với Chúa công (GDD §26) | D2 | Khó | Màn chơi mới theo thời điểm bấm; cần sprite đi bộ từ M16h |
 | M16k | Mini game giải đố cờ tướng (mưu sĩ) | D1 | Khó nhất | Phải làm luật cờ tướng đầy đủ, kiểm tra chiếu hết và soạn bộ thế cờ |
 
 Cần chuẩn bị trước:

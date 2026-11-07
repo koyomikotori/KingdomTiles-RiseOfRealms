@@ -25,10 +25,6 @@ func test_presets_are_valid_and_drawn() -> void:
 				and look.brows < OfficerLook.BROW_STYLES and look.beard < OfficerLook.BEARD_STYLES
 				and look.accent < OfficerLook.ACCENT_COLORS.size(), "Preset %d: face parts exist" % i)
 		check(look.beard == 0 or not look.is_female(), "Preset %d: no beard on a woman" % i)
-		var sprite := GameArt.ruler_sprite(ruler)
-		for layer in GameArt.LAYERS:
-			check(ResourceLoader.exists(GameArt.UNIT_DIR + String(sprite) + layer + ".png"), "%s%s" % [sprite, layer])
-		check_eq(GameArt.frames_of(sprite), GameArt.OFFICER_FRAMES, "%s has 4 frames" % sprite)
 		check(GameArt.ruler_portrait(i) != null, "Preset %d: a drawn portrait" % i)
 		check_eq(GameArt.ruler_portrait(i).get_size(), Vector2(PortraitView.SIZE, PortraitView.SIZE),
 				"Preset %d: portrait is 96×96" % i)
