@@ -41,6 +41,9 @@ const KEYS := {
 	KEY_W: &"up", KEY_UP: &"up", KEY_A: &"left", KEY_LEFT: &"left",
 	KEY_S: &"down", KEY_DOWN: &"down", KEY_D: &"right", KEY_RIGHT: &"right",
 }
+## Screen pixels a finger must travel to count as a swipe.
+const SWIPE_MIN := 40.0
+const NO_SWIPE := Vector2(-1, -1)
 const ARROW_ANGLES := {&"up": -PI / 2, &"left": PI, &"down": PI / 2, &"right": 0.0}
 
 var _state: KingdomState
@@ -68,6 +71,8 @@ var _result: Dictionary = {}
 ## XP multiplier (EventSystem.REQUEST_BONUS when the officer asked for the match).
 var _bonus := 1.0
 var _forfeit_button: Button
+var _swipe_from := NO_SWIPE
+var _swiped := false
 
 
 func start(state: KingdomState, general: General, seed_value: int = 0, bonus: float = 1.0) -> void:
@@ -83,9 +88,14 @@ func start(state: KingdomState, general: General, seed_value: int = 0, bonus: fl
 	var top := VBoxContainer.new()
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	top.offset_top = 14
+	# Clear of the "Bỏ cuộc" button on both sides so the centered title never runs under it.
+	top.offset_left = 160
+	top.offset_right = -160
 	top.add_theme_constant_override("separation", 2)
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(top)
 	var title := _label("Tỉ thí võ công: %s — %s %s" % [_spar.rival_label(), general.name, general.star_text()], 24)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	top.add_child(title)
 	_round_label = _label("", 18)
 	top.add_child(_round_label)
@@ -149,10 +159,32 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+## A tap anywhere strikes; a swipe (a finger or the held mouse moving SWIPE_MIN) dodges that way
+## (M15b). The dodge counts the moment the swipe is long enough, not when the finger lifts.
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_strike()
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_swipe_from = event.position
+			_swiped = false
+			_strike()
+		else:
+			_swipe_from = NO_SWIPE
 		accept_event()
+	elif event is InputEventMouseMotion and _swipe_from != NO_SWIPE and not _swiped:
+		var key := swipe_direction(event.position - _swipe_from)
+		if key != &"":
+			_swiped = true
+			_defend(key)
+		accept_event()
+
+
+## The dodge direction of a finger move, or &"" while it is still shorter than SWIPE_MIN.
+static func swipe_direction(move: Vector2) -> StringName:
+	if move.length() < SWIPE_MIN:
+		return &""
+	if absf(move.x) > absf(move.y):
+		return &"right" if move.x > 0.0 else &"left"
+	return &"down" if move.y > 0.0 else &"up"
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -202,7 +234,7 @@ func _defend(key: StringName) -> void:
 		Sfx.play(&"clash_2")
 		_flash = 0.3
 		_general_shift = Vector2(KNOCK_SHIFT, 0)
-		var why := "Bấm sai hướng" if key != &"" and key != _spar.direction else "Né sớm quá" if key != &"" else "Không kịp né"
+		var why := ("Vuốt sai hướng" if Touch.active else "Bấm sai hướng") if key != &"" and key != _spar.direction else "Né sớm quá" if key != &"" else "Không kịp né"
 		_popup("%s −%d" % [why, answer.damage], HP_LOW_COLOR, _general_foot() + Vector2(0, -ART_SCALE * 40))
 	_after_move()
 
@@ -268,7 +300,7 @@ func _show_result() -> void:
 		counsel_box.setup(counsel, 520.0)
 		box.add_child(counsel_box)
 	var done := Button.new()
-	done.text = "Xong (Enter)"
+	done.text = Touch.keys("Xong (Enter)")
 	done.custom_minimum_size = Vector2(200, 48)
 	done.focus_mode = Control.FOCUS_NONE
 	done.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -292,9 +324,9 @@ func _update_texts() -> void:
 	elif _wait > 0.0 and _spar.phase == Spar.Phase.ATTACK and _spar.round_number == 1 and _spar.rival_hp == Spar.MAX_HP:
 		_hint.text = "Chuẩn bị…"
 	elif _spar.phase == Spar.Phase.ATTACK:
-		_hint.text = "Tấn công: bấm Space hoặc chuột trái khi kim vào vùng giữa"
+		_hint.text = "Tấn công: chạm màn hình khi kim vào vùng giữa" if Touch.active 				else "Tấn công: bấm Space hoặc chuột trái khi kim vào vùng giữa"
 	else:
-		_hint.text = "Phòng thủ: bấm đúng hướng (W / A / S / D) khi vòng thu vào vòng xanh"
+		_hint.text = "Phòng thủ: vuốt theo hướng mũi tên khi vòng thu vào vòng xanh" if Touch.active 				else "Phòng thủ: bấm đúng hướng (W / A / S / D) hoặc vuốt khi vòng thu vào vòng xanh"
 
 
 func _popup(text: String, color: Color, at: Vector2) -> void:
@@ -411,6 +443,8 @@ func _draw_ring() -> void:
 	var side := Vector2.from_angle(angle + PI / 2) * 16.0
 	draw_colored_polygon(PackedVector2Array([tip, back + side, back - side]), ARROW_COLOR)
 	var font := get_theme_default_font()
+	if Touch.active:
+		return
 	var key: String = Spar.DIRECTION_KEYS[_spar.direction]
 	draw_string_outline(font, center + Vector2(-8, RING_START + 34), key, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, 6, Color(0, 0, 0, 0.8))
 	draw_string(font, center + Vector2(-8, RING_START + 34), key, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Color.WHITE)

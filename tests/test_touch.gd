@@ -41,6 +41,38 @@ func test_auto_scale_grows_buttons_on_a_phone() -> void:
 	check_eq(tablet, 1.0, "Large screens need no extra scale")
 
 
+func test_ui_scale_stops_where_windows_still_fit() -> void:
+	# A 2400×1080 phone: 1600×720 logical at scale 1, so 720 / 500 = 1.44 at most.
+	check(is_equal_approx(Touch.fitting_scale(Vector2(2400, 1080), BASE), 1.44), "Height limits a wide phone")
+	check(is_equal_approx(Touch.fitting_scale(Vector2(1280, 720), BASE), 1280.0 / 960), "Width limits the design size")
+	check(Touch.MAX_AUTO_SCALE <= Touch.fitting_scale(Vector2(2400, 1080), BASE), "Auto scale fits a common phone")
+
+
+func test_key_hints_drop_in_touch_mode() -> void:
+	check_eq(Touch.strip_key_hint("Đóng (Esc)"), "Đóng", "Esc hint dropped")
+	check_eq(Touch.strip_key_hint("Kết thúc lượt (Enter)"), "Kết thúc lượt", "Enter hint dropped")
+	check_eq(Touch.strip_key_hint("Xem người khác (phím ← →)"), "Xem người khác", "Arrow hint dropped")
+	check_eq(Touch.strip_key_hint("Làm mới (còn 3 lần)"), "Làm mới (còn 3 lần)", "Other brackets kept")
+	var was := Touch.active
+	Touch.active = false
+	check_eq(Touch.keys("Đóng (Esc)"), "Đóng (Esc)", "Mouse play keeps the hint")
+	Touch.active = was
+
+
+func test_spar_swipe_direction() -> void:
+	check_eq(SparScreen.swipe_direction(Vector2(10, 5)), &"", "Too short")
+	check_eq(SparScreen.swipe_direction(Vector2(60, 10)), &"right", "Right")
+	check_eq(SparScreen.swipe_direction(Vector2(-60, 20)), &"left", "Left")
+	check_eq(SparScreen.swipe_direction(Vector2(10, -50)), &"up", "Up")
+	check_eq(SparScreen.swipe_direction(Vector2(-20, 70)), &"down", "Down")
+
+
+func test_black_market_page_fits_two_columns() -> void:
+	var wide := BlackMarketWindow.page_size(3)
+	var narrow := BlackMarketWindow.page_size(2)
+	check(narrow.x < wide.x and narrow.y > wide.y, "Two columns: narrower and taller")
+
+
 func test_ui_scale_setting_is_kept_and_clamped() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SETTINGS))
 	GameSettings.use_file(TEST_SETTINGS)

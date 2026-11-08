@@ -16,6 +16,7 @@ const PAGES := [
 		"4. Đầu lượt mới có thể có trận đánh, bảng tin quan trọng, sự kiện và chợ đen.",
 		"# Điều khiển",
 		"Lăn chuột để phóng to / thu nhỏ, kéo chuột để di chuyển bản đồ. Phím 1–3 chọn mảnh đất, Enter kết thúc lượt, Esc đóng cửa sổ hoặc bỏ chọn, Space tạm dừng trận đánh.",
+		"Trên điện thoại: chạm một ô để đặt bản xem trước rồi bấm Đặt / Xây; kéo một ngón để di chuyển, chụm hai ngón để phóng to; nhấn giữ một nút để xem chú thích; nút Quay lại của máy = Esc.",
 		"Cột thông báo bên trái tóm tắt những gì đang diễn ra; bấm vào từng dòng để xem chi tiết.",
 	]],
 	["Đất đai", [
@@ -55,7 +56,7 @@ const PAGES := [
 		"# Đột phá",
 		"Tướng sĩ đã đạt cấp tối đa có thể đột phá để nâng thêm cấp và trần chỉ số. Cần tài nguyên và Bí kíp (thắng thảo phạt hoặc mua ở chợ đen).",
 		"# Luyện tập",
-		"Tướng từ 3★ có thể Tỉ thí với một võ nhân giang hồ: bấm Space hoặc chuột trái khi kim vào vùng đỏ / vàng để đánh, bấm đúng W A S D khi vòng thu vào vòng xanh để né.",
+		"Tướng từ 3★ có thể Tỉ thí với một võ nhân giang hồ: bấm Space hoặc chuột trái khi kim vào vùng đỏ / vàng để đánh, bấm đúng W A S D khi vòng thu vào vòng xanh để né. Trên điện thoại: chạm bất kỳ đâu để đánh, vuốt theo hướng mũi tên để né.",
 		"Mưu sĩ từ 3★ có thể Đấu trí lật thẻ với chúa công: lật 2 thẻ giống nhau để lấy cặp, trúng thì được lật tiếp, ai nhiều cặp hơn thắng.",
 		"Thắng hay thua đều có kinh nghiệm (thắng nhiều hơn); mỗi người nghỉ 5 lượt giữa hai lần. Đôi khi chính tướng sĩ tự xin luyện tập: nhận lời thì được thêm 50% kinh nghiệm.",
 		"# Chợ đen",

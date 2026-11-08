@@ -285,7 +285,7 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 	_draw_edges()
 	var font := ThemeDB.fallback_font
-	var hint := "Kéo chuột để di chuyển bản đồ"
+	var hint := "Kéo để di chuyển bản đồ" if Touch.active else "Kéo chuột để di chuyển bản đồ"
 	var at := Vector2(14, size.y - 14)
 	draw_string_outline(font, at, hint, HORIZONTAL_ALIGNMENT_LEFT, -1, HINT_FONT_SIZE, 5, LABEL_OUTLINE)
 	draw_string(font, at, hint, HORIZONTAL_ALIGNMENT_LEFT, -1, HINT_FONT_SIZE, UiPalette.MUTED)

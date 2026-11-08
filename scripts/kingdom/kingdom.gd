@@ -4,6 +4,9 @@ extends Node2D
 const NO_SELECTION := -1
 const NO_BUILDING: StringName = &""
 const NO_MOVE := Vector2i(-1, -1)
+const END_TURN_TEXT := "Kết thúc lượt (Enter)"
+const HAND_HINT := "Chọn một mảnh (hoặc phím 1–3) rồi bấm lên bản đồ. Mảnh không xoay được. Đặt đè lên đất cũ sẽ thay địa hình ô đó."
+const HAND_HINT_TOUCH := "Chọn một mảnh rồi chạm lên bản đồ và bấm Đặt. Mảnh không xoay được. Đặt đè lên đất cũ sẽ thay địa hình ô đó."
 const TOUCH_TEXT_WIDTH := 300.0
 const TOUCH_BUTTON_SIZE := Vector2(110, 48)
 ## Short titles: four tabs of equal width share the 340 px side panel (_build_tab_buttons).
@@ -123,7 +126,9 @@ func _ready() -> void:
 			_touch_cell = (_touch_cell + step).clamp(Vector2i.ZERO, Vector2i(state.board.width - 1, state.board.height - 1))
 			_update_ghost())
 	_build_touch_bar()
+	_apply_touch_texts()
 	TouchInput.mode_changed.connect(func(_on: bool) -> void:
+		_apply_touch_texts()
 		_touch_cell = BoardView.OFF_BOARD
 		_on_cell_hovered(board_view.get_hovered_cell()))
 	_focus_camera()
@@ -202,6 +207,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_toggle_selection(event.keycode - KEY_1)
 		KEY_ENTER, KEY_KP_ENTER:
 			_on_end_turn_pressed()
+
+
+## Labels that name keys or the mouse, in their touch wording while playing by finger (M15b).
+func _apply_touch_texts() -> void:
+	end_turn_button.text = Touch.keys(END_TURN_TEXT)
+	$UI/SidePanel/Margin/VBox/Tabs/PiecesTab/Hint.text = HAND_HINT_TOUCH if Touch.active else HAND_HINT
 
 
 ## The cell info panel: the hovered cell, else the clicked one; collapsed to its first line when

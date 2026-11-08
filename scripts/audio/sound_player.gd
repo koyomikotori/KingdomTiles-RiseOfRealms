@@ -47,9 +47,12 @@ func apply_settings() -> void:
 	_set_bus_volume(&"SFX", GameSettings.sound_volume())
 	var mode := DisplayServer.window_get_mode()
 	var fullscreen := mode == DisplayServer.WINDOW_MODE_FULLSCREEN or mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
-	if GameSettings.fullscreen() and not fullscreen:
+	# Phones always play full screen (Android immersive mode: no status / navigation bar, M15b);
+	# the "Toàn màn hình" setting is hidden there.
+	var wanted := GameSettings.fullscreen() or OS.has_feature("mobile")
+	if wanted and not fullscreen:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	elif not GameSettings.fullscreen() and fullscreen:
+	elif not wanted and fullscreen:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
 
 

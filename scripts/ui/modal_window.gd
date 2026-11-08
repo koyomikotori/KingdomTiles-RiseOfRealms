@@ -86,7 +86,7 @@ func build_frame(title_text: String, accent: Color, width_share: float = WIDTH_S
 	_actions.add_theme_constant_override("separation", 10)
 	_actions.alignment = BoxContainer.ALIGNMENT_END
 	layout.add_child(_actions)
-	_close_button = _button("Đóng (Esc)", close)
+	_close_button = _button(Touch.keys("Đóng (Esc)"), close)
 	_close_button.visible = closable
 	_actions.add_child(_close_button)
 	return body

@@ -9,7 +9,8 @@ extends ModalWindow
 
 const CARD_SIZE := Vector2(270, 236)
 const GAP := 10
-const PAGE_SIZE := Vector2(CARD_SIZE.x * 3 + GAP * 2, CARD_SIZE.y * 2 + GAP)
+## Room the window frame and the portrait column take beside the cards.
+const FRAME_ROOM := 120.0
 const PORTRAIT_SCALE := 2.0
 const GREETINGS: Array[String] = [
 	"Hề hề… Chúa công muốn xem hàng tốt chứ? Đồ của ta không hỏi nguồn gốc đâu nhé.",
@@ -69,11 +70,14 @@ func open(state: KingdomState) -> void:
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", GAP)
 	row.add_child(right)
+	# A narrow screen (a phone at a big UI scale, M15b) gets 2 columns × 3 rows instead of 3 × 2.
+	var columns := 3 if get_viewport().get_visible_rect().size.x >= page_size(3).x + PortraitView.SIZE * PORTRAIT_SCALE + FRAME_ROOM else 2
+	var page_box := page_size(columns)
 	var page := Control.new()
-	page.custom_minimum_size = PAGE_SIZE
+	page.custom_minimum_size = page_box
 	right.add_child(page)
 	_grid = GridContainer.new()
-	_grid.columns = 3
+	_grid.columns = columns
 	_grid.add_theme_constant_override("h_separation", GAP)
 	_grid.add_theme_constant_override("v_separation", GAP)
 	page.add_child(_grid)
@@ -89,14 +93,20 @@ func open(state: KingdomState) -> void:
 	var counsel := Counsel.lines(&"black_market", state.counselor)
 	if not counsel.is_empty():
 		var box := CounselBox.new()
-		box.setup(counsel, PAGE_SIZE.x + PortraitView.SIZE * PORTRAIT_SCALE)
+		box.setup(counsel, page_box.x + PortraitView.SIZE * PORTRAIT_SCALE)
 		body.add_child(box)
-	_close_button.text = "Rời đi (Esc)"
+	_close_button.text = Touch.keys("Rời đi (Esc)")
 	closed.connect(state.black_market.leave)
 	state.black_market.changed.connect(_refresh)
 	state.stockpile.changed.connect(_refresh)
 	state.equipment.changed.connect(_refresh)
 	_refresh()
+
+
+## The offer page for 3 columns × 2 rows or 2 × 3 (BlackMarket.SLOTS cards).
+static func page_size(columns: int) -> Vector2:
+	var rows := ceili(float(BlackMarket.SLOTS) / columns)
+	return Vector2(CARD_SIZE.x * columns + GAP * (columns - 1), CARD_SIZE.y * rows + GAP * (rows - 1))
 
 
 func _toggle_mode() -> void:
