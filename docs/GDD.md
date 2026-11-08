@@ -976,7 +976,8 @@ Bảng thông tin ô đất chuyển xuống đáy cột này.
 
 - **Bản 0.1 Early Access**, chỉ gửi bạn bè: file zip gồm `KingdomTiles.exe` (dữ liệu game gói luôn trong exe) và `Doc truoc.txt` (cách chạy, cảnh báo SmartScreen vì chưa ký số, chỗ để bản lưu và nhật ký).
 - Phiên bản lấy từ `application/config/version` trong `project.godot`, hiện ở góc menu chính và bảng Giới thiệu.
-- **Cách chơi:** bảng 6 tab (Bắt đầu, Đất đai, Xây dựng, Quân đội, Ngoại giao, Thảo phạt), mỗi tab vài đoạn ngắn.
+- **Bản 0.2 Early Access (M17):** gồm mọi thứ của M16 (cân bằng ngoại giao, bất tương xâm, đặc vụ, sự kiện, chợ đen, Bí kíp và đột phá, chúa công đi bộ, cố vấn Linh Nhi / Tử Uyên, tỉ thí, đấu trí, tướng sĩ tự xin luyện tập). Bản lưu của 0.1 vẫn tải được (phiên bản lưu không đổi; trường mới lấy mặc định: chúa công mẫu 0 "Chúa công", cố vấn Linh Nhi, Bí kíp 0, chưa từng tỉ thí / đấu trí).
+- **Cách chơi:** bảng 7 tab (Bắt đầu, Đất đai, Xây dựng, Quân đội, Tướng sĩ, Ngoại giao, Thảo phạt), mỗi tab vài đoạn ngắn. Từ 0.2: Bắt đầu thêm mục Ván mới (chúa công, cố vấn); tab Tướng sĩ mới (tướng và mưu sĩ, lò rèn, đột phá, tỉ thí, đấu trí, chợ đen); Ngoại giao thêm mưu sĩ Ngoại giao; Thảo phạt thêm Bí kíp, tướng nổi loạn và mục Sự kiện.
 - **Giới thiệu:** tab Trò chơi (tác giả, công cụ, nguồn đồ họa / chân dung AI / âm thanh), tab Bản quyền (giấy phép MIT của Godot và mọi thành phần bên thứ ba lấy thẳng từ engine), tab Báo lỗi (đường dẫn thư mục nhật ký và bản lưu, nút mở thư mục).
 - **Nhật ký:** game luôn ghi log vào `user://logs/godot.log` (giữ vài lần chơi gần nhất); lúc mở menu ghi một dòng phiên bản, Godot và hệ điều hành.
 - Build lại: `python tools/release/build_windows.py` (export preset "Windows Desktop" trong `export_presets.cfg`, ra `build/KingdomTiles_v<phiên bản>_Windows.zip`). Exe chưa có icon riêng (cần rcedit), cửa sổ game vẫn dùng icon của game.

@@ -448,9 +448,12 @@ func _ask_custom(text: String, on_confirm: Callable) -> void:
 
 ## Who and which slot to forge for, the cost and odds at this forge level, the job in progress.
 ## Opens the Rèn tab set to make `kind`'s `slot` (from an officer's Trang bị tab, M14h).
+## While the forge is being built or upgraded the window only shows the construction view.
 func preset_forge(kind: StringName, slot: StringName) -> void:
 	_forge_kind = kind
 	_forge_slot = slot
+	if _forge_box == null:
+		return
 	_refresh()
 
 
