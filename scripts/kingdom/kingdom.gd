@@ -4,6 +4,8 @@ extends Node2D
 const NO_SELECTION := -1
 const NO_BUILDING: StringName = &""
 const NO_MOVE := Vector2i(-1, -1)
+const TOUCH_TEXT_WIDTH := 300.0
+const TOUCH_BUTTON_SIZE := Vector2(110, 48)
 ## Short titles: four tabs of equal width share the 340 px side panel (_build_tab_buttons).
 const TAB_TITLES: Array[String] = ["Đất", "Xây dựng", "Quân đội", "Tướng sĩ"]
 
@@ -28,6 +30,13 @@ var _selected_building := NO_BUILDING
 var _moving_from := NO_MOVE
 ## A clicked empty cell whose information stays in the cell info panel.
 var _info_cell := BoardView.OFF_BOARD
+## Touch mode (M15a): the cell the player tapped for the selected piece / building, and whether it
+## can go there. The confirm bar places it.
+var _touch_cell := BoardView.OFF_BOARD
+var _touch_valid := false
+var _touch_bar: PanelContainer
+var _touch_text: Label
+var _touch_ok: Button
 ## The cell info panel shows only its first line.
 var _info_collapsed := false
 ## The resource breakdown opened by clicking a resource (it stays open, unlike the tooltip).
@@ -109,6 +118,14 @@ func _ready() -> void:
 	board_view.cell_hovered.connect(_on_cell_hovered)
 	board_view.cell_tapped.connect(_on_cell_clicked)
 	board_view.pan_dragged.connect(camera.pan)
+	board_view.ghost_dragged.connect(func(step: Vector2i) -> void:
+		if _touch_cell != BoardView.OFF_BOARD:
+			_touch_cell = (_touch_cell + step).clamp(Vector2i.ZERO, Vector2i(state.board.width - 1, state.board.height - 1))
+			_update_ghost())
+	_build_touch_bar()
+	TouchInput.mode_changed.connect(func(_on: bool) -> void:
+		_touch_cell = BoardView.OFF_BOARD
+		_on_cell_hovered(board_view.get_hovered_cell()))
 	_focus_camera()
 
 	var seed_value := piece_seed if piece_seed != 0 else randi()
@@ -126,7 +143,7 @@ func _ready() -> void:
 	state.army.changed.connect(_queue_economy_refresh)
 	state.diplomacy.changed.connect(_queue_economy_refresh)
 	state.board.resized.connect(func(_shift: Vector2i) -> void:
-		board_view.queue_redraw()
+		board_view.redraw_all()
 		_focus_camera())
 	state.turn_started.connect(_on_turn_started)
 	_map_life = MapLifeView.new()
@@ -192,6 +209,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _on_cell_hovered(coord: Vector2i) -> void:
 	var shown := coord if coord != BoardView.OFF_BOARD else _info_cell
 	var text := "Rê chuột lên một ô để xem thông tin.\nKéo chuột trái / phải: cuộn · Con lăn: zoom · G: tọa độ\nBấm khung này để thu gọn."
+	if Touch.active:
+		text = "Chạm một ô để xem thông tin.\nKéo: cuộn · Chụm hai ngón: zoom\nNhấn giữ: xem chú thích\nChạm khung này để thu gọn."
 	if shown != BoardView.OFF_BOARD and state.board.is_in_bounds(shown):
 		text = _describe_cell(state.board.get_cell(shown))
 	cell_info_label.text = text.get_slice("\n", 0) + " ▸" if _info_collapsed else text
@@ -203,6 +222,13 @@ func _on_cell_hovered(coord: Vector2i) -> void:
 ## cell keeps its information in the cell info panel.
 func _on_cell_clicked(coord: Vector2i) -> void:
 	_hide_resource_popup()
+	# Touch mode: a tap only puts the preview there; the confirm bar places it (M15a). A tap on the
+	# preview itself leaves it where it is.
+	if Touch.active and _has_selection():
+		if _touch_cell == BoardView.OFF_BOARD or not board_view.ghost_covers(coord):
+			_touch_cell = coord
+			_update_ghost()
+		return
 	if _moving_from != NO_MOVE:
 		_move_building_to(coord)
 	elif _selected != NO_SELECTION:
@@ -858,11 +884,22 @@ func _rebuild_piece_cards() -> void:
 
 
 ## The ghost under the pointer, and what placing it there would do.
+## The preview under the mouse, or at the tapped cell in touch mode (with the confirm bar).
 func _update_ghost() -> void:
-	var coord := board_view.get_hovered_cell()
+	if not _has_selection():
+		_touch_cell = BoardView.OFF_BOARD
+	var coord := _touch_cell if Touch.active else board_view.get_hovered_cell()
+	_touch_valid = _show_ghost(coord)
+	if Touch.active and _has_selection() and coord == BoardView.OFF_BOARD:
+		placement_status.text = "Chạm lên bản đồ để chọn chỗ, rồi bấm %s." % _touch_verb()
+	_refresh_touch_bar()
+
+
+## Shows the preview of the selection at `coord`; true when it may go there.
+func _show_ghost(coord: Vector2i) -> bool:
 	if coord == BoardView.OFF_BOARD or not _has_selection():
 		board_view.hide_ghost()
-		return
+		return false
 	if _has_selection() and _info_cell != BoardView.OFF_BOARD:
 		_set_info_cell(BoardView.OFF_BOARD)
 	if _moving_from != NO_MOVE:
@@ -872,7 +909,7 @@ func _update_ghost() -> void:
 		board_view.show_building_ghost(moving, target, check == BuildRules.Result.OK)
 		placement_status.text = "Di chuyển %s: %s Esc: hủy." % [moving.display_name,
 				"bấm để đặt ở đây." if check == BuildRules.Result.OK else BuildRules.describe(check)]
-		return
+		return check == BuildRules.Result.OK
 	if _selected_building != NO_BUILDING:
 		var building := _buildings[_selected_building]
 		var origin := coord - _building_anchor(building)
@@ -880,14 +917,14 @@ func _update_ghost() -> void:
 				state.building_cost(building), state.has_free_builder())
 		board_view.show_building_ghost(building, origin, result == BuildRules.Result.OK)
 		placement_status.text = BuildRules.describe(result)
-		return
+		return result == BuildRules.Result.OK
 	var piece := state.hand.pieces[_selected]
 	var piece_origin := coord - piece.get_anchor()
 	var placement := PlacementRules.check(state.board, piece, piece_origin)
 	board_view.show_ghost(piece, piece_origin, placement == PlacementRules.Result.OK)
 	if placement != PlacementRules.Result.OK:
 		placement_status.text = PlacementRules.describe(placement)
-		return
+		return false
 	var delta := UiFormat.amounts(Economy.placement_delta(state.board, piece, piece_origin, _terrains, _buildings),
 			_resource_types, true)
 	# Land alone yields nothing (M14d); the how-to-play pages explain it, so no hint here (M16g).
@@ -895,6 +932,79 @@ func _update_ghost() -> void:
 		placement_status.text = "Có thể đặt."
 	else:
 		placement_status.text = "Có thể đặt. Sản lượng mỗi lượt: %s." % delta
+	return true
+
+
+## Touch mode's confirm bar (M15a), at the bottom of the map: what the preview would do, and
+## Đặt / Xây / Chuyển tới (locked while it cannot go there) and Hủy (drops the selection).
+func _build_touch_bar() -> void:
+	_touch_bar = PanelContainer.new()
+	_touch_bar.visible = false
+	_touch_bar.mouse_filter = Control.MOUSE_FILTER_STOP
+	$UI.add_child(_touch_bar)
+	var margin := MarginContainer.new()
+	for edge in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + edge, 10)
+	_touch_bar.add_child(margin)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	margin.add_child(row)
+	_touch_text = Label.new()
+	_touch_text.add_theme_font_size_override("font_size", 15)
+	_touch_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_touch_text.custom_minimum_size = Vector2(TOUCH_TEXT_WIDTH, 0)
+	_touch_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(_touch_text)
+	_touch_ok = Button.new()
+	_touch_ok.custom_minimum_size = TOUCH_BUTTON_SIZE
+	_touch_ok.pressed.connect(_touch_confirm)
+	row.add_child(_touch_ok)
+	var cancel := Button.new()
+	cancel.text = "Hủy"
+	cancel.custom_minimum_size = TOUCH_BUTTON_SIZE
+	cancel.pressed.connect(_clear_selection)
+	row.add_child(cancel)
+
+
+func _touch_verb() -> String:
+	if _moving_from != NO_MOVE:
+		return "Chuyển tới"
+	return "Xây" if _selected_building != NO_BUILDING else "Đặt"
+
+
+func _refresh_touch_bar() -> void:
+	if _touch_bar == null:
+		return
+	_touch_bar.visible = Touch.active and _has_selection() and _touch_cell != BoardView.OFF_BOARD
+	if not _touch_bar.visible:
+		return
+	_touch_text.text = placement_status.text
+	_touch_ok.text = _touch_verb()
+	_touch_ok.disabled = not _touch_valid
+	_touch_bar.reset_size()
+	# Centered on the open map, between the notice column and the side panel.
+	var view := get_viewport().get_visible_rect().size
+	var left := 8.0
+	var info_panel: Control = cell_info_label.get_parent().get_parent()
+	for panel: Control in [_notices, info_panel]:
+		if panel != null and panel.is_visible_in_tree():
+			left = maxf(left, panel.get_global_rect().end.x + 8.0)
+	var right := side_panel.get_global_rect().position.x - 8.0
+	var size := _touch_bar.get_combined_minimum_size()
+	_touch_bar.position = Vector2(maxf(left, (left + right - size.x) * 0.5), view.y - size.y - 16.0)
+
+
+func _touch_confirm() -> void:
+	if not _touch_valid or _touch_cell == BoardView.OFF_BOARD:
+		return
+	var coord := _touch_cell
+	if _moving_from != NO_MOVE:
+		_move_building_to(coord)
+	elif _selected != NO_SELECTION:
+		_place_selected_piece(coord)
+	elif _selected_building != NO_BUILDING:
+		_build_selected(coord)
+	_update_ghost()
 
 
 ## The cell of a building that sits under the mouse cursor.

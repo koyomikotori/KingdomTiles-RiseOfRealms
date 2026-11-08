@@ -23,6 +23,15 @@ func focus_on(rect: Rect2, reserved_right: float = 0.0, reserved_top: float = 0.
 	position = rect.get_center() + Vector2((reserved_right - reserved_left) * 0.5, -reserved_top * 0.5) / z
 
 
+func _ready() -> void:
+	# Two-finger pinch on a phone (M15a).
+	var touch := get_node_or_null("/root/TouchInput")
+	if touch != null:
+		touch.pinched.connect(func(center: Vector2, factor: float) -> void:
+			if get_viewport().gui_get_hovered_control() == null:
+				_zoom_at(center, factor))
+
+
 ## Moves the view by a drag of `screen_relative` pixels (the map follows the mouse).
 func pan(screen_relative: Vector2) -> void:
 	position -= screen_relative / zoom.x

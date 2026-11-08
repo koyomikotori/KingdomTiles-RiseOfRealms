@@ -797,25 +797,30 @@ Thống kê trận thắng/thua và trạng thái thắng/thua được lưu cù
 
 ### 10.2 Cảm ứng và Android (để cuối dự án, M15)
 
-**Chốt sau khi chơi thử trên điện thoại:** hoàn thiện bản máy tính trước, bản điện thoại làm sau cùng. Toàn bộ phần cảm ứng và Android dưới đây nằm sẵn trên nhánh `m13/touch-apk` (chưa merge); tới M15 cập nhật nhánh đó theo main rồi làm tiếp. Bản máy tính chỉ lấy các phần dùng tốt với chuột (M12f):
+**Chốt sau khi chơi thử trên điện thoại:** hoàn thiện bản máy tính trước, bản điện thoại làm sau cùng. Bản máy tính chỉ lấy các phần dùng tốt với chuột (M12f):
 - Bấm lên bản đồ là đặt / xây / chuyển ngay như cũ (rê chuột xem trước); kéo chuột trái (hoặc phải / giữa) để cuộn bản đồ, con lăn hoặc chụm trên touchpad để zoom.
 - Bấm một ô trống thì khung thông tin giữ ô đó (viền vàng); bấm khung để thu gọn.
 - Bấm một tài nguyên trên thanh gỗ mở bảng thu / chi (ngoài tooltip khi rê chuột).
 - Kéo trên bất kỳ danh sách nào để cuộn, kể cả khi bắt đầu trên nút hay thẻ; kéo xong không bị tính là bấm. Dòng tướng sĩ mở khi thả chuột trên dòng.
 - Cửa sổ và menu tự vừa khi cửa sổ game nhỏ; icon game là thành trì pixel.
 
-Thiết kế bản điện thoại (đã chốt, làm ở M15):
+Thiết kế bản điện thoại (chốt lại khi bắt đầu M15, viết lại từ đầu thay cho code M13 cũ):
 
-**Một cách điều khiển chung** cho điện thoại và máy tính (chuột coi như một ngón tay):
-- **Đặt mảnh đất / xây / di chuyển công trình:** chọn mảnh hoặc công trình, rồi chạm (bấm) một ô: bóng mờ dừng ở đó và **thanh xác nhận** hiện ra với nút **Đặt** (hoặc Xây / Chuyển tới) và **Hủy**, kèm sản lượng hay lý do chưa đặt được (nút Đặt khóa khi không hợp lệ). Chạm ô khác để dời; kéo ngón tay trên bóng thì bóng chạy theo. Trên máy tính, rê chuột vẫn hiện bóng xem trước khi chưa chạm; Enter = Đặt khi thanh xác nhận đang mở, Esc = Hủy.
-- **Xem ô:** khi không cầm gì, chạm ô trống thì ô được viền sáng và khung thông tin góc dưới hiện ô đó (khung thu gọn được); chạm công trình mở bảng công trình như trước.
-- **Bản đồ:** kéo một ngón để cuộn (chuột phải / giữa vẫn kéo được), chụm hai ngón để zoom (con lăn vẫn zoom). Bảng, cửa sổ và danh sách cuộn bằng vuốt.
-- **Thanh tài nguyên:** chạm một tài nguyên mở khung nhỏ chi tiết thu / chi (thay cho tooltip khi rê chuột).
-- **Phím tắt:** đều đã có nút (mảnh đất 1–3 = thẻ mảnh, Enter = Kết thúc lượt, Space = Tạm dừng trận); nút Back của Android = Esc (đóng cửa sổ, bỏ chọn). G (tọa độ) chỉ còn trên máy tính.
+**Chia nhỏ:** M15a cảm ứng cơ bản + xuất APK (chạy trên máy ảo) · M15b mọi cửa sổ và mini game dùng được bằng ngón tay · M15c chơi thử trên điện thoại thật, sửa lỗi, xuất APK v0.3.
 
-**Màn hình:** chỉ nằm ngang. Bố cục giữ như hiện tại; trên điện thoại chữ và nút được phóng to cho vừa ngón tay (nút tối thiểu ~48 px theo kích thước thật của màn hình).
+**Máy tính giữ nguyên** cách chơi hiện tại (rê chuột xem trước, bấm là đặt). Cách mới chỉ bật khi chơi bằng màn cảm ứng.
 
-**Xuất APK:** file cấu hình xuất Android trong project (`export_presets.cfg`: tên "Kingdom Tiles: Rise of Realms", gói `com.koyomikotori.kingdomtiles`, màn ngang, icon thành trì pixel). Người chơi tự cài export templates của Godot 4.5.1, JDK 17 và Android SDK theo `docs/android_export_guide.md`; xuất bản debug để cài thử.
+- **Đặt mảnh đất / xây / di chuyển công trình:** chọn mảnh hoặc công trình, chạm một ô: bóng mờ dừng ở đó và hiện **thanh xác nhận** với nút **Đặt** (Xây / Chuyển tới) và **Hủy**, kèm sản lượng hoặc lý do chưa đặt được (nút Đặt khóa khi không hợp lệ). Chạm ô khác hoặc kéo bóng để dời.
+- **Xem ô:** khi không cầm gì, chạm ô trống thì khung thông tin hiện ô đó; chạm công trình mở bảng công trình.
+- **Bản đồ:** kéo một ngón để cuộn, chụm hai ngón để zoom.
+- **Cuộn bằng ngón tay ở mọi nơi:** mọi danh sách, bảng và cửa sổ cuộn được bằng cách chạm kéo ở bất kỳ đâu trong vùng đó (kể cả khi bắt đầu trên nút hay thẻ), không cần chạm đúng thanh trượt; kéo xong không bị tính là bấm.
+- **Chú thích (tooltip):** nhấn giữ khoảng nửa giây lên nút / biểu tượng để hiện khung chú thích; thả tay hoặc chạm chỗ khác để đóng.
+- **Nút Back** của Android = Esc (đóng cửa sổ, bỏ chọn). Các phím tắt đều đã có nút tương ứng.
+- **Tỉ thí:** chạm bất kỳ đâu khi kim vào vùng đỏ / vàng để đánh; vuốt lên / xuống / trái / phải để né.
+
+**Màn hình:** chỉ nằm ngang. Bố cục giữ như bản máy tính; chữ và nút tự phóng to cho vừa ngón tay (nút tối thiểu ~48 px theo kích thước thật của màn hình), cửa sổ chiếm gần hết màn hình. Cài đặt có thanh trượt **Cỡ giao diện**.
+
+**Xuất APK:** cấu hình xuất Android trong `export_presets.cfg` (tên "Kingdom Tiles: Rise of Realms", gói `com.koyomikotori.kingdomtiles`, màn ngang, icon thành trì pixel). Kiểm tra trước trên máy ảo `KingdomTiles_Phone`, rồi người chơi cài APK vào điện thoại Android thật.
 
 ## 11. Lộ trình
 

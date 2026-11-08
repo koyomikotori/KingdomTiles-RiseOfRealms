@@ -9,6 +9,8 @@ signal cell_hovered(coord: Vector2i)
 signal cell_tapped(coord: Vector2i)
 ## A left-button drag: the map should follow (screen pixels).
 signal pan_dragged(relative: Vector2)
+## Touch mode (M15a): a drag that started on the ghost moves it by `step` cells instead of the map.
+signal ghost_dragged(step: Vector2i)
 
 ## Cells are 48 px; buildings (16×16 art ×2) stand in their middle with room around them for the
 ## walkers (M13c).
@@ -57,6 +59,9 @@ var selected_cell := OFF_BOARD:
 var _pressing := false
 var _press_position := Vector2.ZERO
 var _panning := false
+## Touch mode: the press started on the ghost, which follows the finger cell by cell.
+var _ghost_drag := false
+var _ghost_drag_cell := Vector2i.ZERO
 
 ## Shows "x,y" in every cell. Toggled with G in the kingdom scene (off now that cells have art).
 var show_coords := false:
@@ -92,9 +97,17 @@ var _anim_frame := 0
 var _anim_time := 0.0
 ## Level and turns badges are drawn on this child, above the walkers (MapLifeView, z_index 0).
 var _badges := Node2D.new()
+## The ground (terrain, grid, key markers, territory border) on its own layer under the rest (M15a):
+## it only redraws when the land changes, not with every building animation frame, and draws each
+## kind of tile together so a phone gets a few draw calls instead of two per cell.
+var _ground := Node2D.new()
 
 
 func _ready() -> void:
+	_ground.z_index = -1
+	_ground.show_behind_parent = true
+	_ground.draw.connect(_draw_ground)
+	add_child(_ground)
 	_badges.z_index = 1
 	_badges.draw.connect(_draw_level_badges)
 	add_child(_badges)
@@ -105,7 +118,14 @@ func setup(board: BoardData, terrains: Dictionary[StringName, TerrainData],
 	_board = board
 	_terrains = terrains
 	_buildings = buildings
-	_board.cell_changed.connect(func(_coord: Vector2i) -> void: queue_redraw())
+	_board.cell_changed.connect(func(_coord: Vector2i) -> void: redraw_all())
+	_board.resized.connect(func(_shift: Vector2i) -> void: redraw_all())
+	redraw_all()
+
+
+## Redraws the ground layer too (the land changed).
+func redraw_all() -> void:
+	_ground.queue_redraw()
 	queue_redraw()
 
 
@@ -170,6 +190,15 @@ func hide_ghost() -> void:
 	queue_redraw()
 
 
+## Whether the ghost (piece or building preview) covers `coord`.
+func ghost_covers(coord: Vector2i) -> bool:
+	if _ghost_piece != null:
+		return coord in _ghost_piece.get_board_coords(_ghost_origin)
+	if _ghost_building != null:
+		return Rect2i(_ghost_origin, _ghost_building.size).has_point(coord)
+	return false
+
+
 func get_hovered_cell() -> Vector2i:
 	return _hovered
 
@@ -182,8 +211,20 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _board == null:
 		return
 	if event is InputEventMouseMotion:
-		_update_hover(event.position)
+		# A finger dragging the map hovers nothing: no info panel rebuild per move (M15a).
+		if not (Touch.active and (_panning or Touch.fingers() > 1)):
+			_update_hover(event.position)
 		if not _pressing:
+			return
+		# Two fingers pinch the camera: no pan and no tap from this press (M15a).
+		if Touch.fingers() > 1:
+			_panning = true
+			return
+		if _ghost_drag:
+			var cell := _cell_at(event.position)
+			if cell != _ghost_drag_cell:
+				ghost_dragged.emit(cell - _ghost_drag_cell)
+				_ghost_drag_cell = cell
 			return
 		if _panning or event.position.distance_to(_press_position) > TAP_SLOP:
 			_panning = true
@@ -194,9 +235,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			_pressing = true
 			_press_position = event.position
 			_panning = false
+			_ghost_drag = Touch.active and ghost_covers(coord)
+			_ghost_drag_cell = coord
 		elif _pressing:
 			_pressing = false
-			if not _panning and _board.is_in_bounds(coord):
+			var dragged_ghost: bool = _ghost_drag and event.position.distance_to(_press_position) > TAP_SLOP
+			_ghost_drag = false
+			if not _panning and not dragged_ghost and _board.is_in_bounds(coord):
 				cell_tapped.emit(coord)
 
 
@@ -219,10 +264,6 @@ func _update_hover(screen_position: Vector2) -> void:
 func _draw() -> void:
 	if _board == null:
 		return
-	for cell in _board.get_all_cells():
-		_draw_cell(cell)
-	draw_rect(Rect2(Vector2.ZERO, Vector2(_board.width, _board.height) * TILE_SIZE).grow(1), BOARD_EDGE_COLOR, false, 2.0)
-	_draw_territory_border()
 	_draw_buildings()
 	_draw_key_frames()
 	_badges.queue_redraw()
@@ -238,14 +279,43 @@ func _draw() -> void:
 		draw_rect(_cell_rect(selected_cell).grow(-1), SELECTED_COLOR, false, 3.0)
 
 
-func _draw_cell(cell: CellData) -> void:
-	var rect := _cell_rect(cell.coord)
-	var tint := Color.WHITE if cell.owned or not cell.has_terrain() else UNOWNED_TINT
-	if not draw_terrain(self, rect, cell.terrain_id, tint):
-		draw_rect(rect, EMPTY_COLOR if not cell.has_terrain() else _terrain_color(cell.terrain_id) * tint)
-	draw_rect(rect, GRID_COLOR, false, 1.0)
-	if cell.is_key:
-		draw_key_marker(self, rect)
+## Tiles of the same picture go together and the grid is one line list: a few draw calls in all.
+func _draw_ground() -> void:
+	if _board == null:
+		return
+	var groups: Dictionary = {}
+	var keys: Array[Rect2] = []
+	for cell in _board.get_all_cells():
+		var rect := _cell_rect(cell.coord)
+		var tint := Color.WHITE if cell.owned or not cell.has_terrain() else UNOWNED_TINT
+		var texture := GameArt.terrain(cell.terrain_id)
+		if texture == null:
+			_ground.draw_rect(rect, EMPTY_COLOR if not cell.has_terrain() else _terrain_color(cell.terrain_id) * tint)
+		else:
+			if not groups.has(texture):
+				groups[texture] = []
+			groups[texture].append([rect, tint])
+		if cell.is_key:
+			keys.append(rect)
+	for texture: Texture2D in groups:
+		for item: Array in groups[texture]:
+			_ground.draw_texture_rect(texture, item[0], false, item[1])
+	var size := Vector2(_board.width, _board.height) * TILE_SIZE
+	var grid := PackedVector2Array()
+	for x in _board.width + 1:
+		grid.append(Vector2(x * TILE_SIZE, 0))
+		grid.append(Vector2(x * TILE_SIZE, size.y))
+	for y in _board.height + 1:
+		grid.append(Vector2(0, y * TILE_SIZE))
+		grid.append(Vector2(size.x, y * TILE_SIZE))
+	_ground.draw_multiline(grid, GRID_COLOR, 1.0)
+	for rect in keys:
+		draw_key_marker(_ground, rect)
+	_ground.draw_rect(Rect2(Vector2.ZERO, size).grow(1), BOARD_EDGE_COLOR, false, 2.0)
+	var border := _territory_edges()
+	if not border.is_empty():
+		_ground.draw_multiline(border, TERRITORY_SHADOW_COLOR, 4.0)
+		_ground.draw_multiline(border, TERRITORY_BORDER_COLOR, 2.0)
 
 
 func _draw_ghost() -> void:
@@ -320,7 +390,9 @@ func _terrain_color(terrain_id: StringName) -> Color:
 
 
 ## Draws an edge wherever an owned cell touches a non-owned cell or the board edge.
-func _draw_territory_border() -> void:
+## The kingdom's outline: pairs of points for draw_multiline.
+func _territory_edges() -> PackedVector2Array:
+	var lines := PackedVector2Array()
 	for cell in _board.get_all_cells():
 		if not cell.owned:
 			continue
@@ -335,8 +407,9 @@ func _draw_territory_border() -> void:
 		for i in BoardData.NEIGHBOR_OFFSETS.size():
 			var neighbor := _board.get_cell(cell.coord + BoardData.NEIGHBOR_OFFSETS[i])
 			if neighbor == null or not neighbor.owned:
-				draw_line(corners[i], corners[(i + 1) % 4], TERRITORY_SHADOW_COLOR, 4.0)
-				draw_line(corners[i], corners[(i + 1) % 4], TERRITORY_BORDER_COLOR, 2.0)
+				lines.append(corners[i])
+				lines.append(corners[(i + 1) % 4])
+	return lines
 
 
 func _draw_buildings() -> void:

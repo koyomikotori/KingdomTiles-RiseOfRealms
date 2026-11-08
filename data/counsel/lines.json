@@ -3,7 +3,7 @@
 		"linh_nhi": [
 			["happy", "Chúa công! Từ hôm nay {kingdom} chính thức dựng cờ rồi! Linh Nhi sẽ theo sát người, việc gì cũng báo, chuyện gì cũng kể, không sót chút nào đâu ạ!"],
 			["happy", "Thành mới, đất mới, quân mới… Tiểu nữ hồi hộp quá! Chúa công cứ yên tâm, mấy chuyện lặt vặt cứ để Linh Nhi lo."],
-			["happy", "Chúa công đừng lo, ta có lương, có quân, lại có Linh Nhi kề bên nữa! Sớm muộn gì thiên hạ cũng biết tên {kingdom}!"],
+			["happy", "Chúa công đừng lo, ta có lương, có quân, lại có Linh Nhi nữa! Sớm muộn gì thiên hạ cũng biết tên {kingdom}!"],
 			["neutral", "Tiểu nữ sẽ nhắc Chúa công nghỉ ngơi đúng bữa! Đánh trận cũng phải ăn cơm chứ ạ."]
 		],
 		"tu_uyen": [
@@ -29,7 +29,7 @@
 	},
 	"raid_lost": {
 		"linh_nhi": [
-			["concerned", "Bọn cướp… lấy mất một ít đồ trong kho rồi. Chúa công đừng buồn, chỉ là xui một lần thôi mà!"],
+			["concerned", "Bọn cướp… lấy mất đồ trong kho rồi. Chúa công đừng buồn, chỉ là xui một lần thôi mà!"],
 			["concerned", "Hu… Lính mình đã cố hết sức rồi ạ. Nhà còn, người còn, mình làm lại được!"],
 			["concerned", "Chúa công mệt rồi… Ngồi nghỉ chút đi ạ, phần còn lại để tiểu nữ lo."],
 			["neutral", "Thêm vài đội lính nữa là lần sau bọn cướp hết dám ló mặt, Chúa công!"]
@@ -44,8 +44,8 @@
 	"invasion_won": {
 		"linh_nhi": [
 			["happy", "Quân {clan} bị đánh bật về rồi! Chúa công giỏi quá, đất của mình không mất tấc nào!"],
-			["happy", "{clan} tưởng mình dễ bắt nạt lắm à? Giờ thì biết tay {kingdom} rồi nhé!"],
-			["happy", "Thắng thì phải ăn mừng chứ ạ! Tiểu nữ đi bảo nhà bếp nấu thêm món!"],
+			["happy", "{clan} tưởng mình dễ bắt nạt lắm à? Giờ thì biết tay rồi nhé!"],
+			["happy", "Thắng thì phải ăn mừng chứ ạ! Tiểu nữ đi bảo nhà bếp nấu món Chúa công thích nhé!"],
 			["neutral", "Ừm… Nếu {clan} còn quay lại, mình cứ đánh lui tiếp thôi!"]
 		],
 		"tu_uyen": [
@@ -85,9 +85,9 @@
 	},
 	"attack_lost": {
 		"linh_nhi": [
-			["concerned", "Mình… phải lui quân rồi ạ. Chúa công đừng tự trách, chắc tại hôm nay trời xấu, gió thổi ngược chiều thôi!"],
+			["concerned", "Mình… phải lui quân rồi ạ. Chúa công đừng tự trách, chắc tại hôm nay trời xấu thôi!"],
 			["concerned", "Hu… Lính về ít hơn lúc đi. Nhưng Chúa công còn đây, vậy là còn hy vọng!"],
-			["concerned", "Tiểu nữ sẽ đi đếm lương, xem bao giờ đủ quân đánh lại {clan}."],
+			["neutral", "Tiểu nữ sẽ đi đếm lương, xem bao giờ đủ quân đánh lại {clan}."],
 			["neutral", "Lần sau mình chuẩn bị kỹ hơn, rồi đánh cho {clan} biết tay!"]
 		],
 		"tu_uyen": [
@@ -115,7 +115,7 @@
 		"linh_nhi": [
 			["happy", "Thắng rồi ạ! Mọi người về đủ cả, Chúa công tuyệt quá!"],
 			["happy", "Tiểu nữ nín thở suốt trận luôn đó! Thắng rồi, giờ mới thở ra được!"],
-			["happy", "Lính mình về rồi kìa, ai cũng tươi cười! Tiểu nữ đi pha nước mời họ!"]
+			["happy", "Lính mình về rồi kìa, ai cũng tươi cười!"]
 		],
 		"tu_uyen": [
 			["neutral", "Trận đã thắng. Kết quả như trong báo cáo."],
@@ -137,21 +137,21 @@
 	},
 	"duel_won": {
 		"linh_nhi": [
-			["happy", "{general} thắng rồi! Một chiêu cuối đẹp quá Chúa công ơi, tiểu nữ nhảy cẫng cả lên!"],
-			["surprised", "Trời ơi, {general} hạ được đối thủ thật rồi! Tiểu nữ còn chưa kịp nhắm mắt sợ!"],
+			["happy", "{general} thắng rồi! Một chiêu cuối đẹp quá Chúa công ơi, quá đỉnh!"],
+			["surprised", "Trời ơi, {general} hạ được đối thủ thật rồi! Tiểu nữ còn chưa kịp chớp mắt!"],
 			["happy", "Đêm nay phải mở tiệc cho {general}! Tiểu nữ xin được rót chén rượu đầu tiên!"]
 		],
 		"tu_uyen": [
 			["happy", "{general} thắng. Tinh thần quân ta sẽ lên."],
-			["neutral", "Trận đấu tay đôi kết thúc. {general} vẫn đứng."],
+			["neutral", "Trận đấu tay đôi kết thúc. {general} thắng rồi."],
 			["neutral", "Lần này may mắn đứng về phía ta. Đấu tay đôi, một nhát sai là mất một tướng giỏi."]
 		]
 	},
 	"duel_lost": {
 		"linh_nhi": [
-			["concerned", "{general}… không qua khỏi rồi ạ. Chúa công, tiểu nữ… tiểu nữ xin lỗi, Linh Nhi không biết nói gì nữa."],
+			["concerned", "{general}… không qua khỏi rồi ạ. Chúa công, Linh Nhi không biết nói gì nữa."],
 			["concerned", "Hu… {general} đã chiến đấu đến hơi thở cuối cùng. Chúa công nhớ đến người ấy nhé."],
-			["concerned", "Chúa công… để tiểu nữ ngồi đây với người một lúc nhé."]
+			["neutral", "Chúa công… để tiểu nữ ngồi đây với người một lúc nhé."]
 		],
 		"tu_uyen": [
 			["concerned", "{general} đã tử trận trong trận đấu tay đôi."],
@@ -162,11 +162,11 @@
 	"commander_fallen": {
 		"linh_nhi": [
 			["concerned", "Tổng tướng {general}… đã ngã xuống rồi ạ. Chúa công, tiểu nữ biết người buồn lắm… Linh Nhi cũng vậy."],
-			["concerned", "{general} không về nữa… Trang bị của người ấy cũng mất theo. Chúa công đừng giữ trong lòng nhé, khóc một chút cũng được."],
+			["concerned", "{general} không về nữa… Chúa công đừng giữ trong lòng nhé."],
 			["concerned", "Quân phải có người dẫn… nhưng hôm nay, để Chúa công thương tiếc {general} đã."]
 		],
 		"tu_uyen": [
-			["concerned", "Tổng tướng {general} tử trận. Quân ta mất người cầm quân, và cả trang bị người ấy mang."],
+			["concerned", "Tổng tướng {general} tử trận. Quân ta mất người cầm quân, hành trang của họ bị lấy mất."],
 			["concerned", "{general} đã hy sinh. Thuộc hạ sẽ báo tin cho gia quyến."],
 			["neutral", "Xin Chúa công sớm chọn tổng tướng mới. Quân không tướng thì tinh thần sẽ lung lay."]
 		]
@@ -197,9 +197,9 @@
 	},
 	"expedition_failed": {
 		"linh_nhi": [
-			["concerned", "Đội thảo phạt phải lui về rồi ạ… Không sao, không sao! Người về được là tốt rồi, Chúa công!"],
+			["concerned", "Đội thảo phạt phải lui về rồi ạ… Không sao, không sao!"],
 			["concerned", "Đạo tặc lần này đông quá… Chúa công đừng buồn, mình gom thêm quân rồi đi lần nữa!"],
-			["concerned", "Ừm… nói ra thì đau, nhưng tiểu nữ thấy lần sau nên mang nhiều quân hơn ạ."]
+			["neutral", "Ừm… nói ra thì đau, nhưng tiểu nữ thấy lần sau nên mang nhiều quân hơn ạ."]
 		],
 		"tu_uyen": [
 			["concerned", "Đội thảo phạt bị chặn lại. Quân mang theo không đủ cho số đạo tặc ở đó."],
@@ -212,7 +212,7 @@
 			["surprised", "Chúa công! {clan} tuyên chiến với mình rồi! Sao họ dám chứ?!"],
 			["concerned", "Tin xấu ạ… {clan} đã tuyên chiến. Tiểu nữ hơi sợ, nhưng có Chúa công thì chắc ổn thôi!"],
 			["neutral", "Vậy… mình có nên gửi quà cho mấy nhà khác, kẻo họ cũng nhảy vào không ạ?"],
-			["concerned", "Tiểu nữ hơi run… Nhưng ừm, chuẩn bị quân thôi Chúa công!"]
+			["neutral", "Ừm, chuẩn bị quân thôi Chúa công!"]
 		],
 		"tu_uyen": [
 			["concerned", "{clan} đã tuyên chiến. Từ giờ họ có thể kéo quân sang bất cứ lượt nào."],
@@ -247,7 +247,7 @@
 	},
 	"news_deserted": {
 		"linh_nhi": [
-			["concerned", "Có lính bỏ đi vì đói ạ… Bụng đói thì ai mà đánh trận được, Chúa công đừng giận họ nhé."],
+			["concerned", "Có lính bỏ đi... Chúa công đừng giận nhé."],
 			["concerned", "Kho lương cạn quá, một số lính đã bỏ về quê rồi…"],
 			["neutral", "Vậy mình xây thêm ruộng đi Chúa công! Lúa đầy kho là lính ở lại hết!"]
 		],
@@ -317,12 +317,12 @@
 	},
 	"defeat": {
 		"linh_nhi": [
-			["concerned", "Thành mất rồi… Chúa công, Linh Nhi vẫn ở đây. Người còn sống là còn làm lại được, tiểu nữ tin vậy!"],
+			["concerned", "Thành mất rồi… Chúa công. Có xe ngựa chờ Chúa công ở cổng sau, chúng ta nên rời đi ngay."],
 			["concerned", "Tiểu nữ sẽ đi cùng Chúa công, dù là lần sau hay lần sau nữa."]
 		],
 		"tu_uyen": [
 			["concerned", "Thành chính thất thủ. Thuộc hạ không bảo vệ được Chúa công đến cùng, xin chịu tội."],
-			["neutral", "Ván cờ này đã hết. Nhưng Chúa công đã học được nhiều. Lần sau, ta sẽ đi khác."]
+			["neutral", "Ván cờ này đã hết, chúng ta hãy rời khỏi đây. Nếu có lần sau, ta sẽ đi khác."]
 		]
 	},
 	"event_good": {
@@ -379,8 +379,8 @@
 	},
 	"spar_won": {
 		"linh_nhi": [
-			["happy", "Oa! {general} hạ được {rival} rồi! Tiểu nữ vỗ tay đến đỏ cả tay đây ạ!"],
-			["surprised", "{rival} nổi danh giang hồ mà cũng phải chịu thua {general}! Chúa công thấy chưa, tướng của ta giỏi ghê!"],
+			["happy", "Oa! {general} hạ được {rival} rồi! Trận đấu hấp dẫn quá!"],
+			["surprised", "{rival} nổi danh giang hồ mà cũng phải chịu thua {general}! Tướng của ta giỏi ghê!"],
 			["happy", "Trận đấu đẹp quá Chúa công ơi! {general} tiến bộ nhanh thật đó!"]
 		],
 		"tu_uyen": [
@@ -403,9 +403,9 @@
 	},
 	"memory_won": {
 		"linh_nhi": [
-			["happy", "Chúa công nhớ giỏi quá đi! {advisor} thua tâm phục khẩu phục luôn!"],
+			["happy", "Chúa công giỏi quá đi! {advisor} thua tâm phục khẩu phục luôn!"],
 			["surprised", "Oa, Chúa công lật trúng liền mấy cặp! Tiểu nữ còn chưa kịp nhìn thẻ nữa!"],
-			["happy", "Thắng rồi! {advisor} chắc về nhà luyện trí nhớ cả đêm cho xem, hì hì!"]
+			["happy", "Thắng rồi! {advisor} chắc về nhà suy nghĩ cả đêm cho xem, hì hì!"]
 		],
 		"tu_uyen": [
 			["neutral", "Chúa công thắng gọn. {advisor} đã học được thêm từ ván này."],

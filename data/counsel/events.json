@@ -422,7 +422,7 @@
 	"spar_request": {
 		"linh_nhi": [
 			["happy", "Chúa công ơi, {officer} nhờ tiểu nữ thưa riêng một chuyện: tướng quân mời được một cao thủ giang hồ về thành đó ạ!"],
-			["surprised", "Đây là tâm nguyện riêng của {officer}, muốn tỉ thí để rèn võ công. Chúa công cho phép nha? Tướng quân sẽ học hăng lắm đó!"]
+			["surprised", "Đây là tâm nguyện riêng của {officer}, muốn tỉ thí để rèn võ công. Chúa công cho phép nha? Tướng quân sẽ đánh hăng lắm đó!"]
 		],
 		"tu_uyen": [
 			["neutral", "Thưa Chúa công, {officer} có lời xin riêng: tướng quân đã mời một cao thủ giang hồ đến, muốn được tỉ thí."],
@@ -435,7 +435,7 @@
 			["surprised", "Đây là tâm nguyện riêng của {officer} nên chắc sẽ học được nhiều lắm. Chúa công chơi một ván nha?"]
 		],
 		"tu_uyen": [
-			["neutral", "Thưa Chúa công, {officer} có lời xin riêng: muốn được đấu trí lật thẻ với Chúa công để luyện trí nhớ."],
+			["neutral", "Thưa Chúa công, {officer} có lời xin riêng: muốn được đấu trí lật thẻ với Chúa công để tập luyện."],
 			["neutral", "Mưu sĩ tự xin thì sẽ để tâm hơn. Nếu Chúa công nhận lời, {officer} sẽ được lợi nhiều hơn thường lệ."]
 		]
 	}

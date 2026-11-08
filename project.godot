@@ -13,6 +13,7 @@ config_version=5
 config/name="Kingdom Tiles : Rise Of Realms"
 config/version="0.2"
 run/main_scene="res://scenes/menu/main_menu.tscn"
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://assets/ui/app_icon.png"
 
@@ -20,6 +21,7 @@ config/icon="res://assets/ui/app_icon.png"
 
 DragScroll="*res://scripts/ui/drag_scroll.gd"
 SoundPlayer="*res://scripts/audio/sound_player.gd"
+TouchInput="*res://scripts/ui/touch.gd"
 
 [debug]
 
@@ -34,6 +36,7 @@ window/size/window_width_override=1920
 window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/handheld/orientation=4
 
 [gui]
 
@@ -44,4 +47,5 @@ theme/custom="res://assets/ui/theme.tres"
 textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.16, 0.13, 0.1, 1)
