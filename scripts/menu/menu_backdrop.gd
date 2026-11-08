@@ -24,6 +24,25 @@ void fragment() {
 }
 """
 const BLUR_RADIUS := 2.5
+## Phones (M15a): the blur runs once per screen pixel, and a phone has millions of them, so the
+## scene is drawn at LOW_POWER_SCALE of its size, scaled up smoothly (that already softens it) and
+## blurred with 3×3 reads instead of 7×7.
+const FAST_BLUR_SHADER := """
+shader_type canvas_item;
+uniform float radius = 1.0;
+void fragment() {
+	vec2 step_size = TEXTURE_PIXEL_SIZE * radius;
+	vec4 sum = vec4(0.0);
+	for (int x = -1; x <= 1; x++) {
+		for (int y = -1; y <= 1; y++) {
+			sum += texture(TEXTURE, UV + vec2(float(x), float(y)) * step_size);
+		}
+	}
+	COLOR = sum / 9.0;
+}
+"""
+const LOW_POWER_SCALE := 0.5
+const FAST_BLUR_RADIUS := 1.0
 ## The scene's width as a share of the screen's, and the seconds the camera takes to pan from one
 ## side to the other (eased, back and forth; each scene starts on the left).
 const PAN_WIDTH := 1.8
@@ -50,6 +69,7 @@ var _battle_view: BattleView
 var _next_is_battle := true
 var _hold := -1.0
 var _pan_clock := 0.0
+var _low_power := OS.has_feature("mobile")
 
 
 func _ready() -> void:
@@ -66,10 +86,12 @@ func _ready() -> void:
 	_screen.stretch_mode = TextureRect.STRETCH_SCALE
 	_screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var shader := Shader.new()
-	shader.code = BLUR_SHADER
+	shader.code = FAST_BLUR_SHADER if _low_power else BLUR_SHADER
 	var material := ShaderMaterial.new()
 	material.shader = shader
-	material.set_shader_parameter(&"radius", BLUR_RADIUS)
+	material.set_shader_parameter(&"radius", FAST_BLUR_RADIUS if _low_power else BLUR_RADIUS)
+	if _low_power:
+		_screen.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	_screen.material = material
 	add_child(_screen)
 	var dim := ColorRect.new()
@@ -85,8 +107,15 @@ func _ready() -> void:
 
 func _fit() -> void:
 	var screen_size := size if size.x > 0.0 else get_viewport_rect().size
-	_viewport.size = Vector2i(roundi(screen_size.x * PAN_WIDTH), roundi(screen_size.y))
-	_screen.size = Vector2(_viewport.size)
+	var scene_size := Vector2i(roundi(screen_size.x * PAN_WIDTH), roundi(screen_size.y))
+	if _low_power:
+		# Laid out at full size, drawn into a smaller texture.
+		_viewport.size = Vector2i((Vector2(scene_size) * LOW_POWER_SCALE).round())
+		_viewport.size_2d_override = scene_size
+		_viewport.size_2d_override_stretch = true
+	else:
+		_viewport.size = scene_size
+	_screen.size = Vector2(scene_size)
 
 
 func _process(delta: float) -> void:

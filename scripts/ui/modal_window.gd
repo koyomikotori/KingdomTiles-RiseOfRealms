@@ -22,6 +22,13 @@ var _close_button: Button
 var _closable := true
 ## The top edge is fixed (_pin_top): the window only grows downward.
 var _pinned := false
+## The body sits in this: a window taller than the screen keeps its size and its body scrolls
+## (drag with a finger, M15a) instead of the whole window shrinking.
+var _frame_scroll: ScrollContainer
+var _frame_body: VBoxContainer
+var _frame_panel: PanelContainer
+## Smallest body height kept when the screen is very short.
+const MIN_BODY_HEIGHT := 120.0
 
 
 ## Builds the window and returns the body to fill (between the title and the status line).
@@ -60,9 +67,17 @@ func build_frame(title_text: String, accent: Color, width_share: float = WIDTH_S
 	var title := _label(title_text, 22)
 	title.add_theme_color_override("font_color", UiPalette.ink(accent))
 	layout.add_child(title)
+	_frame_scroll = ScrollContainer.new()
+	_frame_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	layout.add_child(_frame_scroll)
 	var body := VBoxContainer.new()
 	body.add_theme_constant_override("separation", 8)
-	layout.add_child(body)
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_frame_scroll.add_child(body)
+	_frame_body = body
+	_frame_panel = panel
+	body.minimum_size_changed.connect(_fit_body)
+	get_viewport().size_changed.connect(_fit_body)
 	_status = _label("", 14)
 	_status.custom_minimum_size.y = STATUS_HEIGHT
 	layout.add_child(_status)
@@ -75,6 +90,18 @@ func build_frame(title_text: String, accent: Color, width_share: float = WIDTH_S
 	_close_button.visible = closable
 	_actions.add_child(_close_button)
 	return body
+
+
+## The body's room: all of its content, or what the screen leaves after the rest of the window.
+func _fit_body() -> void:
+	if not is_instance_valid(_frame_scroll) or not is_inside_tree():
+		return
+	var wanted := _frame_body.get_combined_minimum_size().y
+	var others := _frame_panel.get_combined_minimum_size().y - _frame_scroll.custom_minimum_size.y
+	var room := maxf(MIN_BODY_HEIGHT, get_viewport_rect().size.y - SCREEN_MARGIN * 2.0 - others)
+	var height := minf(wanted, room)
+	if not is_equal_approx(height, _frame_scroll.custom_minimum_size.y):
+		_frame_scroll.custom_minimum_size.y = height
 
 
 ## Once the window has opened centered, its top edge stays put: content that grows or shrinks

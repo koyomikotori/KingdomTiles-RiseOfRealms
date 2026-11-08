@@ -2,12 +2,16 @@ class_name GameSettings
 extends RefCounted
 ## Player preferences kept on this computer (user://settings.cfg), apart from the saves: map effects
 ## (building animations and walkers, M13c), music and sound volumes and full screen (M14a), the
-## notice column's folded items and whether the column is open (M14b).
+## notice column's folded items and whether the column is open (M14b), the UI scale (M15a).
 ## Changed in SettingsWindow; `changed` lets open scenes apply them at once.
 
 const PATH := "user://settings.cfg"
 const DEFAULT_MUSIC_VOLUME := 0.6
 const DEFAULT_SOUND_VOLUME := 0.8
+## Cỡ giao diện (M15a): 0 = tự chọn theo màn hình (Touch.auto_ui_scale), else MIN..MAX.
+const AUTO_UI_SCALE := 0.0
+const MIN_UI_SCALE := 0.8
+const MAX_UI_SCALE := 2.0
 
 ## Tests point this somewhere else (`use_file`) so they never touch the player's settings.
 static var file_path := PATH
@@ -16,6 +20,7 @@ static var _map_effects := true
 static var _music_volume := DEFAULT_MUSIC_VOLUME
 static var _sound_volume := DEFAULT_SOUND_VOLUME
 static var _fullscreen := false
+static var _ui_scale := AUTO_UI_SCALE
 static var _folded_notices: Array[String] = []
 static var _notices_open := true
 static var _legendary_unlocked := false
@@ -46,6 +51,12 @@ static func sound_volume() -> float:
 static func fullscreen() -> bool:
 	_load()
 	return _fullscreen
+
+
+## The player's UI scale, or AUTO_UI_SCALE (0) to follow the screen.
+static func ui_scale() -> float:
+	_load()
+	return _ui_scale
 
 
 ## Notices.key()s of the items the player folded away.
@@ -116,6 +127,13 @@ static func set_fullscreen(on: bool) -> void:
 	_store("display", "fullscreen", on)
 
 
+## AUTO_UI_SCALE, or a scale clamped to MIN_UI_SCALE..MAX_UI_SCALE.
+static func set_ui_scale(scale: float) -> void:
+	_load()
+	_ui_scale = AUTO_UI_SCALE if scale <= AUTO_UI_SCALE else clampf(scale, MIN_UI_SCALE, MAX_UI_SCALE)
+	_store("display", "ui_scale", _ui_scale)
+
+
 ## Reads and writes `path` from now on, forgetting what was read (tests use their own file).
 static func use_file(path: String) -> void:
 	file_path = path
@@ -138,6 +156,8 @@ static func _load() -> void:
 	file.load(file_path)
 	_map_effects = bool(file.get_value("display", "map_effects", true))
 	_fullscreen = bool(file.get_value("display", "fullscreen", false))
+	var scale := float(file.get_value("display", "ui_scale", AUTO_UI_SCALE))
+	_ui_scale = AUTO_UI_SCALE if scale <= AUTO_UI_SCALE else clampf(scale, MIN_UI_SCALE, MAX_UI_SCALE)
 	_music_volume = clampf(float(file.get_value("audio", "music_volume", DEFAULT_MUSIC_VOLUME)), 0.0, 1.0)
 	_sound_volume = clampf(float(file.get_value("audio", "sound_volume", DEFAULT_SOUND_VOLUME)), 0.0, 1.0)
 	_folded_notices.assign(file.get_value("notices", "folded", []))
