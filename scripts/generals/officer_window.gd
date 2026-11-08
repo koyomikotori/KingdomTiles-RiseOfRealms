@@ -312,13 +312,18 @@ func _fill_equipment() -> void:
 		_equip_box.add_child(take_off)
 	else:
 		_equip_box.add_child(_muted("%s: trống." % Item.SLOT_NAMES[_slot]))
-	var has_forge := _state.forge_origin() != KingdomState.NO_FORGE
+	var forge_at := _state.forge_origin()
+	var has_forge := forge_at != KingdomState.NO_FORGE
+	var forge_busy := has_forge and _state.board.get_cell(forge_at).building_turns > 0
 	var forge := _button("Đến xưởng rèn: rèn %s" % Item.SLOT_NAMES[_slot].to_lower(), func() -> void:
 		forge_requested.emit(&"advisor" if _officer is Advisor else &"general", _slot))
 	forge.custom_minimum_size = Vector2(0, 36)
 	forge.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	forge.disabled = not has_forge
-	forge.tooltip_text = "" if has_forge else "Chưa có Xưởng rèn khí giới (thành cấp 3)."
+	forge.disabled = not has_forge or forge_busy
+	if not has_forge:
+		forge.tooltip_text = "Chưa có Xưởng rèn khí giới (thành cấp 3)."
+	elif forge_busy:
+		forge.tooltip_text = "Xưởng rèn đang xây hoặc nâng cấp."
 	_equip_box.add_child(forge)
 	if not has_forge:
 		_equip_box.add_child(_muted("Chưa có Xưởng rèn khí giới (thành cấp 3)."))
