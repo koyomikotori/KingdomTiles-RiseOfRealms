@@ -64,7 +64,7 @@ func open(state: KingdomState, officer: Officer) -> void:
 		var next := _button("→", _switch.bind(1))
 		for button in [previous, next]:
 			button.custom_minimum_size = Vector2(56, 40)
-			button.tooltip_text = "Xem người khác (phím ← →)"
+			button.tooltip_text = Touch.keys("Xem người khác (phím ← →)")
 		var place := _label("%d/%d" % [officers.find(officer) + 1, officers.size()], 14, false)
 		place.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		place.size_flags_horizontal = Control.SIZE_EXPAND_FILL

@@ -11,7 +11,7 @@ func open(title: String, lines: Array[Dictionary]) -> void:
 	var box := CounselBox.new()
 	box.setup(lines, get_viewport_rect().size.x * COUNSEL_WIDTH - 60.0)
 	body.add_child(box)
-	add_action("Bắt đầu (Enter)", close)
+	add_action(Touch.keys("Bắt đầu (Enter)"), close)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:

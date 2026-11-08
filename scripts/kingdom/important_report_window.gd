@@ -19,7 +19,7 @@ func open(news: Array[Dictionary], counsel: Array[Dictionary] = []) -> void:
 		body.add_child(heading)
 		for line: String in entry.lines:
 			body.add_child(_label("• " + line, 15))
-	add_action("OK (Enter)", close)
+	add_action(Touch.keys("OK (Enter)"), close)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:

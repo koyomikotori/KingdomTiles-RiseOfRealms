@@ -817,8 +817,11 @@ Thiết kế bản điện thoại (chốt lại khi bắt đầu M15, viết l�
 - **Chú thích (tooltip):** nhấn giữ khoảng nửa giây lên nút / biểu tượng để hiện khung chú thích; thả tay hoặc chạm chỗ khác để đóng.
 - **Nút Back** của Android = Esc (đóng cửa sổ, bỏ chọn). Các phím tắt đều đã có nút tương ứng.
 - **Tỉ thí:** chạm bất kỳ đâu khi kim vào vùng đỏ / vàng để đánh; vuốt lên / xuống / trái / phải để né.
+- **Đấu trí:** chạm thẻ để lật (không có hiệu ứng rê chuột).
+- **Chữ gợi ý phím** như "(Esc)", "(Enter)", "(Space)" bị ẩn khi chơi cảm ứng (M15b); Cách chơi có thêm dòng hướng dẫn cho điện thoại.
 
 **Màn hình:** chỉ nằm ngang. Bố cục giữ như bản máy tính; chữ và nút tự phóng to cho vừa ngón tay (nút tối thiểu ~48 px theo kích thước thật của màn hình), cửa sổ chiếm gần hết màn hình. Cài đặt có thanh trượt **Cỡ giao diện**.
+- **Chốt ở M15b:** "Tự động" phóng to tối đa **130%** (160% làm màn hình logic chỉ còn ~450 px chiều cao, cửa sổ quá chật). Cỡ nào cũng bị giới hạn sao cho màn hình logic còn ít nhất **960×500** (các cửa sổ được dàn cho cỡ đó), nên trên điện thoại 1080p thanh trượt thực tế dừng ở khoảng 144%. Chợ đen trên màn hẹp xếp hàng hóa 2 cột × 3 hàng.
 
 **Xuất APK:** cấu hình xuất Android trong `export_presets.cfg` (tên "Kingdom Tiles: Rise of Realms", gói `com.koyomikotori.kingdomtiles`, màn ngang, icon thành trì pixel). Kiểm tra trước trên máy ảo `KingdomTiles_Phone`, rồi người chơi cài APK vào điện thoại Android thật.
 

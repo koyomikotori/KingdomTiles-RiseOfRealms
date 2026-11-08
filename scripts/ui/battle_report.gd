@@ -80,7 +80,7 @@ func show_battle(title_text: String, won: bool, intro: String, record: BattleRec
 		box.add_child(_label("\n".join(lines)))
 
 	var button := Button.new()
-	button.text = "Tiếp tục (Enter)"
+	button.text = Touch.keys("Tiếp tục (Enter)")
 	button.custom_minimum_size = Vector2(0, 40)
 	button.pressed.connect(close)
 	layout.add_child(button)

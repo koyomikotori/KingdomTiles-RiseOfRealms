@@ -36,7 +36,7 @@ func open(state: KingdomState, resource_types: Array[ResourceTypeData], agent: A
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(title)
 	var back := Button.new()
-	back.text = "Quay lại (Esc)"
+	back.text = Touch.keys("Quay lại (Esc)")
 	back.focus_mode = Control.FOCUS_NONE
 	back.custom_minimum_size = Vector2(0, 40)
 	back.pressed.connect(close)

@@ -136,7 +136,7 @@ func _show_stats() -> void:
 				label.add_theme_color_override("font_color", UiPalette.WARNING)
 			grid.add_child(label)
 	columns.add_child(grid)
-	var close := _button("Đóng (Enter)", _close)
+	var close := _button(Touch.keys("Đóng (Enter)"), _close)
 	close.size_flags_horizontal = Control.SIZE_SHRINK_END
 	column.add_child(close)
 	ScreenFit.shrink_to_fit(panel, get_viewport_rect().size)

@@ -21,9 +21,13 @@ const HOLD_SLOP := 12.0
 ## A button about this tall (logical pixels) should be FINGER_MM on the glass.
 const BUTTON_HEIGHT := 40.0
 const FINGER_MM := 8.0
-const MAX_AUTO_SCALE := 1.6
+const MAX_AUTO_SCALE := 1.3
+## The smallest logical screen the windows are laid out for: the UI scale never shrinks it below this.
+const MIN_VIEW := Vector2(960, 500)
 const AWAY := Vector2(-100000, -100000)
 const TIP_WIDTH := 380.0
+## Words that start a keyboard hint in brackets ("(Esc)", "(Enter)", "(Space)", "(phím ← →)").
+const KEY_NAMES: Array[String] = ["Esc", "Enter", "Space", "phím"]
 
 static var active := false
 static var _fingers: Dictionary[int, Vector2] = {}
@@ -43,6 +47,23 @@ static func fingers() -> int:
 	return _fingers.size()
 
 
+## A label without its keyboard hint in touch mode: "Đóng (Esc)" -> "Đóng" (M15b). Only a
+## trailing "(…)" that names a key is dropped.
+static func keys(text: String) -> String:
+	return strip_key_hint(text) if active else text
+
+
+static func strip_key_hint(text: String) -> String:
+	var open := text.rfind(" (")
+	if open < 0 or not text.ends_with(")"):
+		return text
+	var inside := text.substr(open + 2, text.length() - open - 3)
+	for key in KEY_NAMES:
+		if inside.begins_with(key):
+			return text.substr(0, open)
+	return text
+
+
 ## The scale that makes a BUTTON_HEIGHT button about FINGER_MM tall on this screen: 1 on a computer
 ## (or when the screen does not say its density), at most MAX_AUTO_SCALE.
 static func auto_ui_scale(screen_size: Vector2, dpi: float, base_size: Vector2, mobile: bool) -> float:
@@ -51,6 +72,16 @@ static func auto_ui_scale(screen_size: Vector2, dpi: float, base_size: Vector2, 
 	var stretch := minf(screen_size.x / base_size.x, screen_size.y / base_size.y)
 	var wanted := FINGER_MM / 25.4 * dpi
 	return clampf(wanted / (BUTTON_HEIGHT * stretch), 1.0, MAX_AUTO_SCALE)
+
+
+## The largest UI scale that still leaves MIN_VIEW logical pixels in a window this big (M15b): the
+## windows are laid out for that much room, so a bigger chosen scale stops here. Never below 1.
+static func fitting_scale(window_size: Vector2, base_size: Vector2) -> float:
+	if window_size.x <= 0.0 or window_size.y <= 0.0:
+		return INF
+	var stretch := minf(window_size.x / base_size.x, window_size.y / base_size.y)
+	var logical := window_size / stretch
+	return maxf(1.0, minf(logical.x / MIN_VIEW.x, logical.y / MIN_VIEW.y))
 
 
 func _ready() -> void:
@@ -66,11 +97,12 @@ func _ready() -> void:
 
 func apply_ui_scale() -> void:
 	var chosen := GameSettings.ui_scale()
+	var base := Vector2(ProjectSettings.get_setting("display/window/size/viewport_width"),
+			ProjectSettings.get_setting("display/window/size/viewport_height"))
 	if chosen == GameSettings.AUTO_UI_SCALE:
 		var screen := DisplayServer.screen_get_size()
-		var base := Vector2(ProjectSettings.get_setting("display/window/size/viewport_width"),
-				ProjectSettings.get_setting("display/window/size/viewport_height"))
 		chosen = auto_ui_scale(Vector2(screen), DisplayServer.screen_get_dpi(), base, OS.has_feature("mobile"))
+	chosen = minf(chosen, fitting_scale(Vector2(get_tree().root.size), base))
 	if not is_equal_approx(get_tree().root.content_scale_factor, chosen):
 		get_tree().root.content_scale_factor = chosen
 

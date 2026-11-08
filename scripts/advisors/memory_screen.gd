@@ -57,10 +57,15 @@ func start(state: KingdomState, advisor: Advisor, seed_value: int = 0, bonus: fl
 	var top := VBoxContainer.new()
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	top.offset_top = 14
+	# Clear of the "Bỏ cuộc" button on both sides so the centered title never runs under it.
+	top.offset_left = 160
+	top.offset_right = -160
 	top.add_theme_constant_override("separation", 2)
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(top)
-	top.add_child(_label("Đấu trí: %s — %s %s" % [state.ruler.name, advisor.name, advisor.star_text()], 24))
+	var title := _label("Đấu trí: %s — %s %s" % [state.ruler.name, advisor.name, advisor.star_text()], 24)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	top.add_child(title)
 	_turn_label = _label("", 18)
 	top.add_child(_turn_label)
 	_hint = _label("", 18)
@@ -246,7 +251,7 @@ func _show_result() -> void:
 		counsel_box.setup(counsel, 520.0)
 		box.add_child(counsel_box)
 	var done := Button.new()
-	done.text = "Xong (Enter)"
+	done.text = Touch.keys("Xong (Enter)")
 	done.custom_minimum_size = Vector2(200, 48)
 	done.focus_mode = Control.FOCUS_NONE
 	done.size_flags_horizontal = Control.SIZE_SHRINK_END
@@ -363,7 +368,7 @@ func _draw_card(card: int) -> void:
 		var half := minf(inner.size.x, inner.size.y) * 0.18
 		draw_colored_polygon(PackedVector2Array([middle + Vector2(0, -half), middle + Vector2(half, 0),
 				middle + Vector2(0, half), middle + Vector2(-half, 0)]), GOLD)
-		if card == _hover and _match.side == MemoryMatch.Side.RULER and _match.can_flip(card) and _result.is_empty():
+		if card == _hover and not Touch.active and _match.side == MemoryMatch.Side.RULER and _match.can_flip(card) and _result.is_empty():
 			draw_rect(inner, HOVER)
 		return
 	draw_rect(inner, CARD_FACE)

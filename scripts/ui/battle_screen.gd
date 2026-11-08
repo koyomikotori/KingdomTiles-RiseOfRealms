@@ -216,7 +216,7 @@ func _build_controls() -> Control:
 	var bar := _margin(HBoxContainer.new(), 8)
 	var row: HBoxContainer = bar.get_child(0)
 	row.add_theme_constant_override("separation", 8)
-	_pause_button = _button("Tạm dừng (Space)", _toggle_pause)
+	_pause_button = _button(Touch.keys("Tạm dừng (Space)"), _toggle_pause)
 	row.add_child(_pause_button)
 	for i in BattlePlayback.SPEEDS.size():
 		var button := _button("x%d" % BattlePlayback.SPEEDS[i], _select_speed.bind(i))
@@ -257,7 +257,7 @@ func _toggle_pause() -> void:
 	if _playback.is_finished():
 		return
 	_playback.paused = not _playback.paused
-	_pause_button.text = "Tiếp tục (Space)" if _playback.paused else "Tạm dừng (Space)"
+	_pause_button.text = Touch.keys("Tiếp tục (Space)" if _playback.paused else "Tạm dừng (Space)")
 
 
 func _select_speed(index: int) -> void:
