@@ -1,0 +1,78 @@
+{
+	"welcome": {
+		"linh_nhi": [["happy", "Chúa công! Linh Nhi sẽ theo sát người mấy lượt đầu, chỉ từng việc một. Mục tiêu lớn nhất là thống nhất toàn bộ các gia tộc trên bản đồ, nhưng trước hết phải dựng {kingdom} cho vững đã! Bấm \"Tiếp\" nhé."]],
+		"tu_uyen": [["neutral", "Thần Tử Uyên xin hầu Chúa công những bước đầu. Đại nghiệp là thống nhất mọi gia tộc trong thiên hạ; muốn vậy, {kingdom} phải có gốc rễ vững trước. Mời Chúa công bấm \"Tiếp\"."]]
+	},
+	"select_piece": {
+		"linh_nhi": [["neutral", "Mỗi lượt Chúa công nhận ba mảnh đất ở tab Đất bên phải. Chọn một mảnh đi! Mảnh không xoay được, nên chọn mảnh có hình dễ đặt nhất."]],
+		"tu_uyen": [["neutral", "Mỗi lượt có ba mảnh đất trong tab Đất bên phải. Xin Chúa công chọn một mảnh. Mảnh không xoay được; hãy cân nhắc hình dạng."]]
+	},
+	"place_piece": {
+		"linh_nhi": [["happy", "Giờ đặt mảnh đó lên bản đồ, sát vào lãnh thổ của ta (viền vàng). Đặt đè lên đất cũ thì ô đó đổi địa hình. Ruộng cho nông trại, rừng cho xưởng gỗ, đồi đá cho mỏ!"]],
+		"tu_uyen": [["neutral", "Đặt mảnh ấy lên bản đồ, liền với lãnh thổ viền vàng. Đặt đè lên đất cũ sẽ thay địa hình ô đó. Ruộng nuôi nông trại, rừng nuôi xưởng gỗ, đồi đá nuôi mỏ."]]
+	},
+	"open_build": {
+		"linh_nhi": [["neutral", "Đất không tự sinh ra tài nguyên đâu, phải có công trình! Mở tab Xây dựng rồi bấm \"Xây dựng công trình\"."]],
+		"tu_uyen": [["neutral", "Đất đai tự nó không sinh lợi; phải có công trình. Xin Chúa công mở tab Xây dựng, bấm \"Xây dựng công trình\"."]]
+	},
+	"build_farm": {
+		"linh_nhi": [["happy", "Chọn Nông trại, bấm Xây dựng, rồi đặt lên một ô Ruộng. Ô ruộng trống xung quanh nông trại còn cho thêm lương thực nữa đó!"]],
+		"tu_uyen": [["neutral", "Chọn Nông trại, bấm Xây dựng, đặt lên một ô Ruộng. Mỗi ô ruộng trống kề bên sẽ cộng thêm sản lượng. Lương thực là gốc của quân đội."]]
+	},
+	"end_turn": {
+		"linh_nhi": [["neutral", "Công trình cần vài lượt để xây xong. Bấm \"Kết thúc lượt\" để thu tài nguyên, trả phí nuôi quân và nhận mảnh đất mới nào!"]],
+		"tu_uyen": [["neutral", "Công trình cần thời gian. Xin Chúa công bấm \"Kết thúc lượt\": thu tài nguyên, trả phí nuôi quân, nhận mảnh đất mới."]]
+	},
+	"resources": {
+		"linh_nhi": [["surprised", "Thanh gỗ trên cùng là kho của ta: lương thực, gỗ, đá và khoáng sản, gỗ cứng, ngựa. Số trong ngoặc là thu chi mỗi lượt. Số âm là phải lo ngay đó! Bấm vào một tài nguyên để xem chi tiết."]],
+		"tu_uyen": [["neutral", "Thanh trên cùng là kho của ta, số trong ngoặc là thu chi mỗi lượt. Số âm là điềm xấu: thiếu lương thì lính đào ngũ. Bấm vào một tài nguyên để xem từng khoản."]]
+	},
+	"recruit": {
+		"linh_nhi": [["concerned", "Bọn cướp và các gia tộc lân cận không hiền đâu. Mở tab Quân đội, bấm \"Tuyển lính\" và tuyển thêm một đơn vị đi Chúa công!"]],
+		"tu_uyen": [["concerned", "Cướp và gia tộc lân bang không để ta yên lâu. Xin Chúa công mở tab Quân đội, bấm \"Tuyển lính\", tuyển thêm một đơn vị."]]
+	},
+	"castle": {
+		"linh_nhi": [["happy", "Bấm vào Thành chính giữa bản đồ xem nào! Nâng cấp thành mở thêm công trình, lính mạnh hơn và tướng nhiều sao hơn."]],
+		"tu_uyen": [["neutral", "Mời Chúa công bấm vào Thành chính giữa bản đồ. Nâng cấp thành sẽ mở công trình mới, binh chủng mạnh hơn và hiền tài nhiều sao hơn."]]
+	},
+	"hire": {
+		"linh_nhi": [["happy", "Mở tab \"Chiêu hiền\" trong cửa sổ thành. Ở đó có tướng để cầm quân và mưu sĩ để lo việc nước. Chưa đủ tiền thì cứ xem trước thôi!"]],
+		"tu_uyen": [["neutral", "Xin mở tab \"Chiêu hiền\". Tướng cầm quân ra trận, mưu sĩ giữ chức Nội chính, Ngoại giao hoặc Quân sự. Chưa đủ tài lực thì xem trước cũng được."]]
+	},
+	"officers": {
+		"linh_nhi": [["neutral", "Tab Tướng sĩ là nơi xem tướng và mưu sĩ của ta: cộng điểm chỉ số, mặc trang bị, rèn đồ ở Xưởng rèn. Khi đạt cấp tối đa thì Đột phá bằng Bí kíp để mạnh hơn nữa!"]],
+		"tu_uyen": [["neutral", "Tab Tướng sĩ quản lý tướng và mưu sĩ: cộng điểm, mang trang bị, rèn đồ ở Xưởng rèn. Đạt cấp tối đa thì dùng Bí kíp để Đột phá giới hạn."]]
+	},
+	"mini_games": {
+		"linh_nhi": [["happy", "Tướng từ 3 sao có thể Tỉ thí với võ nhân giang hồ, còn mưu sĩ thì Đấu trí lật thẻ với Chúa công. Thắng hay thua đều có kinh nghiệm, 5 lượt chơi một lần. Vui lắm đó!"]],
+		"tu_uyen": [["neutral", "Tướng từ 3 sao có thể Tỉ thí với võ nhân giang hồ; mưu sĩ thì Đấu trí lật thẻ cùng Chúa công. Thắng thua đều được kinh nghiệm, mỗi 5 lượt một lần."]]
+	},
+	"diplomacy": {
+		"linh_nhi": [["neutral", "Giờ ra ngoài xem thiên hạ nào! Bấm nút \"Ngoại giao\" trên thanh trên cùng."]],
+		"tu_uyen": [["neutral", "Đã đến lúc nhìn ra thiên hạ. Xin Chúa công bấm \"Ngoại giao\" trên thanh trên cùng."]]
+	},
+	"clan": {
+		"linh_nhi": [["happy", "Đây là bản đồ các gia tộc, ta ở góc trên bên trái. Bấm vào một gia tộc gần ta để xem quan hệ, tặng quà, giao thương hay kết minh!"]],
+		"tu_uyen": [["neutral", "Đây là bản đồ thiên hạ, ta ở góc trên bên trái. Xin bấm vào một gia tộc gần ta: xem quan hệ, tặng lễ, giao thương, kết minh."]]
+	},
+	"war": {
+		"linh_nhi": [["concerned", "Gia tộc giáp ranh thì đánh được. Đánh tới khi họ yếu thì sáp nhập, đất ta rộng thêm! Còn liên minh thì cũng tính là đã thống nhất. Cấp thành cao cần thống nhất đủ số gia tộc đó nha."]],
+		"tu_uyen": [["neutral", "Gia tộc giáp ranh có thể đem quân đánh; khi họ suy yếu thì sáp nhập, lãnh thổ ta mở rộng. Đồng minh cũng tính là đã thống nhất. Cấp thành cao đòi đủ số gia tộc thống nhất."]]
+	},
+	"notices": {
+		"linh_nhi": [["neutral", "Cột bên trái là Thông báo: công trình xong, chiến sự, quân đội... Bấm vào một mục để thu gọn hay mở ra. Cứ liếc qua mỗi lượt là không sót gì!"]],
+		"tu_uyen": [["neutral", "Cột bên trái là Thông báo: công trình, chiến sự, quân đội. Mỗi lượt xin Chúa công liếc qua một lần để không bỏ sót việc gì."]]
+	},
+	"rebels": {
+		"linh_nhi": [["concerned", "Từ lượt 8, đạo tặc có thể nổi loạn ở rìa lãnh thổ (ô đỏ) và lan dần. Bấm vào vùng đó để cử quân Thảo phạt. Thắng hết các ải còn được Bí kíp đột phá!"]],
+		"tu_uyen": [["concerned", "Từ lượt 8, đạo tặc có thể nổi dậy ở rìa lãnh thổ (ô đỏ), lan dần về thành. Bấm vào vùng ấy để cử quân Thảo phạt; thắng trọn các ải sẽ được Bí kíp đột phá."]]
+	},
+	"agents_market": {
+		"linh_nhi": [["surprised", "Còn nữa! Sở cảnh sát cho tuyển đặc vụ cài vào gia tộc khác. Cứ 8 lượt thì chợ đen ghé một lần. Sự kiện ngẫu nhiên thì Linh Nhi sẽ kể cho người nghe!"]],
+		"tu_uyen": [["neutral", "Ngoài ra: Sở cảnh sát cho tuyển đặc vụ nằm vùng ở gia tộc khác; chợ đen ghé mỗi 8 lượt; sự kiện bất ngờ sẽ do thần bẩm báo."]]
+	},
+	"goal": {
+		"linh_nhi": [["happy", "Vậy là đủ rồi! Muốn đọc lại thì xem mục Cách chơi ở menu chính. Linh Nhi tin Chúa công sẽ thống nhất thiên hạ. Cố lên!"]],
+		"tu_uyen": [["happy", "Thần đã bẩm đủ. Cần xem lại, Chúa công mở mục Cách chơi ở menu chính. Chúc Chúa công sớm thống nhất thiên hạ."]]
+	}
+}

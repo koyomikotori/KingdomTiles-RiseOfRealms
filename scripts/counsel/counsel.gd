@@ -11,9 +11,12 @@ const LINES_PATH := "res://data/counsel/lines.json"
 ## M16i-b: the counselor tells each event instead of its description: {event_id: {"linh_nhi" /
 ## "tu_uyen": [[expression, text], …]}}, same shape as a topic.
 const EVENTS_PATH := "res://data/counsel/events.json"
+## M18a: the tutorial's steps, {step_id: {"linh_nhi" / "tu_uyen": [[expression, text]]}}.
+const TUTORIAL_PATH := "res://data/counsel/tutorial.json"
 
 static var _topics: Dictionary = {}
 static var _events: Dictionary = {}
+static var _tutorial: Dictionary = {}
 ## Line picks only; never the game's own rolls (KingdomState.rng), so talking changes nothing.
 static var _rng := RandomNumberGenerator.new()
 
@@ -28,6 +31,17 @@ static func events() -> Dictionary:
 	if _events.is_empty():
 		_events = _load(EVENTS_PATH)
 	return _events
+
+
+static func tutorial() -> Dictionary:
+	if _tutorial.is_empty():
+		_tutorial = _load(TUTORIAL_PATH)
+	return _tutorial
+
+
+## The counselor explaining tutorial step `step_id` (Tutorial.STEPS).
+static func tutorial_lines(step_id: StringName, speaker: StringName, context: Dictionary = {}) -> Array[Dictionary]:
+	return _pick(tutorial().get(String(step_id), {}), speaker, context)
 
 
 static func _load(path: String) -> Dictionary:

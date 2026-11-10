@@ -7,6 +7,8 @@ extends Control
 signal closed
 ## Forwarded from the clan panel; the kingdom scene closes the map and runs the battle.
 signal attack_requested(clan_id: StringName)
+## A clan was picked on the map (the tutorial waits for it, M18a).
+signal clan_shown(clan_id: StringName)
 
 const BACKGROUND_COLOR := UiPalette.BACKDROP
 
@@ -69,6 +71,7 @@ func open(state: KingdomState, resource_types: Array[ResourceTypeData], agent: A
 	panel_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(panel_margin)
 	_map.clan_selected.connect(_panel.show_clan)
+	_map.clan_selected.connect(func(clan_id: StringName) -> void: clan_shown.emit(clan_id))
 	if agent != null:
 		_panel.preferred_agent = agent
 		_map.clan_selected.connect(func(clan_id: StringName) -> void:

@@ -1206,3 +1206,13 @@ Hai sự kiện ngẫu nhiên (nhóm "Trong vương quốc"), mỗi sự kiện 
 - **Cố vấn kể** rằng đây là yêu cầu riêng của tướng / mưu sĩ đó.
 - **Đồng ý:** vào mini game ngay sau bảng sự kiện, kinh nghiệm nhận được **+50%** (thắng 60%, thua 22,5% số cần để lên cấp). Thời gian nghỉ 5 lượt bắt đầu như bình thường.
 - **Để lúc khác:** không mất gì; người đó vẫn bấm nút tỉ thí / đấu trí được như thường.
+
+## 29. Hướng dẫn chơi lần đầu (M18a, đã chốt)
+
+- **Luôn bật ở mọi ván mới** (sau chơi thử: bỏ ô chọn ở màn Ván mới): người chơi đã quen thì bấm "Bỏ qua hướng dẫn" (bấm hai lần) ngay bước đầu. Bảng chào "Khởi nghiệp" được thay bằng bước đầu của hướng dẫn. Lớp phủ tự giải phóng cùng CanvasLayer của nó khi hướng dẫn kết thúc.
+- **Từng bước, phải làm:** cố vấn đã chọn nói một câu (thoại riêng cho Linh Nhi / Tử Uyên trong `data/counsel/tutorial.json`), một khung vàng nhấp nháy và mũi tên chỉ vào đúng chỗ. Bước cần hành động chỉ qua khi người chơi làm xong; bước chỉ để đọc có nút **Tiếp**. Các nút khác vẫn dùng được, không bị khóa. **Bỏ qua hướng dẫn** (bấm 2 lần) lúc nào cũng được.
+- **19 bước (đầy đủ):** chào và mục tiêu thống nhất · chọn mảnh đất · đặt mảnh · mở bảng xây dựng · xây nông trại trên ô Ruộng · kết thúc lượt · thanh tài nguyên · tuyển thêm một đơn vị · mở Thành chính · tab Chiêu hiền (tự qua nếu thành đang nâng cấp) · tab Tướng sĩ (chỉ số, trang bị, xưởng rèn, đột phá) · tỉ thí / đấu trí · mở Ngoại giao · chọn một gia tộc · chiến tranh, sáp nhập, cấp thành cần gia tộc thống nhất · cột Thông báo · nổi loạn và thảo phạt · đặc vụ, chợ đen, sự kiện · lời chúc (nút Hoàn tất).
+- Bước "đếm" (nông trại, lượt, đơn vị) tính từ lúc bước bắt đầu, nên việc làm trước đó không làm bước tự qua.
+- Hộp cố vấn ở góc dưới trái (trên cột Thông báo); nếu che chỗ đang chỉ thì chuyển xuống giữa hoặc lên dưới thanh trên cùng. Ẩn khi đang mở trận đánh, báo cáo, sự kiện, chợ đen…; vẫn hiện trong bảng xây dựng, tuyển lính, cửa sổ công trình, tướng sĩ và bản đồ thế giới.
+- Tiến độ lưu theo ván (bản lưu cũ: không có hướng dẫn).
+

@@ -6,6 +6,8 @@ extends ModalWindow
 ## demolish). While it is being built or upgraded (M12d) it only shows the turns left and
 ## "Phá hủy" / "Hủy nâng cấp". Every action first explains what it will do and waits for "Xác nhận".
 
+## A tab was opened (its title), for the tutorial (M18a).
+signal tab_shown(title: String)
 ## The player confirmed moving the building at `origin`; the kingdom scene lets them pick the spot.
 signal move_requested(origin: Vector2i)
 ## The building was demolished, or its upgrade called off; `refund` is what came back.
@@ -108,6 +110,7 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 		_agent_hire_box = _tab_box(AGENT_HIRE_TAB)
 		_agent_box = _tab_box(AGENTS_TAB)
 		state.agents.changed.connect(_refresh)
+	_tabs.tab_changed.connect(func(tab: int) -> void: tab_shown.emit(_tabs.get_tab_title(tab)))
 	for i in _tabs.get_tab_count():
 		if _tabs.get_tab_title(i) == start_tab:
 			_tabs.current_tab = i
@@ -162,6 +165,16 @@ func _title() -> String:
 	if _is_castle:
 		return "Thành chính cấp %d" % _state.castle_level
 	return _building.display_name if _building != null else "Công trình"
+
+
+## Where the tab titled `title` sits on screen (empty if there is none), for the tutorial (M18a).
+func tab_rect(title: String) -> Rect2:
+	var bar := _tabs.get_tab_bar()
+	for i in _tabs.get_tab_count():
+		if _tabs.get_tab_title(i) == title:
+			var local := bar.get_tab_rect(i)
+			return Rect2(bar.get_global_rect().position + local.position, local.size)
+	return Rect2()
 
 
 ## A tab page that scrolls inside the fixed area (long lists: three advisors with their stratagems).
