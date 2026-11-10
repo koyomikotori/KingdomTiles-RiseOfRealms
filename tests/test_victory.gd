@@ -72,7 +72,7 @@ func test_castle_falls_when_an_invasion_wins_with_no_land_left() -> void:
 	var second := state.finish_invasion(&"north_wolves", _lost_battle(state))
 	check(second.castle_fallen and state.victory.lost, "Castle falls")
 	check_eq(state.victory.check(state), Victory.NO_PATH, "No victory after a loss")
-	check_eq(state.stats, {"battles_won": 0, "battles_lost": 2}, "Battles counted")
+	check_eq([state.stats.battles_won, state.stats.battles_lost], [0, 2], "Battles counted")
 
 
 func _lost_battle(state: KingdomState) -> BattleRecord:

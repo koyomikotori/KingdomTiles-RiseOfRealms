@@ -14,6 +14,7 @@ import battle_art
 import foot_art
 import item_art
 import portrait_art
+import achievement_art
 import world_art
 import map_art
 
@@ -1037,6 +1038,7 @@ def main() -> None:
     foot_art.draw_all()
     item_art.draw_all()
     portrait_art.draw_all()
+    achievement_art.draw_all()
     world_art.draw_all()
     map_art.draw_all()
     print("Art written to", ASSETS)

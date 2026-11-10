@@ -364,6 +364,16 @@ def frame(tier: int) -> Canvas:
     return item_art.frame(F, colors, pattern, None, 3)
 
 
+# Ruler frames unlocked by achievements (M18b, GDD §30): ngọc bích, son đỏ, bạch ngân.
+RULER_FRAMES = {"jade": ("jade", "jade_light", "jade_dark"), "crimson": ("lacquer", "red_light", "bronze_dark"),
+                "silver": ("steel", "edge", "steel_dark")}
+
+
+def ruler_frame(frame_id: str) -> Canvas:
+    """A rich frame (pattern 3) in the reward's colors."""
+    return item_art.frame(F, RULER_FRAMES[frame_id], 3, None, 3)
+
+
 def black_market_merchant() -> Canvas:
     """The black market's merchant (M16d): a wide straw hat shading the eyes, a black hooded
     cloak, a sly grin with a gold tooth and a coin, in a night alley lit by a lantern. 96×96,
@@ -548,6 +558,8 @@ def draw_all() -> None:
     background().save("portraits/bg.png")
     for tier in range(len(FRAME_TIERS)):
         frame(tier).save(f"portraits/frame_{tier}.png")
+    for frame_id in RULER_FRAMES:
+        ruler_frame(frame_id).save(f"portraits/frame_ruler_{frame_id}.png")
     (Path(ASSETS) / "portraits" / "pool").mkdir(parents=True, exist_ok=True)
     for gender, female in (("m", False), ("f", True)):
         save_part(face(female), f"portraits/face_{gender}.png")

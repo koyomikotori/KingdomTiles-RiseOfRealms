@@ -81,7 +81,11 @@ var counselor := Counselor.LINH_NHI
 ## The first-game tutorial's progress (M18a); off unless the new game screen turned it on.
 var tutorial := Tutorial.new()
 ## Counters for the end-of-game screen: {"battles_won", "battles_lost"}.
-var stats := {"battles_won": 0, "battles_lost": 0}
+## Counts for the end of a game and the achievements (M18b, Achievements.STAT_MEASURES); saved,
+## older saves start at 0.
+var stats := {"battles_won": 0, "battles_lost": 0, "items_forged": 0, "expeditions_cleared": 0,
+		"spars_won": 0, "memories_won": 0, "market_buys": 0, "events_answered": 0, "tutorial_finished": 0,
+		"commanders_lost": 0, "agents_caught": 0, "deserted": 0, "duels_won": 0}
 ## False when building upkeep could not be paid last turn; building effects pause.
 var buildings_supplied := true
 ## Castle level, 1..castle_levels.size() (GDD §8, M11c).
@@ -107,6 +111,9 @@ func _init(p_board: BoardData, p_hand: PieceHand, p_terrains: Dictionary[StringN
 	for unit in p_units:
 		units[unit.unit_id] = unit
 	rng.seed = seed_value
+	tutorial.ended.connect(func(skipped: bool) -> void:
+		if not skipped:
+			stats["tutorial_finished"] = 1)
 	generals.rng.seed = seed_value + 1
 	advisors.rng.seed = seed_value + 2
 	equipment.rng.seed = seed_value + 3
@@ -160,6 +167,19 @@ func _record_battle(won: bool) -> void:
 	stats["battles_won" if won else "battles_lost"] += 1
 
 
+## Adds to one of `stats` (M18b).
+func count_stat(key: String, amount: int = 1) -> void:
+	stats[key] = int(stats.get(key, 0)) + amount
+
+
+## Generals.after_battle, counting a commander who fell (M18b).
+func general_after_battle(record: BattleRecord, side: int) -> Dictionary:
+	var result := generals.after_battle(record, side)
+	if result.get("fate", &"none") == &"dead":
+		count_stat("commanders_lost")
+	return result
+
+
 ## A new game's choices: {"difficulty": Difficulty.Level, "name": String, "color": Color,
 ## "ruler_preset": int, "ruler_name": String, "counselor": StringName, "tutorial": bool (default on; tests turn it off)}; missing keys keep the
 ## defaults.
@@ -170,6 +190,8 @@ func setup_new_game(settings: Dictionary) -> void:
 	# Rounded as the save writes it, so a loaded game looks the same.
 	player_color = Color.html(Color(settings.get("color", PLAYER_COLOR)).to_html(false))
 	ruler = Ruler.from_preset(int(settings.get("ruler_preset", 0)), String(settings.get("ruler_name", "")))
+	ruler.honor = String(settings.get("ruler_honor", ""))
+	ruler.frame = String(settings.get("ruler_frame", ""))
 	counselor = Counselor.valid(StringName(settings.get("counselor", Counselor.LINH_NHI)))
 	# Every new game opens with the tutorial (M18a); "Bỏ qua hướng dẫn" ends it at once.
 	if bool(settings.get("tutorial", true)):
@@ -892,6 +914,13 @@ func end_turn() -> Dictionary:
 	var advisors_healed := advisors.end_turn(healing)
 	_teach_officers()
 	hand.deal_new_hand()
+	if not deserted.is_empty():
+		count_stat("deserted")
+	if forged != null:
+		count_stat("items_forged")
+	for agent_event: Dictionary in agent_events:
+		if agent_event.get("event") in [&"caught", &"killed"]:
+			count_stat("agents_caught")
 	var report := {"collected": collected, "upkeep": upkeep, "deserted": deserted,
 			"buildings_supplied": buildings_supplied, "replenished": replenished, "agreements": agreements}
 	report["completed"] = completed
@@ -1010,6 +1039,8 @@ func _advance_expedition() -> Dictionary:
 	var result := expedition.run_stage(self, rng)
 	# A general who lost a duel (M16e) has already left the expedition.
 	var general: General = result.get("fallen", expedition.general)
+	if result.get("duel", {}).get("won", false):
+		count_stat("duels_won")
 	if result.general_fate == &"dead" and general != null:
 		general.away = false
 		generals.dismiss(general)
@@ -1018,6 +1049,7 @@ func _advance_expedition() -> Dictionary:
 		result["rewards"] = expedition.finish(self)
 		result["cleared"] = not expedition.failed
 		if not expedition.failed:
+			count_stat("expeditions_cleared")
 			uprising.clear(board, turn + 1)
 			_thank_for_expedition()
 			result["relation"] = EXPEDITION_RELATION
@@ -1073,6 +1105,8 @@ func finish_spar(general: General, won: bool, bonus: float = 1.0) -> Dictionary:
 		return {}
 	var xp := Spar.xp_reward(general, won, bonus)
 	general.last_spar_turn = turn
+	if won:
+		count_stat("spars_won")
 	var levels := general.gain_xp(xp)
 	generals.changed.emit()
 	return {"xp": xp, "levels": levels}
@@ -1093,6 +1127,8 @@ func finish_memory(advisor: Advisor, ruler_won: bool, bonus: float = 1.0) -> Dic
 		return {}
 	var xp := MemoryMatch.xp_reward(advisor, ruler_won, bonus)
 	advisor.last_memory_turn = turn
+	if ruler_won:
+		count_stat("memories_won")
 	var levels := advisor.gain_xp(xp)
 	advisors.changed.emit()
 	return {"xp": xp, "levels": levels}
@@ -1123,7 +1159,7 @@ func finish_raid(record: BattleRecord) -> Dictionary:
 	morale_effects.after_battle(ClanOfficers.BANDITS)
 	result["enemy_officers"] = clan_officers.after_battle(record, BattleRecord.ATTACKER, ClanOfficers.BANDITS)
 	generals.survival = building_effect(&"commander_survival")
-	result["general"] = generals.after_battle(record, BattleRecord.DEFENDER)
+	result["general"] = general_after_battle(record, BattleRecord.DEFENDER)
 	result["advisor"] = advisors.after_battle(record, BattleRecord.DEFENDER)
 	if result.won:
 		events.raid_won_turn = turn
@@ -1193,7 +1229,7 @@ func finish_invasion(clan_id: StringName, record: BattleRecord) -> Dictionary:
 	_record_battle(won)
 	morale_effects.after_battle(clan_id)
 	generals.survival = building_effect(&"commander_survival")
-	var general := generals.after_battle(record, BattleRecord.DEFENDER)
+	var general := general_after_battle(record, BattleRecord.DEFENDER)
 	var advisor := advisors.after_battle(record, BattleRecord.DEFENDER)
 	var castle_fallen := not won and board.count_land_outside_castle() == 0
 	if castle_fallen:
@@ -1255,7 +1291,7 @@ func finish_attack(clan_id: StringName, record: BattleRecord) -> Dictionary:
 	_record_battle(won)
 	morale_effects.after_battle(clan_id)
 	generals.survival = building_effect(&"commander_survival")
-	var general := generals.after_battle(record, BattleRecord.ATTACKER)
+	var general := general_after_battle(record, BattleRecord.ATTACKER)
 	var advisor := advisors.after_battle(record, BattleRecord.ATTACKER)
 	var result := BattleOutcome.apply_to_army(army, record, BattleRecord.ATTACKER, true, building_effect(&"retreat_keep"))
 	result.merge(alliances.apply_battle(record, BattleRecord.ATTACKER))

@@ -28,7 +28,7 @@ Bản Android (M15c: điện thoại thật, APK v0.3) để sau đợt này. Th
 | Milestone | Nội dung | Độ khó | Ghi chú |
 |---|---|---|---|
 | M18a (xong, chờ chơi thử) | Hướng dẫn chơi lần đầu: cố vấn dẫn từng bước ở ván mới, bỏ qua được | Vừa | Dùng CounselBox / chân dung cố vấn (M16i) |
-| M18b | Thành tựu kiểu Steam: danh sách thành tựu giữ qua mọi ván, thông báo khi mở khóa, thống kê cuối ván | Vừa | Lưu ở file riêng (như cài đặt), không theo save |
+| M18b (xong, chờ chơi thử) | Thành tựu kiểu Steam: danh sách thành tựu giữ qua mọi ván, thông báo khi mở khóa, phần thưởng trang trí (thống kê cuối ván để sau) | Vừa | Lưu ở file riêng (như cài đặt), không theo save |
 | M18c | Ngoại giao sống động: gia tộc mạnh đòi cống nạp (và ta đòi lại), gia tộc đánh nhau trên bản đồ, sứ giả xin viện trợ | Vừa–khó | GDD §9.8 |
 | M18d | Chơi lại đa dạng: xuất thân chúa công (lợi thế nhỏ), xáo trộn gia tộc mỗi ván (vị trí, tính cách, sức mạnh) | Vừa–khó | Gia tộc hiện là .tres cố định trên lưới 5×5 |
 | M18e | Bản đồ gia tộc lớn hơn, nhiều gia tộc hơn | Khó | Đổi lưới 5×5, mở rộng đất, cân bằng lại cấp thành |

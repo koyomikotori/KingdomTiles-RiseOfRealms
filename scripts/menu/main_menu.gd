@@ -1,6 +1,6 @@
 extends Control
 ## Main menu (GDD §10.1): continue the latest save, start a new game, load a slot, how to play,
-## about, settings, quit; the version in the corner (M14c). Wood + paper look (GDD §13). Built in code.
+## about, achievements (M18b), settings, quit; the version in the corner (M14c). Wood + paper look (GDD §13). Built in code.
 
 const BACKGROUND_COLOR := UiPalette.BACKDROP
 const TITLE_COLOR := UiPalette.ACCENT
@@ -80,7 +80,13 @@ func _ready() -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		help_row.add_child(button)
 	column.add_child(help_row)
-	column.add_child(_button("Cài đặt", _open_window.bind(SettingsWindow)))
+	var settings_row := HBoxContainer.new()
+	settings_row.add_theme_constant_override("separation", 12)
+	for entry: Array in [["Thành tựu", AchievementWindow], ["Cài đặt", SettingsWindow]]:
+		var button := _button(entry[0], _open_window.bind(entry[1]))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		settings_row.add_child(button)
+	column.add_child(settings_row)
 	column.add_child(_button("Thoát", func() -> void: get_tree().quit()))
 	_status = _label("", 14)
 	_status.add_theme_color_override("font_color", WARNING_COLOR)
@@ -100,7 +106,7 @@ func _ready() -> void:
 	_refresh()
 
 
-## Opens a window class with an open() (Cách chơi, Giới thiệu, Cài đặt).
+## Opens a window class with an open() (Cách chơi, Giới thiệu, Thành tựu, Cài đặt).
 func _open_window(window_class: GDScript) -> void:
 	var window: ModalWindow = window_class.new()
 	add_child(window)
