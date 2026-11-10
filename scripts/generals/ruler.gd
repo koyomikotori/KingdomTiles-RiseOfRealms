@@ -3,7 +3,8 @@ extends Officer
 ## The player's ruler (Chúa công, GDD §24, M16h): one of PRESETS (a face and an outfit) and a
 ## name. No stats and no battles; shown (portrait only) on the new game screen and in the castle
 ## window. Their foot sprites wait for the duel mini game (M16j).
-## Saved as {"preset", "name"}.
+## Saved as {"preset", "name", "honor", "frame"}: `honor` (a title shown with the name) and `frame`
+## (frame_ruler_<id>) are achievement rewards (M18b), "" when none.
 
 const DEFAULT_NAME := "Chúa công"
 const MAX_NAME_LENGTH := 24
@@ -31,6 +32,10 @@ const PRESETS: Array[Dictionary] = [
 ]
 
 var preset := 0
+## Danh hiệu from an achievement (M18b), "" for none.
+var honor := ""
+## Portrait frame id from an achievement (M18b, PortraitView.frame_part), "" for the gold one.
+var frame := ""
 
 
 static func from_preset(index: int, ruler_name: String = "") -> Ruler:
@@ -63,10 +68,18 @@ func describe() -> String:
 	return "%s · %s" % [title(), OUTFIT_NAMES[outfit()]]
 
 
+## "Chúa công Minh · Bá Chủ Thiên Hạ", or the name alone without an honor.
+func full_name() -> String:
+	return name if honor.is_empty() else "%s · %s" % [name, honor]
+
+
 func to_save() -> Dictionary:
-	return {"preset": preset, "name": name}
+	return {"preset": preset, "name": name, "honor": honor, "frame": frame}
 
 
 ## {} (older saves) gives the first preset.
 static func from_save(data: Dictionary) -> Ruler:
-	return from_preset(int(data.get("preset", 0)), String(data.get("name", "")))
+	var ruler := from_preset(int(data.get("preset", 0)), String(data.get("name", "")))
+	ruler.honor = String(data.get("honor", ""))
+	ruler.frame = String(data.get("frame", ""))
+	return ruler

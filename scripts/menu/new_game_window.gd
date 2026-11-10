@@ -10,7 +10,7 @@ extends ModalWindow
 ## KingdomState.setup_new_game.
 signal start_requested(settings: Dictionary)
 
-const SWATCH_SIZE := Vector2(44, 44)
+const SWATCH_SIZE := Vector2(36, 36)
 ## The counselors' faces next to their buttons.
 const COUNSELOR_SCALE := 0.5
 const CASTLE_SIZE := Vector2(128, 128)
@@ -19,6 +19,8 @@ const FIGURE_SCALE := 3
 ## The soldiers shown beside the castle: a new game's starting squads.
 const PREVIEW_UNITS: Array[StringName] = [&"swordsman", &"spearman", &"archer"]
 const PREVIEW_GRASS := Color(0.47, 0.66, 0.33)
+## Achievement colors not unlocked yet (M18b).
+const LOCKED_ALPHA := 0.3
 
 var _name_edit: LineEdit
 var _color := KingdomState.PLAYER_COLOR
@@ -30,13 +32,13 @@ var _ruler := Ruler.from_preset(0)
 var _ruler_label: Label
 var _counselor := Counselor.LINH_NHI
 var _counselor_row: HBoxContainer
-var _color_row: HBoxContainer
+var _color_row: HFlowContainer
 var _difficulty_row: HBoxContainer
 var _description: Label
 
 
 func open() -> void:
-	var body := build_frame("Ván mới", UiPalette.TEXT, 0.5, false)
+	var body := build_frame("Ván mới", UiPalette.TEXT, 0.56, false)
 	body.add_child(_build_preview())
 	_ruler_label = _label("", 15, false)
 	_ruler_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -51,8 +53,9 @@ func open() -> void:
 	_name_edit.custom_minimum_size = Vector2(0, 40)
 	body.add_child(_name_edit)
 	body.add_child(_label("Màu chủ đạo (thành trì, áo quân, bản đồ):", 15, false))
-	_color_row = HBoxContainer.new()
-	_color_row.add_theme_constant_override("separation", 8)
+	_color_row = HFlowContainer.new()
+	_color_row.add_theme_constant_override("h_separation", 8)
+	_color_row.add_theme_constant_override("v_separation", 8)
 	body.add_child(_color_row)
 	body.add_child(HSeparator.new())
 	body.add_child(_label("Độ khó:", 15, false))
@@ -117,19 +120,17 @@ func _refresh() -> void:
 			row.remove_child(child)
 			child.queue_free()
 	for color in KingdomState.PLAYER_COLORS:
-		var swatch := Button.new()
-		swatch.custom_minimum_size = SWATCH_SIZE
-		swatch.focus_mode = Control.FOCUS_NONE
-		var box := StyleBoxFlat.new()
-		box.bg_color = color
-		box.set_border_width_all(4 if color == _color else 1)
-		box.border_color = UiPalette.TEXT if color == _color else color.darkened(0.4)
-		box.set_corner_radius_all(4)
-		for state_name in ["normal", "hover", "pressed"]:
-			swatch.add_theme_stylebox_override(state_name, box)
-		swatch.pressed.connect(func() -> void:
-			_color = color
-			_refresh())
+		_color_row.add_child(_swatch(color, ""))
+	# Colors from achievements (M18b): locked ones stay faded and say how to get them.
+	for entry in Achievements.with_reward("color"):
+		var color := Color.html(entry.reward.color)
+		var locked := not AchievementStore.is_unlocked(entry.id)
+		var tip := "%s — mở khi đạt thành tựu \"%s\"" % [entry.reward.name,
+				"???" if entry.hidden else entry.title] if locked else String(entry.reward.name)
+		var swatch := _swatch(color, tip)
+		swatch.disabled = locked
+		if locked:
+			swatch.modulate.a = LOCKED_ALPHA
 		_color_row.add_child(swatch)
 	var unlocked := GameSettings.legendary_unlocked()
 	for level in Difficulty.NAMES.size():
@@ -141,7 +142,7 @@ func _refresh() -> void:
 		button.custom_minimum_size = Vector2(130, 44)
 		button.disabled = level == Difficulty.Level.LEGENDARY and not unlocked
 		_difficulty_row.add_child(button)
-	_ruler_label.text = "Chúa công: %s (%s)" % [_ruler.name, _ruler.describe()]
+	_ruler_label.text = "Chúa công: %s (%s)" % [_ruler.full_name(), _ruler.describe()]
 	_counselor_row.add_child(_label("Cố vấn:", 15, false))
 	for id in Counselor.IDS:
 		var face := CounselorPortrait.new()
@@ -161,18 +162,39 @@ func _refresh() -> void:
 		_description.text += "\nHuyền thoại mở sau khi thắng một ván Bình thường hoặc Khó."
 
 
+func _swatch(color: Color, tip: String) -> Button:
+	var swatch := Button.new()
+	swatch.custom_minimum_size = SWATCH_SIZE
+	swatch.focus_mode = Control.FOCUS_NONE
+	swatch.tooltip_text = tip
+	var box := StyleBoxFlat.new()
+	box.bg_color = color
+	box.set_border_width_all(4 if color == _color else 1)
+	box.border_color = UiPalette.TEXT if color == _color else color.darkened(0.4)
+	box.set_corner_radius_all(4)
+	for state_name in ["normal", "hover", "pressed", "disabled"]:
+		swatch.add_theme_stylebox_override(state_name, box)
+	swatch.pressed.connect(func() -> void:
+		_color = color
+		_refresh())
+	return swatch
+
+
 func _open_ruler() -> void:
 	var window := RulerWindow.new()
 	get_parent().add_child(window)
-	window.open(_ruler.preset, _ruler.name, _color)
-	window.chosen.connect(func(preset: int, ruler_name: String) -> void:
+	window.open(_ruler.preset, _ruler.name, _color, _ruler.honor, _ruler.frame)
+	window.chosen.connect(func(preset: int, ruler_name: String, honor: String, frame: String) -> void:
 		_ruler = Ruler.from_preset(preset, ruler_name)
+		_ruler.honor = honor
+		_ruler.frame = frame
 		_refresh())
 
 
 func _start() -> void:
 	start_requested.emit({"difficulty": _difficulty, "name": _name_edit.text, "color": _color,
-			"ruler_preset": _ruler.preset, "ruler_name": _ruler.name, "counselor": _counselor})
+			"ruler_preset": _ruler.preset, "ruler_name": _ruler.name, "ruler_honor": _ruler.honor,
+			"ruler_frame": _ruler.frame, "counselor": _counselor})
 
 
 ## Esc goes back to the main menu.

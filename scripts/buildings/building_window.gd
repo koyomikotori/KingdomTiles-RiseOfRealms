@@ -153,7 +153,7 @@ func _ruler_row() -> Control:
 	var portrait := PortraitView.new()
 	portrait.setup(ruler, 1.0, _state.player_color)
 	var text := _label("Chúa công %s
-%s" % [ruler.name, ruler.describe()], 15, false)
+%s" % [ruler.full_name(), ruler.describe()], 15, false)
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	var row := _row([portrait, text])

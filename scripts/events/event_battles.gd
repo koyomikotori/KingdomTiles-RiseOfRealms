@@ -148,7 +148,7 @@ static func finish(state: KingdomState, battle: Dictionary, record: BattleRecord
 				# A lost breakout always brings the commander down (dead or wounded).
 				record.sides[side].general_fallen = true
 			state.generals.survival = state.building_effect(&"commander_survival")
-			result["general"] = state.generals.after_battle(record, side)
+			result["general"] = state.general_after_battle(record, side)
 			result.merge(BattleOutcome.apply_to_army(state.army, record, side, not won,
 					state.building_effect(&"retreat_keep")), true)
 			var enemy_lost := BattleOutcome.soldiers_lost(record, 1 - side)
@@ -159,7 +159,7 @@ static func finish(state: KingdomState, battle: Dictionary, record: BattleRecord
 		RESCUE:
 			state._record_battle(won)
 			state.generals.survival = state.building_effect(&"commander_survival")
-			result["general"] = state.generals.after_battle(record, side)
+			result["general"] = state.general_after_battle(record, side)
 			result.merge(BattleOutcome.apply_to_army(state.army, record, side, false,
 					state.building_effect(&"retreat_keep")), true)
 			state.morale_effects.after_battle(ClanOfficers.BANDITS)
@@ -183,6 +183,7 @@ static func _finish_duel(state: KingdomState, clan_id: StringName, won: bool, li
 	var commander := state.generals.commander
 	var clan := _clan_name(state, clan_id)
 	if won:
+		state.count_stat("duels_won")
 		var rival := state.clan_officers.assassinate(clan_id, &"general", true)
 		state.morale_effects.add(MoraleEffects.ENEMY, -DUEL_MORALE, clan_id)
 		var xp := Experience.general_battle_xp(1.0, true)
@@ -192,6 +193,7 @@ static func _finish_duel(state: KingdomState, clan_id: StringName, won: bool, li
 		lines.append("Trận kế tiếp với %s: quân địch %+d nhuệ khí tối đa." % [clan, -DUEL_MORALE])
 		return {"name": commander.name, "fate": &"none", "xp": xp, "levels": levels}
 	state.generals.dismiss(commander)
+	state.count_stat("commanders_lost")
 	state.morale_effects.add(MoraleEffects.KINGDOM, -DUEL_MORALE, clan_id)
 	lines.append("Trận kế tiếp với %s: quân ta %+d nhuệ khí tối đa." % [clan, -DUEL_MORALE])
 	return {"name": commander.name, "fate": &"dead", "xp": 0, "levels": 0}
@@ -200,6 +202,7 @@ static func _finish_duel(state: KingdomState, clan_id: StringName, won: bool, li
 ## The picked general against the bandits' leader: the loser dies.
 static func _finish_bandit_duel(state: KingdomState, general: General, won: bool, lines: Array[String]) -> Dictionary:
 	if won:
+		state.count_stat("duels_won")
 		var leader := state.clan_officers.assassinate(ClanOfficers.BANDITS, &"general", true)
 		state.morale_effects.add(MoraleEffects.ENEMY, -DUEL_MORALE, ClanOfficers.BANDITS, BANDIT_WIN_TURNS)
 		state.raid_pressure.add(BANDIT_WIN_RAID_FACTOR, BANDIT_WIN_TURNS)

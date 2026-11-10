@@ -9,6 +9,8 @@ const PAGES := [
 		"Bạn thua khi thành chính thất thủ: thua một trận xâm lược lúc không còn ô đất nào ngoài thành.",
 		"# Ván mới",
 		"Đặt tên vương quốc, chọn màu quân, độ khó, chúa công (6 mẫu, đặt tên riêng) và một trong hai cố vấn: Linh Nhi vui tươi hay Tử Uyên điềm tĩnh. Cố vấn sẽ kể sự kiện, báo cáo trận đánh và nhận xét kết quả suốt ván. Mỗi ván mới, cố vấn dẫn từng bước trong mấy lượt đầu (bấm \"Bỏ qua hướng dẫn\" lúc nào cũng được).",
+		"# Thành tựu",
+		"Nút \"Thành tựu\" ở màn hình chính liệt kê 46 thành tựu, giữ qua mọi ván (vài cái ẩn tới khi đạt được). Đạt thành tựu thì một thông báo hiện ở góc trên phải. Một số thành tựu mở màu quân, danh hiệu và khung chân dung chúa công mới, chọn ở màn Ván mới (nút \"Thay đổi\" cạnh chúa công).",
 		"# Một lượt",
 		"1. Đặt các mảnh đất mới để mở rộng hoặc cải tạo lãnh thổ.",
 		"2. Xây công trình, tuyển lính, chiêu mộ tướng sĩ, ngoại giao.",

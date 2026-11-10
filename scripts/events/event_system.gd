@@ -357,6 +357,7 @@ func resolve(state: KingdomState, rng: RandomNumberGenerator, index: int, genera
 	var officer := current_officer(state)
 	var officer_name := current_officer_name()
 	pending.pop_front()
+	state.count_stat("events_answered")
 	var changes: Array[String] = []
 	if not choice.cost.is_empty():
 		state.stockpile.spend(choice.cost)

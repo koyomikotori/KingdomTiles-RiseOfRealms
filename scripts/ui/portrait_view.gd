@@ -83,4 +83,6 @@ static func layers(officer: Officer, team: Color) -> Array:
 
 ## The frame of the officer's star tier.
 static func frame_part(officer: Officer) -> String:
+	if officer is Ruler and not (officer as Ruler).frame.is_empty():
+		return "frame_ruler_" + (officer as Ruler).frame
 	return "frame_%d" % FRAME_TIER_BY_STARS[clampi(officer.stars, 0, FRAME_TIER_BY_STARS.size() - 1)]

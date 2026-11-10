@@ -6,6 +6,8 @@ const NO_BUILDING: StringName = &""
 const NO_MOVE := Vector2i(-1, -1)
 ## Above the windows (the UI layer), below the touch tooltip (layer 120).
 const TUTORIAL_LAYER := 60
+## The "Đạt thành tựu!" notes (M18b), above the tutorial.
+const ACHIEVEMENT_LAYER := 70
 const END_TURN_TEXT := "Kết thúc lượt (Enter)"
 const HAND_HINT := "Chọn một mảnh (hoặc phím 1–3) rồi bấm lên bản đồ. Mảnh không xoay được. Đặt đè lên đất cũ sẽ thay địa hình ô đó."
 const HAND_HINT_TOUCH := "Chọn một mảnh rồi chạm lên bản đồ và bấm Đặt. Mảnh không xoay được. Đặt đè lên đất cũ sẽ thay địa hình ô đó."
@@ -21,6 +23,7 @@ const TAB_TITLES: Array[String] = ["Đất", "Xây dựng", "Quân đội", "Tư
 ## never overwrite the player's saves.
 @export var autosave := true
 
+var _achievement_toast: AchievementToast
 var state: KingdomState
 var _terrains: Dictionary[StringName, TerrainData] = {}
 var _shapes: Dictionary[StringName, PieceShapeData] = {}
@@ -98,6 +101,11 @@ var _tab_buttons: Array[Button] = []
 
 
 func _ready() -> void:
+	var toast_layer := CanvasLayer.new()
+	toast_layer.layer = ACHIEVEMENT_LAYER
+	add_child(toast_layer)
+	_achievement_toast = AchievementToast.new()
+	toast_layer.add_child(_achievement_toast)
 	_terrains = TerrainLibrary.load_all()
 	_shapes = PieceShapeLibrary.load_all()
 	_buildings = BuildingData.load_all()
@@ -802,6 +810,7 @@ func _play_event_request() -> void:
 
 ## Shows the defeat screen once the castle has fallen, or the victory screen for a path just won.
 func _show_end_game_if_any() -> void:
+	_check_achievements()
 	var path := _pending_victory
 	_pending_victory = Victory.NO_PATH
 	if not state.victory.lost and path == Victory.NO_PATH:
@@ -1196,6 +1205,7 @@ func _flush_economy_refresh() -> void:
 
 func _refresh_economy() -> void:
 	_refresh_notices()
+	_check_achievements()
 	var net := state.get_net_income()
 	var breakdown := state.get_income_breakdown()
 	for type in _resource_types:
@@ -1280,6 +1290,16 @@ func _describe_cell(cell: CellData) -> String:
 
 
 # --- Tutorial (M18a) ----------------------------------------------------------------------------
+
+## Unlocks the achievements this game has reached (M18b) and shows them. Only a real game does it:
+## previews turn `autosave` off, which also keeps them away from the player's achievements file.
+func _check_achievements() -> void:
+	if not autosave or state == null:
+		return
+	for entry in Achievements.check(state):
+		if is_instance_valid(_achievement_toast):
+			_achievement_toast.show_unlocked(entry)
+
 
 func _start_tutorial() -> void:
 	var layer := CanvasLayer.new()

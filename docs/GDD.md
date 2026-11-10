@@ -1216,3 +1216,16 @@ Hai sự kiện ngẫu nhiên (nhóm "Trong vương quốc"), mỗi sự kiện 
 - Hộp cố vấn ở góc dưới trái (trên cột Thông báo); nếu che chỗ đang chỉ thì chuyển xuống giữa hoặc lên dưới thanh trên cùng. Ẩn khi đang mở trận đánh, báo cáo, sự kiện, chợ đen…; vẫn hiện trong bảng xây dựng, tuyển lính, cửa sổ công trình, tướng sĩ và bản đồ thế giới.
 - Tiến độ lưu theo ván (bản lưu cũ: không có hướng dẫn).
 
+## 30. Thành tựu (M18b, đã chốt)
+
+- **46 thành tựu** trong `data/achievements/achievements.json`, chia 6 nhóm: Kinh tế, Quân sự, Ngoại giao, Tướng sĩ, Phiêu lưu (thảo phạt, tỉ thí, đấu trí, chợ đen, sự kiện), Chinh phục (hướng dẫn, chiến thắng theo độ khó, thắng trước lượt 150). 5 thành tựu **ẩn** (mất thành, tổng tướng tử trận, đặc vụ bị bắt, lính đào ngũ, thắng đấu tay đôi): hiện "Thành tựu ẩn" và huy chương dấu hỏi cho tới khi đạt.
+- **Giữ qua mọi ván**, lưu ở file riêng `user://achievements.cfg` (không theo save, không theo cài đặt): ngày đạt và tiến độ cao nhất từng đạt của thành tựu chưa mở (thanh tiến độ).
+- **Điều kiện** đọc từ ván đang chơi (lượt, cấp thành, số ô, công trình, đơn vị, đồng minh, gia tộc sáp nhập, tướng sĩ...) và từ các bộ đếm mới trong ván (`stats`: đồ đã rèn, lần thảo phạt trọn, tỉ thí / đấu trí thắng, mua ở chợ đen, sự kiện đã giải quyết, hướng dẫn hoàn tất, tổng tướng tử trận, đặc vụ bị bắt, lần đào ngũ, đấu tay đôi thắng). Bản lưu cũ bắt đầu các bộ đếm này từ 0. Kiểm tra mỗi khi trạng thái ván đổi; xem thử (preview) không ghi thành tựu.
+- **Thông báo** "Đạt thành tựu!" trượt vào góc trên phải màn hình vương quốc (huy chương, tên, phần thưởng), 4 giây, nhiều cái thì lần lượt.
+- **Xem ở menu chính** (nút "Thành tựu" cạnh "Cài đặt"): số đã đạt / tổng và %, rồi một danh sách duy nhất từ dễ tới khó, thành tựu ẩn ở cuối (chỉ một thanh cuộn của cửa sổ), mỗi dòng có huy chương (xám khi chưa đạt), mô tả, tiến độ, phần thưởng, ngày đạt.
+- **Phần thưởng chỉ để trang trí** (không ảnh hưởng cân bằng), chọn ở màn Ván mới:
+  - 6 **màu quân** mới (Đất son, Huyết dụ, Vàng kim, Ngọc lam, Tím than, Bạch kim): hiện mờ khi chưa mở, rê chuột xem cần thành tựu nào.
+  - 8 **danh hiệu** (Trường Thọ, Chiến Thần, Minh Chủ, Khai Quốc, Minh Quân, Bá Chủ Thiên Hạ, Võ Thánh...): hiện sau tên chúa công (màn Ván mới, cửa sổ Thành chính).
+  - 3 **khung chân dung** chúa công (Ngọc bích, Son đỏ, Bạch ngân), thay khung vàng mặc định.
+  - Danh hiệu và khung chọn trong cửa sổ Chúa công (← / →); lưu theo ván cùng chúa công.
+- Thống kê cuối ván để sau.

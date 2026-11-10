@@ -107,6 +107,7 @@ func buy(index: int, state: KingdomState) -> Result:
 	var offer := offers[index]
 	state.stockpile.spend(offer.cost)
 	offer.sold = true
+	state.count_stat("market_buys")
 	if offer.item != null:
 		if offer.item.legendary_id != &"":
 			state.equipment.found_legendaries.append(offer.item.legendary_id)
