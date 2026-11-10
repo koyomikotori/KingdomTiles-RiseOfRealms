@@ -8,6 +8,9 @@ extends VBoxContainer
 
 signal build_window_requested
 
+## The long button on top (the tutorial points at it, M18a).
+var open_button: Button
+
 const MUTED_COLOR := UiPalette.MUTED
 const WARNING_COLOR := UiPalette.WARNING
 ## Size of the building pictures in the rows.
@@ -24,7 +27,8 @@ func setup(buildings: Dictionary[StringName, BuildingData], resource_types: Arra
 	_buildings = buildings
 	_resource_types = resource_types
 	add_theme_constant_override("separation", 6)
-	var open := Button.new()
+	open_button = Button.new()
+	var open := open_button
 	open.text = "Xây dựng công trình"
 	open.focus_mode = Control.FOCUS_NONE
 	open.custom_minimum_size = Vector2(0, 44)

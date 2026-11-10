@@ -78,6 +78,8 @@ var player_color := PLAYER_COLOR
 var ruler := Ruler.from_preset(0)
 ## The counselor chosen on the new game screen (Counselor id, M16i); the only one who speaks.
 var counselor := Counselor.LINH_NHI
+## The first-game tutorial's progress (M18a); off unless the new game screen turned it on.
+var tutorial := Tutorial.new()
 ## Counters for the end-of-game screen: {"battles_won", "battles_lost"}.
 var stats := {"battles_won": 0, "battles_lost": 0}
 ## False when building upkeep could not be paid last turn; building effects pause.
@@ -159,7 +161,7 @@ func _record_battle(won: bool) -> void:
 
 
 ## A new game's choices: {"difficulty": Difficulty.Level, "name": String, "color": Color,
-## "ruler_preset": int, "ruler_name": String, "counselor": StringName}; missing keys keep the
+## "ruler_preset": int, "ruler_name": String, "counselor": StringName, "tutorial": bool (default on; tests turn it off)}; missing keys keep the
 ## defaults.
 func setup_new_game(settings: Dictionary) -> void:
 	difficulty = clampi(int(settings.get("difficulty", Difficulty.Level.NORMAL)), 0, Difficulty.NAMES.size() - 1)
@@ -169,6 +171,9 @@ func setup_new_game(settings: Dictionary) -> void:
 	player_color = Color.html(Color(settings.get("color", PLAYER_COLOR)).to_html(false))
 	ruler = Ruler.from_preset(int(settings.get("ruler_preset", 0)), String(settings.get("ruler_name", "")))
 	counselor = Counselor.valid(StringName(settings.get("counselor", Counselor.LINH_NHI)))
+	# Every new game opens with the tutorial (M18a); "Bỏ qua hướng dẫn" ends it at once.
+	if bool(settings.get("tutorial", true)):
+		tutorial.start(self)
 	wars.set_enemy_scale(Difficulty.enemy_scale(difficulty), turn)
 
 
@@ -182,7 +187,7 @@ func to_save() -> Dictionary:
 			"events": events.to_save(), "generals": generals.to_save(), "advisors": advisors.to_save(),
 			"equipment": equipment.to_save(), "agents": agents.to_save(), "clan_officers": clan_officers.to_save(),
 			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false), "ruler": ruler.to_save(), "counselor": counselor,
-			"scrolls": scrolls, "black_market": black_market.to_save(), "morale_effects": morale_effects.to_save(), "raid_pressure": raid_pressure.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
+			"tutorial": tutorial.to_save(), "scrolls": scrolls, "black_market": black_market.to_save(), "morale_effects": morale_effects.to_save(), "raid_pressure": raid_pressure.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
 
 
 ## Restores everything but the board from to_save() data. Random rolls are not saved: they come
@@ -198,6 +203,7 @@ func load_save(data: Dictionary) -> void:
 	ruler = Ruler.from_save(data.get("ruler", {}))
 	# Saves from before M16i: Linh Nhi leads.
 	counselor = Counselor.valid(StringName(data.get("counselor", Counselor.LINH_NHI)))
+	tutorial.load_save(data.get("tutorial", {}))
 	wars.enemy_scale = Difficulty.enemy_scale(difficulty)
 	# Saves from before M11c have no castle level.
 	castle_level = clampi(int(data.get("castle_level", 1)), 1, castle_levels.size())

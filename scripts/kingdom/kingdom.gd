@@ -4,6 +4,8 @@ extends Node2D
 const NO_SELECTION := -1
 const NO_BUILDING: StringName = &""
 const NO_MOVE := Vector2i(-1, -1)
+## Above the windows (the UI layer), below the touch tooltip (layer 120).
+const TUTORIAL_LAYER := 60
 const END_TURN_TEXT := "Kết thúc lượt (Enter)"
 const HAND_HINT := "Chọn một mảnh (hoặc phím 1–3) rồi bấm lên bản đồ. Mảnh không xoay được. Đặt đè lên đất cũ sẽ thay địa hình ô đó."
 const HAND_HINT_TOUCH := "Chọn một mảnh rồi chạm lên bản đồ và bấm Đặt. Mảnh không xoay được. Đặt đè lên đất cũ sẽ thay địa hình ô đó."
@@ -91,6 +93,8 @@ var _intro_pending := false
 var _expedition_stages: Array[Dictionary] = []
 var _stage_replay_pending := false
 var _economy_refresh_queued := false
+## The side panel's four tab buttons (_build_tab_buttons), for the tutorial's pointer.
+var _tab_buttons: Array[Button] = []
 
 
 func _ready() -> void:
@@ -184,6 +188,10 @@ func _ready() -> void:
 		state.resume()
 		_continue_turn_start.call_deferred()
 	_on_cell_hovered(BoardView.OFF_BOARD)
+	if state.tutorial.is_active():
+		# The tutorial's welcome replaces the counselors' intro window.
+		_intro_pending = false
+		_start_tutorial()
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -305,6 +313,11 @@ func _open_building(origin: Vector2i, start_tab: String = "") -> BuildingWindow:
 	$UI.add_child(window)
 	window.open(state, origin, start_tab)
 	window.agent_mission_requested.connect(_open_world_map)
+	if state.board.get_cell(origin).building_id == BoardData.CASTLE_ID:
+		_tutorial_event(&"castle_opened")
+		window.tab_shown.connect(func(title: String) -> void:
+			if title == "Chiêu hiền":
+				_tutorial_event(&"hire_tab"))
 	window.move_requested.connect(func(from: Vector2i) -> void:
 		_moving_from = from
 		placement_status.text = "Chọn ô mới cho %s. Esc: hủy." % _moving_building().display_name)
@@ -349,6 +362,7 @@ func _place_selected_piece(coord: Vector2i) -> void:
 	_select(NO_SELECTION)
 	_refresh_economy()
 	placement_status.text = "Đã đặt mảnh đất."
+	_tutorial_event(&"piece_placed")
 	_on_cell_hovered(coord)
 
 
@@ -372,6 +386,7 @@ func _open_build_window() -> void:
 	var window := BuildWindow.new()
 	$UI.add_child(window)
 	window.open(state)
+	_tutorial_event(&"build_window")
 	window.building_chosen.connect(func(building_id: StringName) -> void:
 		tabs.current_tab = 1
 		_toggle_building(building_id))
@@ -708,6 +723,8 @@ func _open_world_map(agent: Agent = null) -> void:
 	_world_map.open(state, _resource_types, agent)
 	_world_map.closed.connect(func() -> void: _world_map = null)
 	_world_map.attack_requested.connect(_attack_clan)
+	_world_map.clan_shown.connect(func(_clan_id: StringName) -> void: _tutorial_event(&"clan_selected"))
+	_tutorial_event(&"world_map")
 
 
 func _on_battle_report_closed() -> void:
@@ -867,6 +884,8 @@ func _select(index: int) -> void:
 	for i in piece_list.get_child_count():
 		(piece_list.get_child(i) as PieceCard).set_pressed_no_signal(i == _selected)
 	placement_status.text = "" if _selected == NO_SELECTION else "Bấm lên bản đồ để đặt. Esc: bỏ chọn."
+	if _selected != NO_SELECTION:
+		_tutorial_event(&"piece_selected")
 	_update_ghost()
 
 
@@ -1032,7 +1051,7 @@ func _build_tab_buttons() -> void:
 	parent.add_child(row)
 	parent.move_child(row, tabs.get_index())
 	var group := ButtonGroup.new()
-	var buttons: Array[Button] = []
+	var buttons: Array[Button] = _tab_buttons
 	for i in TAB_TITLES.size():
 		var button := Button.new()
 		button.text = TAB_TITLES[i]
@@ -1258,3 +1277,103 @@ func _describe_cell(cell: CellData) -> String:
 			building += " (bỏ hoang vì chiến sự, còn %d lượt)" % cell.disabled_turns
 	return "Ô (%d, %d)\nĐịa hình: %s\nSở hữu: %s\nSản lượng mỗi lượt: %s\nCông trình: %s" % [
 		cell.coord.x, cell.coord.y, terrain, "Có" if cell.owned else "Không", production, building]
+
+
+# --- Tutorial (M18a) ----------------------------------------------------------------------------
+
+func _start_tutorial() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = TUTORIAL_LAYER
+	add_child(layer)
+	var overlay := TutorialOverlay.new()
+	overlay.target_rect = _tutorial_target
+	overlay.is_busy = _tutorial_busy
+	layer.add_child(overlay)
+	overlay.setup(state)
+
+
+func _tutorial_event(event: StringName) -> void:
+	state.tutorial.notify(event, state)
+
+
+## Where the tutorial points for `id` (Tutorial.STEPS target), on screen; empty while a window
+## covers the side panel or the thing is hidden. A button in a side tab that is not open points at
+## the tab instead.
+func _tutorial_target(id: StringName) -> Rect2:
+	match id:
+		&"farm_entry":
+			# The farm in the build window; with the window shut, its button; while placing, nothing.
+			for child in $UI.get_children():
+				if child is BuildWindow and not child.is_queued_for_deletion():
+					return _button_rect(child, "Nông trại")
+			if _selected_building != NO_BUILDING:
+				return Rect2()
+			id = &"build_button"
+		&"hire_tab":
+			for child in $UI.get_children():
+				if child is BuildingWindow and not child.is_queued_for_deletion():
+					return (child as BuildingWindow).tab_rect("Chiêu hiền")
+			return _castle_screen_rect()
+	if _tutorial_window_open():
+		return Rect2()
+	var control: Control = null
+	match id:
+		&"hand":
+			control = piece_list if tabs.current_tab == 0 else _tab_buttons[0]
+		&"build_button":
+			control = build_panel.open_button if tabs.current_tab == 1 else _tab_buttons[1]
+		&"recruit_button":
+			control = army_panel.open_button if tabs.current_tab == 2 else _tab_buttons[2]
+		&"officers_tab":
+			control = _tab_buttons[3]
+		&"end_turn":
+			control = end_turn_button
+		&"resources":
+			control = resource_bar
+		&"diplomacy":
+			control = diplomacy_button
+		&"notices":
+			control = _notices
+		&"castle":
+			return _castle_screen_rect()
+	if control == null or not control.is_visible_in_tree():
+		return Rect2()
+	return control.get_global_rect()
+
+
+## The first visible button under `root` whose text starts with `prefix`.
+func _button_rect(root: Node, prefix: String) -> Rect2:
+	for node in root.find_children("*", "Button", true, false):
+		var button := node as Button
+		if button.is_visible_in_tree() and button.text.begins_with(prefix):
+			return button.get_global_rect()
+	return Rect2()
+
+
+func _castle_screen_rect() -> Rect2:
+	var local := Rect2()
+	for cell in state.board.get_all_cells():
+		if cell.building_id == BoardData.CASTLE_ID:
+			var tile := Rect2(BoardView.cell_to_local(cell.coord), Vector2.ONE * BoardView.TILE_SIZE)
+			local = tile if not local.has_area() else local.merge(tile)
+	return board_view.get_global_transform_with_canvas() * local if local.has_area() else Rect2()
+
+
+## Any window or screen over the kingdom: the tutorial hides unless it is one of the windows its
+## steps happen in.
+func _tutorial_busy() -> bool:
+	for child in $UI.get_children():
+		if not (child is Control and (child as Control).visible) or child.is_queued_for_deletion():
+			continue
+		if child is BuildWindow or child is RecruitWindow or child is BuildingWindow or child is WorldMapScreen 				or child is OfficerWindow:
+			continue
+		if child is ModalWindow or child is BattleScreen or child is BattleReport or child is ExpeditionScreen 				or child is SparScreen or child is MemoryScreen:
+			return true
+	return false
+
+
+func _tutorial_window_open() -> bool:
+	for child in $UI.get_children():
+		if (child is ModalWindow or child is WorldMapScreen) and (child as Control).visible and not child.is_queued_for_deletion():
+			return true
+	return false

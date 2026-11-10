@@ -16,6 +16,8 @@ const STATUS_HEIGHT := 20.0
 ## Windows keep this far from the top and bottom of the screen.
 const SCREEN_MARGIN := 12.0
 
+## Guards _fit_body against calling itself through the layout signals it sets off.
+var _fitting := false
 var _status: Label
 var _actions: HBoxContainer
 var _close_button: Button
@@ -69,6 +71,10 @@ func build_frame(title_text: String, accent: Color, width_share: float = WIDTH_S
 	layout.add_child(title)
 	_frame_scroll = ScrollContainer.new()
 	_frame_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	# The scrollbar's room is kept even while it is hidden: a bar that came and went changed the
+	# body's width, so wrapped text changed its height, which changed whether the bar was needed —
+	# an endless layout loop that crashed the game in full screen (pay_demand event, M18a fix).
+	_frame_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_RESERVE
 	layout.add_child(_frame_scroll)
 	var body := VBoxContainer.new()
 	body.add_theme_constant_override("separation", 8)
@@ -94,14 +100,16 @@ func build_frame(title_text: String, accent: Color, width_share: float = WIDTH_S
 
 ## The body's room: all of its content, or what the screen leaves after the rest of the window.
 func _fit_body() -> void:
-	if not is_instance_valid(_frame_scroll) or not is_inside_tree():
+	if _fitting or not is_instance_valid(_frame_scroll) or not is_inside_tree():
 		return
+	_fitting = true
 	var wanted := _frame_body.get_combined_minimum_size().y
 	var others := _frame_panel.get_combined_minimum_size().y - _frame_scroll.custom_minimum_size.y
 	var room := maxf(MIN_BODY_HEIGHT, get_viewport_rect().size.y - SCREEN_MARGIN * 2.0 - others)
 	var height := minf(wanted, room)
 	if not is_equal_approx(height, _frame_scroll.custom_minimum_size.y):
 		_frame_scroll.custom_minimum_size.y = height
+	_fitting = false
 
 
 ## Once the window has opened centered, its top edge stays put: content that grows or shrinks

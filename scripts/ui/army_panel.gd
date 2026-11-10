@@ -6,6 +6,9 @@ extends VBoxContainer
 ## button.
 
 signal recruit_window_requested
+
+## The long button on top (the tutorial points at it, M18a).
+var open_button: Button
 signal disband_requested(squad: Army.Squad)
 
 const HEADER_COLOR := UiPalette.HEADER
@@ -23,7 +26,8 @@ func setup(units: Array[UnitData], resource_types: Array[ResourceTypeData]) -> v
 	_units = units
 	_resource_types = resource_types
 	add_theme_constant_override("separation", 6)
-	var open := Button.new()
+	open_button = Button.new()
+	var open := open_button
 	open.text = "Tuyển lính"
 	open.focus_mode = Control.FOCUS_NONE
 	open.custom_minimum_size = Vector2(0, 44)
