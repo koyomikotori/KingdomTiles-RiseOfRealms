@@ -16,6 +16,9 @@ extends RefCounted
 ## - BANDIT_DUEL: a general the player picked (battle.general) against the bandits' leader. Win:
 ##   the leader dies, raids are scarcer (BANDIT_WIN_RAID_FACTOR) and weaker (−DUEL_MORALE) for
 ##   BANDIT_WIN_TURNS turns. Loss: the general dies, −DUEL_MORALE in the next bandit battle.
+## - AID (M18c): a detachment helps a friendly clan against bandits. Win: relation
+##   +AID_WIN_RELATION and maybe their thanks later (EventSystem.add_thanks); loss: they still
+##   remember the help (+AID_LOSS_RELATION).
 ## Stateless: everything goes through the KingdomState passed in.
 
 const DUEL := &"duel"
@@ -23,7 +26,8 @@ const BANDIT_DUEL := &"bandit_duel"
 const BREAKOUT := &"breakout"
 const SURPRISE := &"surprise"
 const RESCUE := &"rescue"
-const KINDS: Array[StringName] = [DUEL, BREAKOUT, SURPRISE, RESCUE, BANDIT_DUEL]
+const AID := &"aid"
+const KINDS: Array[StringName] = [DUEL, BREAKOUT, SURPRISE, RESCUE, BANDIT_DUEL, AID]
 
 const DETACHMENT_MIN := 3
 const DETACHMENT_MAX := 5
@@ -40,11 +44,15 @@ const RESCUE_WIN_RELATION := 3
 const RESCUE_LOSS_RELATION := -5
 const BANDIT_WIN_TURNS := 10
 const BANDIT_WIN_RAID_FACTOR := 0.5
+const AID_ENEMY_SHARE := 0.9
+const AID_WIN_RELATION := 12
+const AID_LOSS_RELATION := 4
+const AID_THANKS_CHANCE := 0.4
 
 
 ## Which side the kingdom fights on.
 static func player_side(kind: StringName) -> int:
-	return BattleRecord.ATTACKER if kind in [SURPRISE, RESCUE] else BattleRecord.DEFENDER
+	return BattleRecord.ATTACKER if kind in [SURPRISE, RESCUE, AID] else BattleRecord.DEFENDER
 
 
 static func title(state: KingdomState, battle: Dictionary) -> String:
@@ -60,6 +68,8 @@ static func title(state: KingdomState, battle: Dictionary) -> String:
 			return "Cứu viện quan chức bị bắt!"
 		BANDIT_DUEL:
 			return "Tay đôi với thủ lĩnh đạo tặc!"
+		AID:
+			return "Giúp %s đánh đạo tặc!" % clan
 	return ""
 
 
@@ -114,11 +124,12 @@ static func start(state: KingdomState, battle: Dictionary, rng: RandomNumberGene
 				return null
 			var soldiers := maxi(1, roundi(state.wars.fronts[clan_id].strength * SURPRISE_SHARE))
 			return state.create_attack(clan_id, soldiers, SURPRISE_MORALE)
-		RESCUE:
+		RESCUE, AID:
 			var kingdom := _detachment_side(state, battle, rng, false)
 			if kingdom == null:
 				return null
-			var bandits := _bandit_side(state, rng, roundi(kingdom.start_total() * RESCUE_ENEMY_SHARE))
+			var share := RESCUE_ENEMY_SHARE if battle.kind == RESCUE else AID_ENEMY_SHARE
+			var bandits := _bandit_side(state, rng, roundi(kingdom.start_total() * share))
 			state.morale_effects.apply(kingdom, bandits, ClanOfficers.BANDITS)
 			return BattleSimulator.new(kingdom, bandits, rng.randi())
 	return null
@@ -173,6 +184,20 @@ static func finish(state: KingdomState, battle: Dictionary, record: BattleRecord
 				_relation_all(state, RESCUE_LOSS_RELATION)
 				lines.append("Quan chức bị đạo tặc giết, các gia tộc chê trách.")
 				lines.append("Quan hệ với mọi gia tộc %+d." % RESCUE_LOSS_RELATION)
+		AID:
+			state._record_battle(won)
+			state.generals.survival = state.building_effect(&"commander_survival")
+			result["general"] = state.general_after_battle(record, side)
+			result.merge(BattleOutcome.apply_to_army(state.army, record, side, false,
+					state.building_effect(&"retreat_keep")), true)
+			state.morale_effects.after_battle(ClanOfficers.BANDITS)
+			var clan := _clan_name(state, clan_id)
+			var gain := AID_WIN_RELATION if won else AID_LOSS_RELATION
+			state.diplomacy.change_relation(clan_id, gain, Diplomacy.MEMORY_EVENT)
+			lines.append(("Đạo tặc tan chạy, %s vô cùng cảm kích." if won else "Không thắng nổi, nhưng %s vẫn nhớ ơn ta đã đến.") % clan)
+			lines.append("Quan hệ với %s %+d." % [clan, gain])
+			if won and state.rng.randf() < AID_THANKS_CHANCE:
+				state.events.add_thanks(state, clan_id, state.rng)
 	result["lines"] = lines
 	return result
 

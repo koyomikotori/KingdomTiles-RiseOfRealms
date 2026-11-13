@@ -78,6 +78,15 @@ const CATEGORY_NAMES: Array[String] = ["Kinh tế", "Ngoại giao", "Quân sự"
 @export var clan_must_border: bool = false
 ## M16e: only clans where one of the kingdom's agents is on a mission.
 @export var clan_must_host_agent: bool = false
+## M18c: turns before the same clan can bring this event again (on top of `cooldown`).
+@export var clan_cooldown: int = 0
+## M18c: the clan has at least this many times the kingdom's soldiers (0 = no check).
+@export var clan_min_strength_ratio: float = 0.0
+## M18c: skips clans under a non-aggression pact or keeping the peace for a tribute.
+@export var clan_no_pact: bool = false
+@export_group("Scripted (M18c)")
+## Never rolled at random: EventSystem adds it itself (a clan's thanks, CLAN_THANKS_EVENT).
+@export var scripted: bool = false
 
 @export_group("")
 @export var choices: Array[EventChoiceData] = []

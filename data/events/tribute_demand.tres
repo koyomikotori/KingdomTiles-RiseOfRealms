@@ -7,33 +7,34 @@
 [sub_resource type="Resource" id="outcome_0_0"]
 script = ExtResource("3_outcome")
 weight = 1.0
-text = "{clan} tạm hài lòng."
-relation = 12
+text = "{clan} nhận cống rồi rút sứ giả về, hứa không động binh một thời gian."
+relation = 5
+tribute_peace = 10
 
 [sub_resource type="Resource" id="choice_0"]
 script = ExtResource("2_choice")
 text = "Nộp cống"
-hint = "Mua lấy bình yên, ít nhất là lúc này."
-cost = Dictionary[StringName, int]({&"food": 20, &"wood": 20})
+hint = "Mua lấy bình yên: họ sẽ không tuyên chiến trong 10 lượt."
+cost_share = Dictionary[StringName, float]({&"food": 0.12, &"wood": 0.12, &"stone": 0.12})
 outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
 
 [sub_resource type="Resource" id="outcome_1_0"]
 script = ExtResource("3_outcome")
-weight = 0.5
+weight = 0.65
 text = "{clan} buông lời đe dọa rồi bỏ đi."
-relation = -15
+relation = -10
 
 [sub_resource type="Resource" id="outcome_1_1"]
 script = ExtResource("3_outcome")
-weight = 0.5
+weight = 0.35
 text = "{clan} nổi giận và kéo quân!"
-relation = -15
+relation = -10
 declare_war = true
 
 [sub_resource type="Resource" id="choice_1"]
 script = ExtResource("2_choice")
 text = "Khước từ"
-hint = "Họ có thể nổi giận."
+hint = "Họ có thể nổi giận mà tuyên chiến."
 outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0"), SubResource("outcome_1_1")])
 
 [resource]
@@ -43,9 +44,12 @@ title = "{clan} đòi cống nạp"
 text = "Sứ giả {clan} ngạo nghễ: nộp cống nếu không muốn thấy quân họ ngoài cổng thành."
 category = 1
 weight = 1.5
-cooldown = 10
+cooldown = 4
 min_turn = 5
 needs_clan = true
-clan_max_tier = 1
-clan_must_be_stronger = true
+clan_max_tier = 2
+clan_must_border = true
+clan_cooldown = 15
+clan_min_strength_ratio = 1.5
+clan_no_pact = true
 choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

@@ -149,6 +149,8 @@ func _standing_text() -> String:
 		parts.append("Đồng minh (còn %d lượt)" % clan.alliance_turns)
 	if clan.has_pact():
 		parts.append("Bất tương xâm (còn %d lượt)" % clan.pact_turns)
+	if clan.tribute_peace > 0:
+		parts.append("Đã nhận cống, không động binh (còn %d lượt)" % clan.tribute_peace)
 	var agreement := clan.agreement
 	if agreement != null:
 		parts.append("Hợp đồng (còn %d lượt)" % agreement.turns_left)
@@ -197,9 +199,22 @@ func _update_trade(button: Button, reason: Label) -> void:
 
 
 func _update_gift(button: Button, reason: Label) -> void:
-	button.disabled = _diplomacy.clans[_clan_id].gift_gain_this_turn >= Diplomacy.MAX_GIFT_GAIN_PER_TURN
+	var clan := _diplomacy.clans[_clan_id]
+	var limit := clan.gift_gain_this_turn >= Diplomacy.MAX_GIFT_GAIN_PER_TURN
+	var sated: bool = clan.memories.get(Diplomacy.MEMORY_GIFT, 0) >= Diplomacy.GIFT_MEMORY_CAP
+	button.disabled = limit or sated
 	if button.disabled:
-		reason.text = Diplomacy.describe_gift(Diplomacy.GiftResult.LIMIT_REACHED)
+		reason.text = Diplomacy.describe_gift(Diplomacy.GiftResult.LIMIT_REACHED if limit else Diplomacy.GiftResult.SATED)
+
+
+## M18c: only for bordering clans that are neither at war nor allied.
+func _update_tribute(button: Button, reason: Label) -> void:
+	var clan := _diplomacy.clans[_clan_id]
+	button.visible = _wars.is_neighbor(_clan_id) and not _wars.at_war_with(_clan_id) and not clan.is_allied()
+	var result := Tribute.check(_state, _clan_id)
+	button.disabled = result != Tribute.Result.OK
+	if button.visible and button.disabled:
+		reason.text = Tribute.describe(result)
 
 
 func _update_agreement(button: Button, reason: Label) -> void:
@@ -317,6 +332,7 @@ func _build_details() -> void:
 	_add_command("Hợp đồng giao thương", AgreementDialog, _update_agreement)
 	_add_command("Liên minh", AllianceDialog, _update_alliance)
 	_add_command("Bất tương xâm", PactDialog, _update_pact)
+	_add_command("Đòi cống nạp", TributeDialog, _update_tribute, true)
 	_add_command("Tuyên chiến", DeclareWarDialog, _update_declare, true)
 	_add_command("Cử đặc vụ", AgentDialog, _update_agent)
 

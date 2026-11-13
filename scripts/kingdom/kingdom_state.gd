@@ -122,7 +122,9 @@ func _init(p_board: BoardData, p_hand: PieceHand, p_terrains: Dictionary[StringN
 	uprising.rng.seed = seed_value + 6
 	rebels.rng.seed = seed_value + 7
 	black_market.rng.seed = seed_value + 8
+	diplomacy.rng.seed = seed_value + 9
 	diplomacy.admin_effect = building_effect
+	diplomacy.clan_tier = wars.tier
 	wars.sabotage = agents.sabotage_on
 	generals.advisors = advisors
 	advisors.changed.connect(_sync_advisors)

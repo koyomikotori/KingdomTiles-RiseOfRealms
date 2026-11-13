@@ -6,8 +6,9 @@ extends RefCounted
 signal changed
 
 enum Tier { HOSTILE, TENSE, NEUTRAL, FRIENDLY, CLOSE }
-enum GiftResult { OK, EMPTY, CANNOT_AFFORD, LIMIT_REACHED, ANNEXED, TOO_SMALL, TOO_FAR }
-enum TradeResult { OK, REFUSED, SAME_RESOURCE, EMPTY, CANNOT_AFFORD, OVER_CAPACITY, TOO_SMALL, TOO_FAR }
+enum GiftResult { OK, EMPTY, CANNOT_AFFORD, LIMIT_REACHED, ANNEXED, TOO_SMALL, TOO_FAR, SATED }
+enum TradeResult { OK, REFUSED, SAME_RESOURCE, EMPTY, CANNOT_AFFORD, OVER_CAPACITY, TOO_SMALL, TOO_FAR,
+		OUT_OF_STOCK }
 ## OK = the clan signed. DECLINED = valid offer, but the clan said no.
 enum ProposalResult { OK, DECLINED, REFUSED, SAME_RESOURCE, EMPTY, TOO_LARGE, BAD_DURATION, ALREADY_HAS, ASKED_THIS_TURN,
 		TOO_FAR, NOT_YET }
@@ -35,6 +36,7 @@ const MEMORY_TREATY: StringName = &"treaty"
 const MEMORY_EVENT: StringName = &"event"
 const MEMORY_AGENT: StringName = &"agent"
 const MEMORY_EXPEDITION: StringName = &"expedition"
+const MEMORY_TRIBUTE: StringName = &"tribute"
 const MEMORY_OTHER: StringName = &"other"
 ## Lasting factors in relation_factors(), in display order.
 const LASTING_FACTORS: Array[StringName] = [&"base", &"wariness", &"agreement_bonus", &"alliance_bonus", &"pact_bonus"]
@@ -57,6 +59,7 @@ const FACTOR_NAMES: Dictionary[StringName, String] = {
 	&"event": "Sự kiện",
 	&"agent": "Đặc vụ",
 	&"expedition": "Dẹp loạn đạo tặc",
+	&"tribute": "Cống nạp",
 	&"other": "Khác",
 }
 ## Gift value per relation point before the personality multiplier.
@@ -117,6 +120,37 @@ const ENVOY_CHANCE := 0.0225
 const ENVOY_WARINESS := 0.03
 const ENVOY_GIFT := 0.0225
 
+# --- M18c: hidden goods, supply and demand, tired of gifts (GDD §9.8) ---
+## Trade value of each resource a clan keeps for trading (units = value / trade value), before the
+## multipliers below. Never shown to the player.
+const STOCK_VALUE := 60.0
+const STOCK_SURPLUS := 2.0
+const STOCK_DEFICIT := 0.5
+const STOCK_MERCHANT := 1.5
+## By Wars.Tier (weak, medium, strong).
+const STOCK_TIER: Array[float] = [1.0, 1.2, 1.5]
+## Share of the full stock that comes back each turn.
+const STOCK_REFILL := 0.25
+## Below this share of the full stock the trade dialog hints that their goods run low.
+const STOCK_LOW_SHARE := 0.3
+## Selling the same resource to a clan lowers its price: up to DEMAND_DROP once the value sold
+## lately reaches DEMAND_VALUE; what was sold fades to DEMAND_KEEP of itself every turn.
+const DEMAND_DROP := 0.4
+const DEMAND_VALUE := 120.0
+const DEMAND_KEEP := 0.7
+## Every URGENT_TURNS turns a clan badly needs one resource (never one it has in surplus) and pays
+## URGENT_BONUS more for it; gifts of it (or of anything it lacks) count GIFT_NEED_BONUS more.
+const URGENT_TURNS := 6
+const URGENT_BONUS := 1.3
+const GIFT_NEED_BONUS := 1.5
+## Gifts tire: their effect is multiplied by 1 − fatigue / GIFT_FATIGUE_SCALE (at least
+## GIFT_MIN_APPEAL); fatigue grows by the relation gained and falls GIFT_FATIGUE_DECAY a turn.
+const GIFT_FATIGUE_SCALE := 60.0
+const GIFT_MIN_APPEAL := 0.25
+const GIFT_FATIGUE_DECAY := 5
+## Relation remembered from gifts never goes past this (it fades like every memory).
+const GIFT_MEMORY_CAP := 30
+
 
 ## The relation is never stored: it is the sum of lasting factors (base, wariness, treaties) and
 ## recent events that fade, so the panel can always show where every point comes from (GDD §9.3).
@@ -147,6 +181,18 @@ class ClanState:
 	## Non-aggression pact (M16a): turns left, 0 = none; and turns before another offer.
 	var pact_turns := 0
 	var pact_cooldown := 0
+	## M18c. Goods the clan can still hand over (resource -> units); a resource missing is full.
+	var stock: Dictionary[StringName, int] = {}
+	## Trade value of each resource the kingdom sold it lately (fades by DEMAND_KEEP a turn).
+	var sold: Dictionary[StringName, int] = {}
+	## The resource it badly needs now (&"" before the first turn ends) and turns until it changes.
+	var urgent: StringName = &""
+	var urgent_turns := 0
+	var gift_fatigue := 0
+	## Turns before the kingdom may demand tribute again (Tribute).
+	var tribute_cooldown := 0
+	## Turns the clan keeps the peace after the kingdom paid it tribute (an event): it declares no war.
+	var tribute_peace := 0
 
 	func is_allied() -> bool:
 		return alliance_turns > 0
@@ -206,6 +252,10 @@ var gift_bonus := 0.0
 ## How threatening the kingdom looks (KingdomState.get_threat()); every clan's wariness grows toward
 ## it (wariness_target).
 var threat := 0
+## The clan's Wars.Tier (0 weak, 1 medium, 2 strong) for its stock; unset = weak (tests).
+var clan_tier: Callable
+## M18c. Picks each clan's urgent need; seeded by KingdomState (seed + 9).
+var rng := RandomNumberGenerator.new()
 var _trade_values: Dictionary[StringName, int] = {}
 
 
@@ -312,7 +362,35 @@ func end_turn() -> void:
 		clan.trade_gain_this_turn = 0
 		clan.traded_value_this_turn = 0
 		clan.proposed_this_turn = false
+		_market_turn(clan)
 	changed.emit()
+
+
+## M18c: goods come back, sales fade, gifts tire less, a new urgent need now and then, tribute
+## counters run down.
+func _market_turn(clan: ClanState) -> void:
+	var clan_id := clan.data.clan_id
+	for resource_id in clan.stock.keys():
+		var full := stock_max(clan_id, resource_id)
+		_set_stock(clan, resource_id, clan.stock[resource_id] + ceili(full * STOCK_REFILL))
+	for resource_id in clan.sold.keys():
+		var left := floori(clan.sold[resource_id] * DEMAND_KEEP)
+		if left <= 0:
+			clan.sold.erase(resource_id)
+		else:
+			clan.sold[resource_id] = left
+	clan.gift_fatigue = maxi(0, clan.gift_fatigue - GIFT_FATIGUE_DECAY)
+	clan.tribute_cooldown = maxi(0, clan.tribute_cooldown - 1)
+	clan.tribute_peace = maxi(0, clan.tribute_peace - 1)
+	clan.urgent_turns -= 1
+	if clan.urgent_turns <= 0:
+		var options: Array[StringName] = []
+		for resource_id in _trade_values:
+			if not clan.data.surplus.has(resource_id):
+				options.append(resource_id)
+		options.sort()
+		clan.urgent = options[rng.randi_range(0, options.size() - 1)] if not options.is_empty() else &""
+		clan.urgent_turns = URGENT_TURNS
 
 
 ## Relation once every recent event has faded and wariness has caught up with the threat:
@@ -366,11 +444,24 @@ func value_of(amounts: Dictionary[StringName, int]) -> int:
 # --- Gifts --------------------------------------------------------------------------------
 
 ## Relation the gift would add right now (after the per-turn limit).
+## Things the clan lacks or needs urgently count GIFT_NEED_BONUS more; tired of gifts, less
+## (gift_appeal); never past the per-turn limit or GIFT_MEMORY_CAP.
 func gift_gain(clan_id: StringName, amounts: Dictionary[StringName, int]) -> int:
 	var clan := clans[clan_id]
-	var raw := floori(float(value_of(amounts)) / GIFT_VALUE_PER_POINT * GIFT_MULTIPLIER[clan.data.personality]
-			* (1.0 + envoy * ENVOY_GIFT + gift_bonus))
-	return clampi(raw, 0, MAX_GIFT_GAIN_PER_TURN - clan.gift_gain_this_turn)
+	var value := 0.0
+	for resource_id in amounts:
+		var needed := clan.data.deficit.has(resource_id) or clan.urgent == resource_id
+		value += amounts[resource_id] * _trade_values.get(resource_id, 1) * (GIFT_NEED_BONUS if needed else 1.0)
+	var raw := floori(value / GIFT_VALUE_PER_POINT * GIFT_MULTIPLIER[clan.data.personality]
+			* (1.0 + envoy * ENVOY_GIFT + gift_bonus) * gift_appeal(clan_id))
+	var room := mini(MAX_GIFT_GAIN_PER_TURN - clan.gift_gain_this_turn,
+			GIFT_MEMORY_CAP - clan.memories.get(MEMORY_GIFT, 0))
+	return clampi(raw, 0, maxi(0, room))
+
+
+## How much a gift still pleases the clan, GIFT_MIN_APPEAL..1 (lower after many gifts).
+func gift_appeal(clan_id: StringName) -> float:
+	return maxf(GIFT_MIN_APPEAL, 1.0 - clans[clan_id].gift_fatigue / GIFT_FATIGUE_SCALE)
 
 
 func check_gift(stockpile: Stockpile, clan_id: StringName, amounts: Dictionary[StringName, int]) -> GiftResult:
@@ -382,6 +473,8 @@ func check_gift(stockpile: Stockpile, clan_id: StringName, amounts: Dictionary[S
 		return GiftResult.EMPTY
 	if clans[clan_id].gift_gain_this_turn >= MAX_GIFT_GAIN_PER_TURN:
 		return GiftResult.LIMIT_REACHED
+	if clans[clan_id].memories.get(MEMORY_GIFT, 0) >= GIFT_MEMORY_CAP:
+		return GiftResult.SATED
 	if not stockpile.can_afford(amounts):
 		return GiftResult.CANNOT_AFFORD
 	if gift_gain(clan_id, amounts) <= 0:
@@ -397,6 +490,7 @@ func give_gift(stockpile: Stockpile, clan_id: StringName, amounts: Dictionary[St
 	var gain := gift_gain(clan_id, amounts)
 	stockpile.spend(amounts)
 	clans[clan_id].gift_gain_this_turn += gain
+	clans[clan_id].gift_fatigue += gain
 	change_relation(clan_id, gain, MEMORY_GIFT)
 	return GiftResult.OK
 
@@ -417,6 +511,8 @@ static func describe_gift(result: GiftResult) -> String:
 			return "Món quà quá nhỏ, họ sẽ không để ý (quan hệ +0)."
 		GiftResult.TOO_FAR:
 			return "Quá xa: chỉ qua lại được với gia tộc cách lãnh thổ tối đa %d vùng." % REACH
+		GiftResult.SATED:
+			return "Họ đã nhận quá nhiều quà, thêm quà lúc này chẳng còn ý nghĩa. Hãy đợi ít lâu."
 	return ""
 
 
@@ -434,6 +530,7 @@ func price_factor(clan_id: StringName, give_id: StringName, get_id: StringName) 
 		factor *= SURPLUS_BONUS
 	if distance(clan_id) > 1:
 		factor *= DISTANT_PENALTY
+	factor *= demand_factor(clan_id, give_id)
 	return factor * (1.0 + envoy * ENVOY_PRICE) * (1.0 + minf(MAX_MARKET_PRICE, _admin(&"trade_price")))
 
 
@@ -441,6 +538,46 @@ func price_factor(clan_id: StringName, give_id: StringName, get_id: StringName) 
 func trade_quote(clan_id: StringName, give_id: StringName, give_amount: int, get_id: StringName) -> int:
 	var value: int = give_amount * _trade_values.get(give_id, 1)
 	return floori(value * price_factor(clan_id, give_id, get_id) / _trade_values.get(get_id, 1))
+
+
+## M18c: how much the clan still wants `give_id`: lower after the kingdom sold it a lot lately,
+## higher when it is the clan's urgent need.
+func demand_factor(clan_id: StringName, give_id: StringName) -> float:
+	var clan := clans[clan_id]
+	var factor := 1.0 - DEMAND_DROP * minf(1.0, clan.sold.get(give_id, 0) / DEMAND_VALUE)
+	return factor * (URGENT_BONUS if clan.urgent == give_id else 1.0)
+
+
+## M18c: the most of `resource_id` the clan keeps for trading (hidden from the player).
+func stock_max(clan_id: StringName, resource_id: StringName) -> int:
+	var clan := clans[clan_id]
+	var amount: float = STOCK_VALUE / _trade_values.get(resource_id, 1)
+	if clan.data.surplus.has(resource_id):
+		amount *= STOCK_SURPLUS
+	elif clan.data.deficit.has(resource_id):
+		amount *= STOCK_DEFICIT
+	if clan.data.personality == ClanData.Personality.MERCHANT:
+		amount *= STOCK_MERCHANT
+	var tier: int = clan_tier.call(clan_id) if clan_tier.is_valid() else 0
+	return roundi(amount * STOCK_TIER[clampi(tier, 0, STOCK_TIER.size() - 1)])
+
+
+## M18c: what the clan can still hand over of `resource_id` right now (hidden).
+func stock_left(clan_id: StringName, resource_id: StringName) -> int:
+	return clans[clan_id].stock.get(resource_id, stock_max(clan_id, resource_id))
+
+
+## The clan's goods of this kind run low (a vague hint for the trade dialog; no numbers).
+func stock_low(clan_id: StringName, resource_id: StringName) -> bool:
+	return stock_left(clan_id, resource_id) < stock_max(clan_id, resource_id) * STOCK_LOW_SHARE
+
+
+func _set_stock(clan: ClanState, resource_id: StringName, amount: int) -> void:
+	var full := stock_max(clan.data.clan_id, resource_id)
+	if amount >= full:
+		clan.stock.erase(resource_id)
+	else:
+		clan.stock[resource_id] = maxi(0, amount)
 
 
 func remaining_capacity(clan_id: StringName) -> int:
@@ -465,8 +602,11 @@ func check_trade(stockpile: Stockpile, clan_id: StringName, give_id: StringName,
 		return TradeResult.CANNOT_AFFORD
 	if give_amount * _trade_values.get(give_id, 1) > remaining_capacity(clan_id):
 		return TradeResult.OVER_CAPACITY
-	if trade_quote(clan_id, give_id, give_amount, get_id) <= 0:
+	var quote := trade_quote(clan_id, give_id, give_amount, get_id)
+	if quote <= 0:
 		return TradeResult.TOO_SMALL
+	if quote > stock_left(clan_id, get_id):
+		return TradeResult.OUT_OF_STOCK
 	return TradeResult.OK
 
 
@@ -480,7 +620,11 @@ func trade(stockpile: Stockpile, clan_id: StringName, give_id: StringName, give_
 	stockpile.spend({give_id: give_amount})
 	stockpile.add({get_id: received})
 	var clan := clans[clan_id]
-	clan.traded_value_this_turn += give_amount * _trade_values.get(give_id, 1)
+	var given_value: int = give_amount * _trade_values.get(give_id, 1)
+	clan.traded_value_this_turn += given_value
+	_set_stock(clan, get_id, stock_left(clan_id, get_id) - received)
+	_set_stock(clan, give_id, stock_left(clan_id, give_id) + give_amount)
+	clan.sold[give_id] = clan.sold.get(give_id, 0) + given_value
 	if clan.trade_gain_this_turn < MAX_TRADE_GAIN_PER_TURN:
 		clan.trade_gain_this_turn += TRADE_RELATION_GAIN
 		change_relation(clan_id, TRADE_RELATION_GAIN, MEMORY_TRADE)
@@ -507,6 +651,8 @@ static func describe_trade(result: TradeResult) -> String:
 			return "Số lượng quá ít để đổi được gì."
 		TradeResult.TOO_FAR:
 			return "Quá xa: chỉ qua lại được với gia tộc cách lãnh thổ tối đa %d vùng." % REACH
+		TradeResult.OUT_OF_STOCK:
+			return "Họ không còn nhiều hàng đó để đổi lúc này."
 	return ""
 
 
@@ -704,7 +850,8 @@ static func describe_proposal(result: ProposalResult) -> String:
 ## ClanState fields written as they are (ints and bools); add new plain fields here.
 const SAVED_CLAN_FIELDS: Array[StringName] = [&"wariness", &"gift_gain_this_turn", &"trade_gain_this_turn",
 		&"traded_value_this_turn", &"proposed_this_turn", &"annexed", &"alliance_turns",
-		&"alliance_cooldown", &"pact_turns", &"pact_cooldown"]
+		&"alliance_cooldown", &"pact_turns", &"pact_cooldown", &"urgent_turns", &"gift_fatigue",
+		&"tribute_cooldown", &"tribute_peace"]
 const SAVED_AGREEMENT_FIELDS: Array[StringName] = [&"give_amount", &"get_amount", &"total_turns", &"turns_left"]
 
 
@@ -719,6 +866,9 @@ func to_save() -> Dictionary:
 		for source in clan.memories:
 			memories[String(source)] = clan.memories[source]
 		entry["memories"] = memories
+		entry["stock"] = _plain_amounts(clan.stock)
+		entry["sold"] = _plain_amounts(clan.sold)
+		entry["urgent"] = String(clan.urgent)
 		if clan.agreement != null:
 			var agreement := {"give_id": String(clan.agreement.give_id), "get_id": String(clan.agreement.get_id)}
 			for field in SAVED_AGREEMENT_FIELDS:
@@ -743,6 +893,10 @@ func load_save(data: Dictionary) -> void:
 		clan.memories.clear()
 		for source: String in entry.memories:
 			clan.memories[StringName(source)] = int(entry.memories[source])
+		# M18c fields: older saves start with full goods and no sales.
+		clan.stock = _loaded_amounts(entry.get("stock", {}))
+		clan.sold = _loaded_amounts(entry.get("sold", {}))
+		clan.urgent = StringName(entry.get("urgent", ""))
 		clan.agreement = null
 		if entry.has("agreement"):
 			var saved: Dictionary = entry.agreement
@@ -754,6 +908,20 @@ func load_save(data: Dictionary) -> void:
 				agreement.set(field, int(saved[String(field)]))
 			clan.agreement = agreement
 	changed.emit()
+
+
+static func _plain_amounts(amounts: Dictionary[StringName, int]) -> Dictionary:
+	var result := {}
+	for resource_id in amounts:
+		result[String(resource_id)] = amounts[resource_id]
+	return result
+
+
+static func _loaded_amounts(data: Dictionary) -> Dictionary[StringName, int]:
+	var result: Dictionary[StringName, int] = {}
+	for resource_name: String in data:
+		result[StringName(resource_name)] = int(data[resource_name])
+	return result
 
 
 ## JSON numbers come back as floats: give a loaded value the type of the field it replaces.

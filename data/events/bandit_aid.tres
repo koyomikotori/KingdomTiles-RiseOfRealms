@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+weight = 1.0
+text = "Một toán quân lên đường sang đất {clan} đánh đạo tặc."
+battle = &"aid"
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Cử quân giúp"
+hint = "3 đến 5 đơn vị ở nhà sẽ ra trận. Thắng thì họ rất cảm kích; thua họ vẫn nhớ ơn."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
+min_squads_home = 3
+
+[sub_resource type="Resource" id="outcome_1_0"]
+script = ExtResource("3_outcome")
+weight = 1.0
+text = "Sứ giả {clan} lặng lẽ ra về."
+relation = -3
+
+[sub_resource type="Resource" id="choice_1"]
+script = ExtResource("2_choice")
+text = "Từ chối"
+hint = "Họ sẽ hơi buồn."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"bandit_aid"
+title = "{clan} xin viện binh"
+text = "Đạo tặc quấy phá đất {clan}, quân họ không đủ sức dẹp. Sứ giả xin vương quốc cử quân sang giúp."
+category = 2
+weight = 1.5
+cooldown = 8
+min_turn = 8
+min_squads = 3
+needs_clan = true
+clan_min_tier = 3
+clan_cooldown = 15
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

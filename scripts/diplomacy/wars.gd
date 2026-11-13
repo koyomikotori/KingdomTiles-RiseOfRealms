@@ -195,9 +195,10 @@ func _start_war(clan_id: StringName) -> void:
 
 
 ## The clan declares war on the kingdom on its own (an event); false when it cannot right now
-## (also never during a non-aggression pact).
+## (also never during a non-aggression pact, nor while it keeps the peace for a tribute, M18c).
 func clan_declares_war(clan_id: StringName) -> bool:
-	if check_declare(clan_id) != DeclareResult.OK or _diplomacy.clans[clan_id].has_pact():
+	var clan := _diplomacy.clans[clan_id]
+	if check_declare(clan_id) != DeclareResult.OK or clan.has_pact() or clan.tribute_peace > 0:
 		return false
 	_start_war(clan_id)
 	return true
@@ -238,7 +239,7 @@ func end_turn(rng: RandomNumberGenerator, turn: int = 1) -> Array[StringName]:
 ## Chance this turn that the clan declares war on its own (0 unless Tense or Hostile, and never
 ## during a non-aggression pact).
 func _declare_chance(clan_id: StringName) -> float:
-	if _diplomacy.clans[clan_id].has_pact():
+	if _diplomacy.clans[clan_id].has_pact() or _diplomacy.clans[clan_id].tribute_peace > 0:
 		return 0.0
 	var personality := _diplomacy.clans[clan_id].data.personality
 	match _diplomacy.get_tier(clan_id):

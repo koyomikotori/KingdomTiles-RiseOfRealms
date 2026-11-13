@@ -8,6 +8,9 @@ extends Resource
 @export var hint: String
 ## Paid up front when chosen.
 @export var cost: Dictionary[StringName, int] = {}
+## M18c: paid up front as well: this share of the stockpile of each resource (at least
+## EventSystem.COST_SHARE_MIN), fixed when the event is rolled.
+@export var cost_share: Dictionary[StringName, float] = {}
 ## One is rolled by weight. Empty = nothing else happens.
 @export var outcomes: Array[EventOutcomeData] = []
 @export_group("Chance (M16b)")

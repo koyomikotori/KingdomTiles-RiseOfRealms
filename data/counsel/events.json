@@ -21,12 +21,12 @@
 	},
 	"ally_request": {
 		"linh_nhi": [
-			["neutral", "Chúa công, {clan} đang sửa thành mà thiếu gỗ, họ gửi thư nhờ mình giúp một ít ạ. Bạn bè lúc khó mà!"],
-			["happy", "Đồng minh {clan} nhờ mình giúp ít gỗ để sửa thành đó Chúa công! Giúp họ thì tình nghĩa càng thêm bền ạ."]
+			["concerned", "Chúa công, thành của {clan} vừa bị bão làm hư hại, họ gửi sứ giả xin mình ít gỗ với đá để dựng lại ạ."],
+			["neutral", "{clan} xin vật liệu sửa thành đó Chúa công! Giúp người lúc khó thì họ nhớ lâu lắm ạ."]
 		],
 		"tu_uyen": [
-			["neutral", "{clan} đang sửa thành, xin ta giúp ít gỗ. Đồng minh cần được giữ, nhưng kho của ta cũng phải tính."],
-			["neutral", "Chúa công, đồng minh {clan} xin gỗ để sửa thành. Thuộc hạ đã kiểm kho, đủ để giúp nếu Chúa công muốn."]
+			["neutral", "{clan} xin gỗ và đá để dựng lại thành sau bão. Giúp được thì nên giúp, nhưng kho ta cũng phải tính."],
+			["neutral", "Chúa công, sứ giả {clan} xin vật liệu. Thuộc hạ đã kiểm kho, phần họ xin không quá lớn."]
 		]
 	},
 	"ancient_shrine": {
@@ -342,10 +342,10 @@
 	"tribute_demand": {
 		"linh_nhi": [
 			["concerned", "Chúa công! Sứ giả {clan} vênh váo đòi mình nộp cống, không thì họ kéo quân đến cổng thành! Tức quá đi!"],
-			["surprised", "{clan} đòi cống nạp kìa Chúa công! Họ mạnh hơn mình thật... nhưng tiểu nữ không cam lòng chút nào!"]
+			["surprised", "{clan} đòi cống nạp kìa Chúa công! Quân họ đông hơn mình nhiều... nhưng tiểu nữ không cam lòng chút nào!"]
 		],
 		"tu_uyen": [
-			["concerned", "{clan} đòi cống nạp, đe dọa kéo quân đến. Họ mạnh hơn ta lúc này, khước từ là chấp nhận rủi ro chiến tranh."],
+			["concerned", "{clan} đòi cống nạp, đe dọa kéo quân đến. Quân họ đông hơn ta hẳn; nộp thì mua được ít lượt bình yên, khước từ là chấp nhận rủi ro chiến tranh."],
 			["neutral", "Chúa công, sứ giả {clan} đến đòi cống. Thuộc hạ đã ước lượng quân họ, không thể coi thường."]
 		]
 	},
@@ -437,6 +437,26 @@
 		"tu_uyen": [
 			["neutral", "Thưa Chúa công, {officer} có lời xin riêng: muốn được đấu trí lật thẻ với Chúa công để tập luyện."],
 			["neutral", "Mưu sĩ tự xin thì sẽ để tâm hơn. Nếu Chúa công nhận lời, {officer} sẽ được lợi nhiều hơn thường lệ."]
+		]
+	},
+	"bandit_aid": {
+		"linh_nhi": [
+			["concerned", "Chúa công ơi, đạo tặc đang hoành hành ở đất {clan}, họ cử sứ giả sang xin mình viện binh ạ!"],
+			["surprised", "{clan} xin quân giúp đánh đạo tặc đó Chúa công! Mình mà thắng thì họ nhớ ơn lắm luôn!"]
+		],
+		"tu_uyen": [
+			["neutral", "{clan} bị đạo tặc quấy phá, xin ta cử quân sang. Đây là dịp tốt để thắt chặt tình giao hảo, nhưng quân đi thì nhà vắng."],
+			["neutral", "Chúa công, sứ giả {clan} xin viện binh dẹp đạo tặc. Thuộc hạ nghĩ một toán nhỏ là đủ."]
+		]
+	},
+	"clan_thanks": {
+		"linh_nhi": [
+			["happy", "Chúa công ơi! {clan} gửi quà đáp lễ kìa! Mình giúp họ lần trước đó, họ vẫn nhớ ạ!"],
+			["happy", "Sứ giả {clan} mang quà tới tạ ơn đó Chúa công! Tiểu nữ đã bảo là làm ơn sẽ được nhớ mà!"]
+		],
+		"tu_uyen": [
+			["happy", "{clan} gửi quà đáp lễ lần ta ra tay giúp đỡ. Ơn nghĩa đã có hồi đáp, Chúa công."],
+			["neutral", "Chúa công, sứ giả {clan} tới tạ ơn kèm lễ vật. Thuộc hạ đã cho người kiểm hàng."]
 		]
 	}
 }
