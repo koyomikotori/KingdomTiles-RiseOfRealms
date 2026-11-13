@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"reed_marsh"
 display_name = "Lau Sậy Trạch"
-description = "Dân đầm lầy lau sậy, ẩn mình và ngờ vực người lạ."
+description = "Dân đầm lầy sống giữa rừng lau sậy, đường thủy chằng chịt như mê cung."
 color = Color(0.41, 0.75, 0.82, 1)
 grid = Vector2i(0, 3)
 personality = 3

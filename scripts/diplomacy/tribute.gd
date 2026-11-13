@@ -52,7 +52,7 @@ static func check(state: KingdomState, clan_id: StringName) -> Result:
 static func chance(state: KingdomState, clan_id: StringName) -> float:
 	var personality := state.diplomacy.clans[clan_id].data.personality
 	var value := minf(MAX_CHANCE, BASE_CHANCE + CHANCE_PER_RATIO * maxf(0.0, ratio(state, clan_id) - MIN_RATIO))
-	return clampf(value + PERSONALITY_CHANCE[personality], 0.05, 0.95)
+	return clampf(value + PERSONALITY_CHANCE[personality] + state.diplomacy.origin_chance, 0.05, 0.95)
 
 
 ## What the clan would pay: its surplus goods (or FALLBACK_GOODS), the value split evenly.

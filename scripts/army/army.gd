@@ -25,6 +25,8 @@ class Squad:
 
 
 var squads: Array[Squad] = []
+## Multiplies every XP gain (the Võ tướng background, M18d; set by KingdomState, not saved).
+var xp_rate := 1.0
 
 
 func add_squad(unit_id: StringName, soldiers: int) -> void:
@@ -53,7 +55,7 @@ func add_soldiers(squad: Squad, added: int) -> void:
 
 func add_xp(squad: Squad, amount: float) -> void:
 	if amount > 0.0:
-		squad.xp += amount
+		squad.xp += amount * xp_rate
 		changed.emit()
 
 
@@ -63,7 +65,7 @@ func train() -> void:
 	var cap: float = Experience.SQUAD_LEVEL_XP[Experience.TRAINING_MAX_LEVEL]
 	for squad in squads:
 		if squad.xp < cap:
-			squad.xp = minf(cap, squad.xp + Experience.TRAINING_XP)
+			squad.xp = minf(cap, squad.xp + Experience.TRAINING_XP * xp_rate)
 	changed.emit()
 
 

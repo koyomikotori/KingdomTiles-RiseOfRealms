@@ -1248,6 +1248,10 @@ func _income_source_text(entry: Dictionary) -> String:
 			return "Kho lương (giảm lương thực nuôi quân)"
 		&"magistrate":
 			return "Quan phủ (thêm sản lượng)"
+		&"origin_yield":
+			return "Xuất thân Mưu sĩ (thêm sản lượng)"
+		&"origin_upkeep":
+			return "Xuất thân Mưu sĩ (giảm lương thực nuôi quân)"
 		&"production":
 			return "%s ×%d (khai thác)" % [_buildings[entry.id].display_name, entry.count]
 		&"building":

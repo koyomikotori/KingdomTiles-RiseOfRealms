@@ -121,8 +121,8 @@ func test_notices_list_what_is_going_on() -> void:
 			lines[Notices.key(section.id, item.id)] = item.lines
 	check_eq(lines.get("buildings/constructing"), ["Doanh trại: còn 2 lượt"] as Array[String], "Construction with turns left")
 	check_eq(lines.get("buildings/completed"), ["Nông trại lên cấp 2"] as Array[String], "Finished this turn")
-	check(lines.get("diplomacy/wars", [""])[0].begins_with("Lang Tộc Phương Bắc: quân"), "At war, with their army")
-	check_eq(lines.get("diplomacy/allies"), ["Điền Trang Nam Lâm: còn 7 lượt"] as Array[String], "Allies with turns left")
+	check(lines.get("diplomacy/wars", [""])[0].begins_with("Lang Tộc Bạch Nha: quân"), "At war, with their army")
+	check_eq(lines.get("diplomacy/allies"), ["Điền Trang Thanh Lâm: còn 7 lượt"] as Array[String], "Allies with turns left")
 	check_eq(lines.get("army/replenished"), ["+3 Kiếm binh nông dân"] as Array[String], "Replenished soldiers")
 	check(not lines.has("army/deserted"), "Empty items are left out")
 	for key: String in lines:

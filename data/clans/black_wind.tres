@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"black_wind"
 display_name = "Hắc Phong Trại"
-description = "Sơn tặc Hắc Phong khét tiếng, quân đông và tàn bạo."
+description = "Sơn trại Hắc Phong giữa rừng núi lộng gió, cờ đen phần phật trên vách đá."
 color = Color(0.82, 0.41, 0.75, 1)
 grid = Vector2i(1, 4)
 personality = 1

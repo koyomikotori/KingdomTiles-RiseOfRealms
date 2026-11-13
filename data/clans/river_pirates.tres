@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"river_pirates"
 display_name = "Thủy Trại Bạch Giang"
-description = "Thủy tặc chiếm cứ khúc sông lớn, sống bằng thu thuế thuyền buôn."
+description = "Thủy trại dựng trên khúc sông lớn, chiến thuyền neo kín bến."
 color = Color(0.82, 0.48, 0.41, 1)
 grid = Vector2i(3, 0)
 personality = 1

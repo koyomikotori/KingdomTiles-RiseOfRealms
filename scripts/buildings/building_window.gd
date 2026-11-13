@@ -147,16 +147,21 @@ func _open_construction(body: VBoxContainer, cell: CellData) -> void:
 
 
 ## The ruler at the top of the castle's info tab (M16h): portrait (as big as the Chiêu hiền
-## ones), name and look.
+## ones), name, look and background with its advantages (M18d).
 func _ruler_row() -> Control:
 	var ruler := _state.ruler
 	var portrait := PortraitView.new()
 	portrait.setup(ruler, 1.0, _state.player_color)
-	var text := _label("Chúa công %s
-%s" % [ruler.full_name(), ruler.describe()], 15, false)
-	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	var row := _row([portrait, text])
+	var lines := VBoxContainer.new()
+	lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lines.alignment = BoxContainer.ALIGNMENT_CENTER
+	lines.add_child(_label("Chúa công %s\n%s" % [ruler.full_name(), ruler.describe()], 15, false))
+	var origin := _state.origin()
+	if not origin.is_empty():
+		var advantages := _label(RulerOrigin.summary(origin), 13)
+		advantages.add_theme_color_override("font_color", MUTED_COLOR)
+		lines.add_child(advantages)
+	var row := _row([portrait, lines])
 	row.add_theme_constant_override("separation", 12)
 	return row
 

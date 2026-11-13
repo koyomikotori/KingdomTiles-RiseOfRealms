@@ -247,6 +247,10 @@ var envoy := 0
 ## The kingdom's administrative effects (KingdomState.building_effect: effect id -> amount);
 ## unset in tests that build a Diplomacy alone. Markets: trade_capacity, trade_price.
 var admin_effect: Callable
+## The Thiên tử background (RulerOrigin, M18d; set by KingdomState): added to every proposal's
+## chance (agreements, renewals, alliances, pacts, peace, tribute) and to trade prices.
+var origin_chance := 0.0
+var origin_price := 0.0
 ## Extra share of relation from gifts (the diplomacy advisor's items, M12e; set by KingdomState).
 var gift_bonus := 0.0
 ## How threatening the kingdom looks (KingdomState.get_threat()); every clan's wariness grows toward
@@ -531,7 +535,8 @@ func price_factor(clan_id: StringName, give_id: StringName, get_id: StringName) 
 	if distance(clan_id) > 1:
 		factor *= DISTANT_PENALTY
 	factor *= demand_factor(clan_id, give_id)
-	return factor * (1.0 + envoy * ENVOY_PRICE) * (1.0 + minf(MAX_MARKET_PRICE, _admin(&"trade_price")))
+	return factor * (1.0 + envoy * ENVOY_PRICE) * (1.0 + minf(MAX_MARKET_PRICE, _admin(&"trade_price"))) \
+			* (1.0 + origin_price)
 
 
 ## Units of `get_id` the player would receive for `give_amount` of `give_id` (rounded down).
@@ -677,7 +682,7 @@ func agreement_chance(clan_id: StringName, give_id: StringName, give_amount: int
 		return 0.0
 	var clan := clans[clan_id]
 	var chance := 1.5 - float(get_amount) / fair + clan.relation / 200.0 + AGREEMENT_PERSONALITY[clan.data.personality] \
-			+ envoy * ENVOY_CHANCE
+			+ envoy * ENVOY_CHANCE + origin_chance
 	return clampf(chance, 0.0, AGREEMENT_MAX_CHANCE)
 
 

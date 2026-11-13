@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_clan")
 clan_id = &"south_farmers"
-display_name = "Điền Trang Nam Lâm"
-description = "Những làng nông nghiệp yên bình giữa rừng phương Nam. Hiền hòa, dư gỗ, thiếu đá xây dựng."
+display_name = "Điền Trang Thanh Lâm"
+description = "Những làng nông nghiệp giữa rừng xanh, ruộng lúa và vườn cây tươi tốt."
 color = Color(0.45, 0.75, 0.35, 1)
 grid = Vector2i(0, 1)
 personality = 0

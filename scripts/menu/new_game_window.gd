@@ -142,7 +142,9 @@ func _refresh() -> void:
 		button.custom_minimum_size = Vector2(130, 44)
 		button.disabled = level == Difficulty.Level.LEGENDARY and not unlocked
 		_difficulty_row.add_child(button)
-	_ruler_label.text = "Chúa công: %s (%s)" % [_ruler.full_name(), _ruler.describe()]
+	_ruler_label.text = "Chúa công: %s (%s) · Xuất thân %s" % [_ruler.full_name(), _ruler.describe(),
+			RulerOrigin.display_name(_ruler.origin())]
+	_ruler_label.tooltip_text = RulerOrigin.describe(_ruler.origin())
 	_counselor_row.add_child(_label("Cố vấn:", 15, false))
 	for id in Counselor.IDS:
 		var face := CounselorPortrait.new()

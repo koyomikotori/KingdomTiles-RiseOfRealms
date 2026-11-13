@@ -167,7 +167,7 @@ func test_a_choice_pays_its_cost_and_applies_the_outcome() -> void:
 	check_eq(state.stockpile.get_amount(&"food"), 180, "Paid 10% of the food")
 	check_eq(state.diplomacy.clans[&"south_farmers"].relation, relation + 12, "+12")
 	check_eq(state.diplomacy.clans[&"south_farmers"].memories.get(Diplomacy.MEMORY_EVENT), 12, "Remembered as an event")
-	check(result.text.contains("Điền Trang Nam Lâm"), "Clan name filled in")
+	check(result.text.contains("Điền Trang Thanh Lâm"), "Clan name filled in")
 	check(state.events.pending.is_empty(), "Answered")
 
 

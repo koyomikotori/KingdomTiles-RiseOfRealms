@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"moon_palace"
 display_name = "Nguyệt Cung"
-description = "Kinh thành phồn hoa của các thương gia giàu có."
+description = "Kinh thành phồn hoa với lầu gác soi bóng xuống hồ trăng."
 color = Color(0.82, 0.41, 0.61, 1)
 grid = Vector2i(2, 4)
 personality = 2

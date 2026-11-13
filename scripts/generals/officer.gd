@@ -23,6 +23,8 @@ var level := 1
 var xp := 0
 ## Unspent level points.
 var points := 0
+## Multiplies every XP gain (the Thiên tử background, M18d; set by KingdomState, not saved).
+var xp_rate := 1.0
 ## Limit breaks done (M16c, LimitBreak): each raises the stat caps and the max level.
 var breaks := 0
 ## Portrait and battle sprite (OfficerLook).
@@ -83,7 +85,7 @@ func level_text() -> String:
 ## Returns how many levels were gained.
 func gain_xp(amount: int) -> int:
 	var gained := 0
-	xp += maxi(0, amount)
+	xp += roundi(maxi(0, amount) * xp_rate)
 	while level < max_level() and xp >= xp_to_next():
 		xp -= xp_to_next()
 		level += 1

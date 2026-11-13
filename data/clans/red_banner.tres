@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"red_banner"
 display_name = "Xích Kỳ Quân"
-description = "Đạo quân cờ đỏ chiếm giữ ngã tư giữa thiên hạ, sống nhờ chinh chiến."
+description = "Đạo quân cờ đỏ đóng trại nơi ngã tư đường lớn."
 color = Color(0.41, 0.82, 0.48, 1)
 grid = Vector2i(2, 2)
 personality = 1

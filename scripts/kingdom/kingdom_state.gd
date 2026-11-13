@@ -97,6 +97,13 @@ static var instant_construction := false
 ## Castle levels need united clans (CastleLevelData.required_clans, GDD §15). Tests and previews
 ## that are about something else turn this off.
 static var castle_needs_clans := true
+## The ruler's background gives its advantages (RulerOrigin, GDD §31). Tests that are about
+## something else turn this off (run_tests.gd).
+static var origins_on := true
+## New games shuffle the clans (ClanLayout, GDD §31); tests turn this off and keep the fixed map.
+static var shuffle_clans := true
+## This game's clan layout (ClanLayout); {} = the fixed map of data/clans/.
+var clan_layout := {}
 var castle_levels: Array[CastleLevelData] = CastleLevelData.load_all()
 var rng := RandomNumberGenerator.new()
 
@@ -129,6 +136,28 @@ func _init(p_board: BoardData, p_hand: PieceHand, p_terrains: Dictionary[StringN
 	generals.advisors = advisors
 	advisors.changed.connect(_sync_advisors)
 	equipment.changed.connect(_sync_advisors)
+	generals.changed.connect(_apply_origin)
+	advisors.changed.connect(_apply_origin)
+	_apply_origin()
+
+
+## The ruler's background (RulerOrigin), &"" while origins_on is off.
+func origin() -> StringName:
+	return ruler.origin() if origins_on else &""
+
+
+## Hands the background's advantages to the parts that use them; called again whenever the
+## officers change (new ones gain XP faster too).
+func _apply_origin() -> void:
+	var emperor := origin() == RulerOrigin.EMPEROR
+	diplomacy.origin_chance = RulerOrigin.DIPLOMACY_CHANCE if emperor else 0.0
+	diplomacy.origin_price = RulerOrigin.TRADE_PRICE if emperor else 0.0
+	army.xp_rate = 1.0 + (RulerOrigin.SQUAD_XP if origin() == RulerOrigin.WARLORD else 0.0)
+	var officer_rate := 1.0 + (RulerOrigin.OFFICER_XP if emperor else 0.0)
+	for general in generals.generals:
+		general.xp_rate = officer_rate
+	for advisor in advisors.advisors:
+		advisor.xp_rate = officer_rate
 
 
 ## The diplomacy advisor's skill lives in Diplomacy (its rules use it); keep it current.
@@ -140,13 +169,23 @@ func _sync_advisors() -> void:
 ## A new game's stockpile (KingdomState.STARTING_RESOURCES). The kingdom scene calls it for new
 ## games only; tests start from an empty stockpile.
 func give_starting_resources() -> void:
-	stockpile.add(STARTING_RESOURCES)
+	var amounts := STARTING_RESOURCES.duplicate()
+	if origin() == RulerOrigin.EMPEROR:
+		for resource_id in amounts:
+			amounts[resource_id] = roundi(amounts[resource_id] * (1.0 + RulerOrigin.START_RESOURCES))
+	stockpile.add(amounts)
 
 
 ## A new game's army (STARTING_SQUADS, full strength). The kingdom scene calls it for new games only.
 func give_starting_army() -> void:
 	for unit_id in STARTING_SQUADS:
 		army.add_squad(unit_id, units[unit_id].squad_size)
+	# The background's officer (GDD §31).
+	match origin():
+		RulerOrigin.WARLORD:
+			generals.add(generals.generate(RulerOrigin.START_STARS))
+		RulerOrigin.STRATEGIST:
+			advisors.add(advisors.generate(RulerOrigin.START_STARS))
 
 
 ## Deals the first hand. Call once after connecting signals.
@@ -198,7 +237,14 @@ func setup_new_game(settings: Dictionary) -> void:
 	# Every new game opens with the tutorial (M18a); "Bỏ qua hướng dẫn" ends it at once.
 	if bool(settings.get("tutorial", true)):
 		tutorial.start(self)
+	# A new map every game (GDD §31), from its own rolls so the game's other rolls stay the same.
+	if shuffle_clans:
+		var layout_rng := RandomNumberGenerator.new()
+		layout_rng.seed = rng.seed + 10
+		clan_layout = ClanLayout.roll(ClanData.load_all(), layout_rng)
+		ClanLayout.apply(diplomacy, clan_layout)
 	wars.set_enemy_scale(Difficulty.enemy_scale(difficulty), turn)
+	_apply_origin()
 
 
 ## The whole game as JSON-safe data. The board is restored separately (BoardData.from_save),
@@ -211,7 +257,7 @@ func to_save() -> Dictionary:
 			"events": events.to_save(), "generals": generals.to_save(), "advisors": advisors.to_save(),
 			"equipment": equipment.to_save(), "agents": agents.to_save(), "clan_officers": clan_officers.to_save(),
 			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false), "ruler": ruler.to_save(), "counselor": counselor,
-			"tutorial": tutorial.to_save(), "scrolls": scrolls, "black_market": black_market.to_save(), "morale_effects": morale_effects.to_save(), "raid_pressure": raid_pressure.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
+			"tutorial": tutorial.to_save(), "clan_layout": clan_layout, "scrolls": scrolls, "black_market": black_market.to_save(), "morale_effects": morale_effects.to_save(), "raid_pressure": raid_pressure.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
 
 
 ## Restores everything but the board from to_save() data. Random rolls are not saved: they come
@@ -235,6 +281,9 @@ func load_save(data: Dictionary) -> void:
 	hand.load_save(data.hand)
 	stockpile.load_save(data.stockpile)
 	army.load_save(data.army, units)
+	# Saves from before M18d: the fixed map.
+	clan_layout = data.get("clan_layout", {})
+	ClanLayout.apply(diplomacy, clan_layout)
 	diplomacy.load_save(data.diplomacy)
 	wars.load_save(data.wars, turn)
 	# Saves from before M11a have no victory state or stats.
@@ -270,6 +319,7 @@ func load_save(data: Dictionary) -> void:
 	uprising.load_save(data.get("uprising", {}), board)
 	var saved_expedition: Dictionary = data.get("expedition", {})
 	expedition = Expedition.from_save(saved_expedition, self) if not saved_expedition.is_empty() else null
+	_apply_origin()
 
 
 ## What a save slot shows: {"turn", "cells", "soldiers"}.
@@ -523,7 +573,19 @@ func half_refund(amounts: Dictionary[StringName, int]) -> Dictionary[StringName,
 
 
 func recruit(unit_id: StringName) -> RecruitmentRules.Result:
-	return RecruitmentRules.apply(board, stockpile, army, get_squad_capacity(), units[unit_id])
+	return RecruitmentRules.apply(board, stockpile, army, get_squad_capacity(), units[unit_id], recruit_cost(unit_id))
+
+
+## What a squad costs: its recruit_cost, less the Võ tướng's discount (GDD §31).
+func recruit_cost(unit_id: StringName) -> Dictionary[StringName, int]:
+	var cost := units[unit_id].recruit_cost
+	if origin() != RulerOrigin.WARLORD:
+		return cost
+	var saved := Advisors.share_of(cost, RulerOrigin.RECRUIT_DISCOUNT)
+	var result: Dictionary[StringName, int] = {}
+	for resource_id in cost:
+		result[resource_id] = cost[resource_id] - saved.get(resource_id, 0)
+	return result
 
 
 ## Removes a squad for good. Nothing is refunded.
@@ -706,7 +768,25 @@ func get_turn_yield() -> Dictionary[StringName, int]:
 		Economy.add_into(total, Economy.buildings_yield(board, buildings))
 	Economy.add_into(total, advisor_yield_bonus())
 	Economy.add_into(total, magistrate_bonus())
+	Economy.add_into(total, origin_yield_bonus())
 	return total
+
+
+## The Mưu sĩ background's share of what production buildings make (GDD §31).
+func origin_yield_bonus() -> Dictionary[StringName, int]:
+	if not buildings_supplied or origin() != RulerOrigin.STRATEGIST:
+		return {}
+	return Advisors.share_of(Economy.buildings_yield(board, buildings), RulerOrigin.PRODUCTION)
+
+
+## The Mưu sĩ background's cut of the food squads and generals eat (GDD §31).
+func origin_upkeep_discount() -> Dictionary[StringName, int]:
+	if origin() != RulerOrigin.STRATEGIST:
+		return {}
+	var base := army.get_upkeep(units)
+	Economy.add_into(base, generals.get_upkeep())
+	var food: Dictionary[StringName, int] = {&"food": base.get(&"food", 0)}
+	return Advisors.share_of(food, RulerOrigin.FOOD_UPKEEP_CUT)
 
 
 ## Nội chính: a share of what production buildings make (economy v2: the land yields nothing).
@@ -725,6 +805,7 @@ func get_army_upkeep() -> Dictionary[StringName, int]:
 	Economy.add_into(total, generals.get_upkeep())
 	var saved := upkeep_discount()
 	Economy.add_into(saved, granary_discount())
+	Economy.add_into(saved, origin_upkeep_discount())
 	for resource_id in saved:
 		total[resource_id] -= saved[resource_id]
 	Economy.add_into(total, advisors.get_upkeep())
@@ -820,6 +901,12 @@ func get_income_breakdown() -> Dictionary[StringName, Array]:
 	var magistrate := magistrate_bonus()
 	for resource_id in magistrate:
 		add.call(resource_id, {"source": &"magistrate", "id": &"", "amount": magistrate[resource_id], "count": 1})
+	var origin_yield := origin_yield_bonus()
+	for resource_id in origin_yield:
+		add.call(resource_id, {"source": &"origin_yield", "id": &"", "amount": origin_yield[resource_id], "count": 1})
+	var origin_upkeep := origin_upkeep_discount()
+	for resource_id in origin_upkeep:
+		add.call(resource_id, {"source": &"origin_upkeep", "id": &"", "amount": origin_upkeep[resource_id], "count": 1})
 	# Production buildings, per building type (paused while their upkeep is unpaid).
 	if buildings_supplied:
 		var produced := {}  # building_id -> amounts
