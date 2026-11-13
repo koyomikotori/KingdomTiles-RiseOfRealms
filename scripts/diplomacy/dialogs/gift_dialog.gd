@@ -17,7 +17,8 @@ func _shows_stockpile() -> bool:
 
 
 func _build(content: VBoxContainer) -> void:
-	var hint := _label("Mỗi %d giá trị hàng = +1 quan hệ (nhân theo tính cách: %s). Tối đa +%d mỗi lượt." % [
+	var hint := _label(("Mỗi %d giá trị hàng = +1 quan hệ (nhân theo tính cách: %s). Tối đa +%d mỗi lượt. "
+			+ "Tặng thứ họ thiếu hoặc đang cần gấp thì quý hơn; tặng liên tục thì họ quen dần, quà kém tác dụng.") % [
 			Diplomacy.GIFT_VALUE_PER_POINT, ClanData.PERSONALITY_NAMES[clan_data().personality].to_lower(),
 			Diplomacy.MAX_GIFT_GAIN_PER_TURN], 13)
 	hint.add_theme_color_override("font_color", MUTED_COLOR)
@@ -42,7 +43,9 @@ func _refresh() -> void:
 	var result := state.diplomacy.check_gift(state.stockpile, clan_id, _gift())
 	_gift_button.disabled = result != Diplomacy.GiftResult.OK
 	if result == Diplomacy.GiftResult.OK:
-		set_preview(_preview, "Quan hệ +%d (mờ dần theo thời gian)." % state.diplomacy.gift_gain(clan_id, _gift()), true)
+		var tired := "\nHọ có vẻ đã quen nhận quà của ta." if state.diplomacy.gift_appeal(clan_id) < 0.75 else ""
+		set_preview(_preview, "Quan hệ +%d (mờ dần theo thời gian).%s" % [state.diplomacy.gift_gain(clan_id, _gift()),
+				tired], true)
 	else:
 		set_preview(_preview, Diplomacy.describe_gift(result), false)
 

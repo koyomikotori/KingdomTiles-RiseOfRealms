@@ -90,3 +90,8 @@ extends Resource
 ## The event's officer starts their mini game (EventData.officer_request) with
 ## EventSystem.REQUEST_BONUS XP: the kingdom scene opens it after the event window.
 @export var starts_request: bool = false
+@export_group("Diplomacy (M18c)")
+## The event clan declares no war for this many turns (a tribute was paid).
+@export var tribute_peace: int = 0
+## Chance the event clan sends thanks (the scripted clan_thanks event) a few turns later.
+@export var gratitude_chance: float = 0.0

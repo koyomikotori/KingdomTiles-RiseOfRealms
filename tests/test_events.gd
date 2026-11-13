@@ -21,7 +21,11 @@ func _rng(seed_value: int = 1) -> RandomNumberGenerator:
 ## Answers `event_id` (about `clan_id`) with choice `index`.
 func _resolve(state: KingdomState, event_id: StringName, index: int, clan_id: StringName = &"",
 		rng: RandomNumberGenerator = _rng()) -> Dictionary:
-	state.events.pending = [{"event_id": event_id, "clan_id": clan_id}] as Array[Dictionary]
+	var entry := {"event_id": event_id, "clan_id": clan_id}
+	var event: EventData = state.events.events[event_id]
+	if event.choices.any(func(choice: EventChoiceData) -> bool: return not choice.cost_share.is_empty()):
+		entry["costs"] = state.events._fixed_costs(state, event)
+	state.events.pending = [entry] as Array[Dictionary]
 	return state.events.resolve(state, rng, index)
 
 
@@ -115,43 +119,63 @@ func test_bandits_beg_only_after_a_raid_was_beaten_last_turn() -> void:
 	check(not _can(state, &"bandit_mercy"), "Too late")
 
 
+## M18c: a tribute demand comes only from a bordering clan with 1.5× the kingdom's soldiers, no
+## friendlier than Neutral, under no pact or tribute peace, at most once per clan in 15 turns.
 func test_clan_events_pick_a_matching_clan() -> void:
 	var state := _state()
 	var tribute: EventData = state.events.events[&"tribute_demand"]
-	check(not _can(state, &"tribute_demand"), "No clan is tense yet")
-	state.diplomacy.change_relation(&"north_wolves", -40)  # -10 -> -50: tense, 70 soldiers > 0
-	check(_can(state, &"tribute_demand"), "Wolves are tense and stronger")
+	for i in 4:
+		state.army.add_squad(&"swordsman", 20)
+	for front in state.wars.fronts.values():
+		front.strength = 10
+	check(not _can(state, &"tribute_demand"), "No clan is strong enough")
+	state.wars.fronts[&"north_wolves"].strength = 119
+	check(not _can(state, &"tribute_demand"), "Below 1.5 × 80 soldiers")
+	state.wars.fronts[&"north_wolves"].strength = 120
+	check(_can(state, &"tribute_demand"), "Wolves border us with 1.5 × our soldiers")
 	check_eq(state.events.pick_clan(state, tribute, _rng()), &"north_wolves", "Only the wolves match")
-	state.army.add_squad(&"swordsman", 20)
-	state.army.add_squad(&"swordsman", 20)
-	state.army.add_squad(&"swordsman", 20)
-	state.army.add_squad(&"swordsman", 20)
-	check(not _can(state, &"tribute_demand"), "Not once the kingdom has more soldiers")
-	check(not _can(state, &"ally_request"), "No ally")
-	state.stockpile.add({&"wood": 30})
-	state.diplomacy.clans[&"south_farmers"].alliance_turns = 10
-	check_eq(state.events.pick_clan(state, state.events.events[&"ally_request"], _rng()), &"south_farmers", "The ally")
+	state.diplomacy.change_relation(&"north_wolves", 80)
+	check(not _can(state, &"tribute_demand"), "Not from a friendly clan")
+	state.diplomacy.change_relation(&"north_wolves", -80)
+	state.diplomacy.clans[&"north_wolves"].pact_turns = 5
+	check(not _can(state, &"tribute_demand"), "Not under a pact")
+	state.diplomacy.clans[&"north_wolves"].pact_turns = 0
+	state.diplomacy.clans[&"north_wolves"].tribute_peace = 3
+	check(not _can(state, &"tribute_demand"), "Not while keeping the peace for a tribute")
+	state.diplomacy.clans[&"north_wolves"].tribute_peace = 0
+	state.events.clan_last_turn["tribute_demand|north_wolves"] = state.turn - 14
+	check(not _can(state, &"tribute_demand"), "Once per clan in 15 turns")
+	state.events.clan_last_turn["tribute_demand|north_wolves"] = state.turn - 15
+	check(_can(state, &"tribute_demand"), "Cooldown over")
+	# Aid requests need a friendly clan and enough in store.
+	var request: EventData = state.events.events[&"ally_request"]
+	state.stockpile.add({&"wood": 40, &"stone": 40})
+	state.diplomacy.change_relation(&"south_farmers", 100)
+	var matching := state.events._matching_clans(state, request)
+	check(matching.has(&"south_farmers"), "A friendly clan asks")
+	for clan_id in matching:
+		check(state.diplomacy.get_tier(clan_id) >= Diplomacy.Tier.FRIENDLY, "%s is friendly" % clan_id)
 
 
 # --- Answers ------------------------------------------------------------------------------
 
 func test_a_choice_pays_its_cost_and_applies_the_outcome() -> void:
 	var state := _state()
-	state.stockpile.add({&"food": 40})
+	state.stockpile.add({&"food": 200})
 	var relation := state.diplomacy.clans[&"south_farmers"].relation
 	var result := _resolve(state, &"famine_aid", 0, &"south_farmers")
-	check_eq(state.stockpile.get_amount(&"food"), 15, "Paid 25 food")
-	check_eq(state.diplomacy.clans[&"south_farmers"].relation, relation + 15, "+15")
-	check_eq(state.diplomacy.clans[&"south_farmers"].memories.get(Diplomacy.MEMORY_EVENT), 15, "Remembered as an event")
+	check_eq(state.stockpile.get_amount(&"food"), 180, "Paid 10% of the food")
+	check_eq(state.diplomacy.clans[&"south_farmers"].relation, relation + 12, "+12")
+	check_eq(state.diplomacy.clans[&"south_farmers"].memories.get(Diplomacy.MEMORY_EVENT), 12, "Remembered as an event")
 	check(result.text.contains("Điền Trang Nam Lâm"), "Clan name filled in")
 	check(state.events.pending.is_empty(), "Answered")
 
 
 func test_unaffordable_choices_change_nothing() -> void:
 	var state := _state()
-	state.stockpile.add({&"food": 10})
-	check(_resolve(state, &"famine_aid", 0, &"south_farmers").is_empty(), "Refused")
-	check_eq(state.stockpile.get_amount(&"food"), 10, "Nothing paid")
+	state.stockpile.add({&"food": 5})
+	check(_resolve(state, &"famine_aid", 0, &"south_farmers").is_empty(), "Refused (at least 10 food)")
+	check_eq(state.stockpile.get_amount(&"food"), 5, "Nothing paid")
 	check_eq(state.events.pending.size(), 1, "Still waiting for an answer")
 
 
@@ -506,3 +530,68 @@ func test_request_officers_are_saved() -> void:
 	var loaded := EventSystem.new()
 	loaded.load_save(data)
 	check_eq(loaded.pending[0].get("officer"), "Hùng", "The asking officer is kept")
+
+
+# --- M18c: shares of the stockpile, tribute peace, thanks ----------------------------------
+
+func test_shared_costs_are_fixed_when_rolled() -> void:
+	var state := _state()
+	state.stockpile.add({&"food": 300, &"wood": 300, &"stone": 300})
+	var event: EventData = state.events.events[&"tribute_demand"]
+	var costs := state.events._fixed_costs(state, event)
+	check_eq(costs[0], {&"food": 36, &"wood": 36, &"stone": 36}, "12% of each")
+	check(costs[1].is_empty(), "Refusing costs nothing")
+	state.events.pending = [{"event_id": &"tribute_demand", "clan_id": &"north_wolves", "costs": costs}] as Array[Dictionary]
+	state.stockpile.add({&"food": 700})
+	check_eq(state.events.cost_of(event.choices[0])[&"food"], 36, "Still what was asked when the envoy came")
+	var saved := state.events.to_save()
+	var loaded := EventSystem.new()
+	loaded.load_save(JSON.parse_string(JSON.stringify(saved)))
+	check_eq(loaded.pending[0].costs[0], {&"food": 36, &"wood": 36, &"stone": 36}, "Saved with the event")
+
+
+func test_paying_tribute_buys_peace() -> void:
+	var state := _state()
+	state.stockpile.add({&"food": 100, &"wood": 100, &"stone": 100})
+	var result := _resolve(state, &"tribute_demand", 0, &"north_wolves")
+	check_eq(state.diplomacy.clans[&"north_wolves"].tribute_peace, 10, "10 turns of peace")
+	check_eq(state.stockpile.get_amount(&"food"), 88, "Paid 12 food")
+	check_eq(result.tone, &"event_good", "Peace is good news")
+	state.diplomacy.change_relation(&"north_wolves", -100)
+	check(not state.wars.clan_declares_war(&"north_wolves"), "No war while the peace holds")
+	check_eq(state.wars._declare_chance(&"north_wolves"), 0.0, "Not even when hostile")
+	for i in 10:
+		state.diplomacy.end_turn()
+	check(state.wars.clan_declares_war(&"north_wolves"), "War is possible again")
+
+
+func test_grateful_clans_send_thanks_later() -> void:
+	var state := _state()
+	check(not _can(state, EventSystem.CLAN_THANKS_EVENT), "Never rolled at random")
+	state.events.add_thanks(state, &"south_farmers", _rng())
+	var due: int = state.events.thanks[0].turn
+	check(due >= state.turn + 3 and due <= state.turn + 6, "Comes in 3 to 6 turns")
+	state.turn = due - 1
+	state.events.pending.clear()
+	var early := state.events.roll(state, _rng())
+	check(not early.any(func(e: Dictionary) -> bool: return e.event_id == EventSystem.CLAN_THANKS_EVENT), "Not yet")
+	state.turn = due
+	var added := state.events.roll(state, _rng())
+	check(added.size() >= 1 and added[0].event_id == EventSystem.CLAN_THANKS_EVENT, "The thanks arrive")
+	check_eq(added[0].clan_id, &"south_farmers", "From the clan we helped")
+	check(state.events.thanks.is_empty(), "Delivered once")
+	var before := state.stockpile.get_amount(&"food") + state.equipment.items.size()
+	state.events.pending = [added[0]] as Array[Dictionary]
+	state.events.resolve(state, _rng(), 0)
+	check(state.stockpile.get_amount(&"food") + state.stockpile.get_amount(&"ore") \
+			+ state.equipment.items.size() > before, "Got goods or an item")
+
+
+func test_thanks_skip_clans_at_war() -> void:
+	var state := _state()
+	state.events.thanks = [{"clan_id": &"north_wolves", "turn": state.turn}] as Array[Dictionary]
+	state.wars.declare_war(&"north_wolves")
+	state.events.pending.clear()
+	var added := state.events.roll(state, _rng())
+	check(not added.any(func(e: Dictionary) -> bool: return e.event_id == EventSystem.CLAN_THANKS_EVENT), "No thanks in war")
+	check(state.events.thanks.is_empty(), "Dropped")

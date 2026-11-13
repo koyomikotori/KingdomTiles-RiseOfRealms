@@ -699,14 +699,35 @@ Thang −100 → +100:
 - **Phá hiệp ước:** tuyên chiến với đồng minh → liên minh tan, mọi gia tộc khác thêm **−20**. Tuyên chiến khi đang bất tương xâm → hiệp ước mất, mọi gia tộc khác thêm **−10**.
 - Chiến tranh nổ ra (bất kể bên nào tuyên chiến) thì liên minh và bất tương xâm với gia tộc đó mất.
 
-### 9.8 Ý tưởng ngoại giao để sau
+### 9.8 Giao thương cân bằng, cống nạp, sứ giả (M18c, đã chốt)
 
-- Tăng độ khó: gia tộc hồi quân nhanh hơn / mạnh dần theo thời gian, quân xâm lược đông hơn ở giai đoạn sau.
+Mục tiêu: người chơi không "vắt" được gia tộc AI (mua sạch một loại hàng, tặng quà mãi để mua quan hệ).
 
-- Kết thông gia (quan hệ tăng lâu dài, cần tướng/người trong gia đình — M11).
-- Yêu sách / cống nạp: gia tộc mạnh đòi nộp tài nguyên mỗi lượt, từ chối thì quan hệ giảm và dễ bị xâm lược; người chơi mạnh cũng có thể đòi lại.
-- Mượn đường quân sự (đánh gia tộc ở xa qua đất láng giềng — M9).
-- Sự kiện ngoại giao ngẫu nhiên: sứ giả đến, gia tộc gặp nạn đói xin viện trợ, hai gia tộc gây chiến với nhau…
+- **Kho hàng ẩn**: mỗi gia tộc chỉ có một lượng hàng mỗi loại để đổi cho ta; người chơi **không thấy con số**.
+  - Đủ kho = 60 giá trị hàng (lương thực/gỗ 60, đá/gỗ cứng 30, khoáng/ngựa 20). Hàng họ dư ×2, hàng họ thiếu ×0.5, thương nhân ×1.5, gia tộc yếu/vừa/mạnh ×1/1.2/1.5.
+  - Mỗi lượt hồi 25% kho đầy. Hàng ta đưa cho họ cũng vào kho họ (tối đa đầy).
+  - Không đủ hàng thì nút Trao đổi khóa với câu "Họ không còn nhiều X để đổi lúc này"; còn dưới 30% thì gợi ý "Hàng X của họ sắp cạn". Hợp đồng giao thương không lấy từ kho này.
+- **Giá theo cung cầu**: bán dồn một thứ cho cùng gia tộc thì giá họ trả giảm dần, tối đa −40% khi đã bán 120 giá trị gần đây; phần đã bán phai 30% mỗi lượt.
+- **Cần gấp**: cứ 6 lượt mỗi gia tộc cần gấp một loại (không bao giờ là thứ họ dư), trả giá ×1.3 cho thứ đó. Hiện trong cửa sổ Trao đổi.
+- **Quà nhàm**:
+  - Quà là thứ họ thiếu hoặc đang cần gấp thì tính ×1.5.
+  - Tặng liên tục thì quà kém tác dụng: hiệu quả nhân 1 − mức nhàm/60 (thấp nhất 25%). Mức nhàm tăng bằng số quan hệ vừa nhận, giảm 5 mỗi lượt.
+  - Quan hệ nhớ từ quà không vượt +30 (vẫn phai dần như mọi ký ức); chạm trần thì nút Tặng quà khóa ("Họ đã nhận quá nhiều quà").
+- **Gia tộc đòi ta cống nạp** (sự kiện "đòi cống nạp"):
+  - Chỉ gia tộc giáp ranh, quân ≥ 1.5× quân ta, quan hệ ≤ Trung lập, không có bất tương xâm. Mỗi gia tộc tối đa 1 lần / 15 lượt.
+  - Nộp: mất 12% lương thực, gỗ, đá đang có (ít nhất 10 mỗi thứ, chốt lúc sứ giả đến), quan hệ +5, họ không tuyên chiến 10 lượt.
+  - Khước từ: quan hệ −10, 35% họ tuyên chiến ngay.
+- **Ta đòi cống nạp** (lệnh "Đòi cống nạp" ở bảng gia tộc, `Tribute`):
+  - Chỉ với gia tộc giáp ranh, không chiến tranh, không đồng minh, khi quân ta ≥ 2× quân họ.
+  - Khả năng chịu nộp: 35% + 15% mỗi bậc tỉ lệ trên 2 (tối đa 90%), cộng theo tính cách (hiếu hòa +10%, hiếu chiến −15%, thương nhân +5%, biệt lập −5%).
+  - Họ nộp **một lần** bằng hàng họ dư: 40 + 0.25 × quân họ (giá trị hàng).
+  - Nộp: quan hệ −15 và mọi gia tộc khác −3. Từ chối: quan hệ −10. Đòi xong phải đợi 10 lượt.
+- **Sứ giả xin viện trợ** (sự kiện ngẫu nhiên, từ gia tộc Thân thiện trở lên, mỗi gia tộc tối đa 1 lần / 12–15 lượt):
+  - Nạn đói: 10% lương thực.
+  - Xin vật liệu sửa thành: 8% gỗ và 8% đá.
+  - Xin viện binh đánh đạo tặc: 3–5 đơn vị ở nhà ra trận. Thắng thì quan hệ +12, thua vẫn +4.
+  - Giúp thì quan hệ +12, và 30% (40% với trận thắng) vài lượt sau họ gửi quà đáp lễ (sự kiện "đáp lễ": hàng hóa hoặc một món đồ hiếm). Từ chối thì quan hệ −3.
+- Để sau: kết thông gia, mượn đường quân sự, hai gia tộc AI đánh nhau trên bản đồ.
 
 ## 9b. Thắng / thua (M11a, đã chốt)
 

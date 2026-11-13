@@ -7,26 +7,27 @@
 [sub_resource type="Resource" id="outcome_0_0"]
 script = ExtResource("3_outcome")
 weight = 1.0
-text = "{clan} cảm kích tấm lòng của bạn."
-relation = 15
+text = "{clan} cảm kích tấm lòng của vương quốc."
+relation = 12
+gratitude_chance = 0.3
 
 [sub_resource type="Resource" id="choice_0"]
 script = ExtResource("2_choice")
 text = "Gửi lương thực"
-hint = "Họ sẽ nhớ ơn."
-cost = Dictionary[StringName, int]({&"food": 25})
+hint = "Họ sẽ nhớ ơn, có khi còn đáp lễ."
+cost_share = Dictionary[StringName, float]({&"food": 0.1})
 outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
 
 [sub_resource type="Resource" id="outcome_1_0"]
 script = ExtResource("3_outcome")
 weight = 1.0
 text = "Sứ giả {clan} ra về trong im lặng."
-relation = -8
+relation = -3
 
 [sub_resource type="Resource" id="choice_1"]
 script = ExtResource("2_choice")
 text = "Từ chối"
-hint = "Họ sẽ không vui."
+hint = "Họ sẽ hơi buồn."
 outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
 
 [resource]
@@ -36,8 +37,9 @@ title = "Nạn đói ở {clan}"
 text = "Sứ giả của {clan} quỳ trước sân: mất mùa, dân họ đang đói, xin vương quốc cứu giúp."
 category = 1
 weight = 2.0
-cooldown = 8
-min_stock = Dictionary[StringName, int]({&"food": 25})
+cooldown = 6
+min_stock = Dictionary[StringName, int]({&"food": 40})
 needs_clan = true
-clan_min_tier = 1
+clan_min_tier = 3
+clan_cooldown = 12
 choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])

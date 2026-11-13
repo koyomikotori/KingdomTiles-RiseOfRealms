@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/events/event_data.gd" id="1_event"]
+[ext_resource type="Script" path="res://scripts/events/event_choice_data.gd" id="2_choice"]
+[ext_resource type="Script" path="res://scripts/events/event_outcome_data.gd" id="3_outcome"]
+
+[sub_resource type="Resource" id="outcome_0_0"]
+script = ExtResource("3_outcome")
+weight = 0.65
+text = "Đoàn xe chở đầy hàng hóa tiến vào thành."
+random_resources = Dictionary[StringName, Dictionary]({&"food": {30: 50, 60: 35, 90: 15}, &"ore": {0: 40, 15: 40, 30: 20}, &"horses": {0: 50, 10: 35, 20: 15}})
+relation = 3
+
+[sub_resource type="Resource" id="outcome_0_1"]
+script = ExtResource("3_outcome")
+weight = 0.35
+text = "Trong rương là một món đồ quý hiếm."
+relation = 3
+item_rarity = 2
+
+[sub_resource type="Resource" id="choice_0"]
+script = ExtResource("2_choice")
+text = "Nhận quà"
+hint = "Mở ra xem họ gửi gì."
+outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1")])
+
+[resource]
+script = ExtResource("1_event")
+event_id = &"clan_thanks"
+title = "{clan} đáp lễ"
+text = "Sứ giả {clan} mang quà tới, đáp lễ lần vương quốc đã ra tay giúp đỡ."
+category = 1
+weight = 0.0
+cooldown = 0
+min_turn = 0
+needs_clan = true
+scripted = true
+choices = Array[ExtResource("2_choice")]([SubResource("choice_0")])

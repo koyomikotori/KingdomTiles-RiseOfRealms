@@ -52,8 +52,9 @@ func _choice_row(choice: EventChoiceData, index: int) -> Control:
 	var clan_id := _state.events.current_clan()
 	var blocked := _state.events.block_reason(_state, choice, clan_id)
 	var text := choice.text
-	if not choice.cost.is_empty():
-		text += " (−%s)" % UiFormat.amounts(choice.cost, _resource_types)
+	var cost := _state.events.cost_of(choice)
+	if not cost.is_empty():
+		text += " (−%s)" % UiFormat.amounts(cost, _resource_types)
 	var button := _button(text, _on_choice_pressed.bind(index))
 	button.disabled = not blocked.is_empty()
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT

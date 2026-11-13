@@ -7,37 +7,39 @@
 [sub_resource type="Resource" id="outcome_0_0"]
 script = ExtResource("3_outcome")
 weight = 1.0
-text = "{clan} gửi lời cảm ơn."
-relation = 10
+text = "{clan} gửi lời cảm ơn, thành của họ sớm dựng lại."
+relation = 12
+gratitude_chance = 0.3
 
 [sub_resource type="Resource" id="choice_0"]
 script = ExtResource("2_choice")
-text = "Giúp đỡ"
-hint = "Tình đồng minh thêm bền."
-cost = Dictionary[StringName, int]({&"wood": 20})
+text = "Gửi vật liệu"
+hint = "Họ sẽ nhớ ơn, có khi còn đáp lễ."
+cost_share = Dictionary[StringName, float]({&"wood": 0.08, &"stone": 0.08})
 outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0")])
 
 [sub_resource type="Resource" id="outcome_1_0"]
 script = ExtResource("3_outcome")
 weight = 1.0
 text = "{clan} tỏ ra thất vọng."
-relation = -10
+relation = -3
 
 [sub_resource type="Resource" id="choice_1"]
 script = ExtResource("2_choice")
 text = "Từ chối"
-hint = "Họ có thể phật lòng."
+hint = "Họ sẽ hơi buồn."
 outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_1_0")])
 
 [resource]
 script = ExtResource("1_event")
 event_id = &"ally_request"
-title = "Đồng minh nhờ giúp"
-text = "{clan} đang sửa thành, xin vương quốc giúp ít gỗ."
+title = "{clan} xin vật liệu"
+text = "Sứ giả {clan} tới xin: thành của họ vừa hư hại sau mùa bão, cần gỗ và đá để dựng lại."
 category = 1
 weight = 2.0
-cooldown = 8
-min_stock = Dictionary[StringName, int]({&"wood": 20})
+cooldown = 6
+min_stock = Dictionary[StringName, int]({&"wood": 40, &"stone": 40})
 needs_clan = true
-clan_must_be_allied = true
+clan_min_tier = 3
+clan_cooldown = 12
 choices = Array[ExtResource("2_choice")]([SubResource("choice_0"), SubResource("choice_1")])
