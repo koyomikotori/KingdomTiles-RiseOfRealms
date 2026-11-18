@@ -13,15 +13,16 @@ func _stock(amounts: Dictionary[StringName, int]) -> Stockpile:
 	return stockpile
 
 
-func test_campaign_map_has_24_clans_on_a_5x5_grid() -> void:
+func test_campaign_map_has_35_clans_on_a_6x6_grid() -> void:
 	var clans := ClanData.load_all()
-	check_eq(clans.size(), 24, "24 clans")
+	check_eq(ClanData.GRID_SIZE, 6, "6×6 (M18e)")
+	check_eq(clans.size(), 35, "35 clans")
 	var by_grid := {}
 	for clan in clans:
 		check(clan.grid != ClanData.HOME, "%s is not on the kingdom's square" % clan.clan_id)
 		check(Rect2i(0, 0, ClanData.GRID_SIZE, ClanData.GRID_SIZE).has_point(clan.grid), "%s is on the map" % clan.clan_id)
 		by_grid[clan.grid] = clan
-	check_eq(by_grid.size(), 24, "One clan per square")
+	check_eq(by_grid.size(), 35, "One clan per square")
 	var ids := clans.map(func(c: ClanData) -> StringName: return c.clan_id)
 	for clan in clans:
 		for friend in clan.friends:
@@ -31,8 +32,8 @@ func test_campaign_map_has_24_clans_on_a_5x5_grid() -> void:
 				check(other.friends.has(clan.clan_id), "%s <-> %s goes both ways" % [clan.clan_id, friend])
 				check_eq(ClanData.grid_distance(clan.grid, other.grid), 1, "%s and %s are neighbours" % [clan.clan_id, friend])
 	# Farther clans are stronger: the far corner beats the kingdom's neighbours.
-	check(by_grid[Vector2i(4, 4)].military_strength > 3 * by_grid[Vector2i(1, 0)].military_strength, "The far corner is strongest")
-	check(by_grid[Vector2i(4, 4)].army_units.has(&"heavy_cavalry"), "…and fields the best units")
+	check(by_grid[Vector2i(5, 5)].military_strength > 3 * by_grid[Vector2i(1, 0)].military_strength, "The far corner is strongest")
+	check(by_grid[Vector2i(5, 5)].army_units.has(&"heavy_cavalry"), "…and fields the best units")
 	check(by_grid[Vector2i(1, 0)].army_units.keys().all(func(id: StringName) -> bool:
 			return id in [&"swordsman", &"spearman", &"archer"]), "Neighbours field peasants")
 

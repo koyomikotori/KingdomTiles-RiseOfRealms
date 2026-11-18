@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"imperial_guard"
 display_name = "Ngự Lâm Quân"
-description = "Tàn quân cấm vệ của triều đại cũ, giữ thành kiên cố."
+description = "Tàn quân cấm vệ của triều đại cũ, trấn giữ một tòa thành đá cổ."
 color = Color(0.62, 0.41, 0.82, 1)
 grid = Vector2i(4, 3)
 personality = 3

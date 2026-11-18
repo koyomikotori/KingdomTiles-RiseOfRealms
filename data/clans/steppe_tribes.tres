@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"steppe_tribes"
 display_name = "Bộ Lạc Thảo Nguyên"
-description = "Các bộ lạc du mục trên đồng cỏ Tây Nam. Phóng khoáng, dư lương thực, thiếu đá."
+description = "Các bộ lạc du mục trên đồng cỏ, lều trại dời theo mùa cỏ."
 color = Color(0.85, 0.55, 0.3, 1)
 grid = Vector2i(0, 2)
 personality = 0

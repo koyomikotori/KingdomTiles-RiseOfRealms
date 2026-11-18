@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"snow_monks"
 display_name = "Tuyết Sơn Tự"
-description = "Tu viện võ tăng trên đỉnh núi tuyết, ít khi xuống núi."
+description = "Tu viện võ tăng trên đỉnh núi tuyết, tiếng chuông vọng khắp thung lũng."
 color = Color(0.82, 0.62, 0.41, 1)
 grid = Vector2i(4, 0)
 personality = 3

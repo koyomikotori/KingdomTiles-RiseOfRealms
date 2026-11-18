@@ -98,7 +98,7 @@ func _fill_requirements(id: StringName, view: RequirementView) -> void:
 	view.requirement("Còn chỗ cho đơn vị (%d/%d)" % [_state.army.count_squads(), _state.get_squad_capacity()],
 			_state.army.count_squads() < _state.get_squad_capacity())
 	view.header("Chi phí")
-	view.costs(unit.recruit_cost, _state.stockpile)
+	view.costs(_state.recruit_cost(unit.unit_id), _state.stockpile)
 	view.amounts("Nuôi mỗi lượt:", unit.upkeep)
 
 
@@ -122,7 +122,8 @@ func _special_rules(unit: UnitData) -> String:
 
 func _block_reason(id: StringName) -> String:
 	var unit := _state.units[id]
-	var result := RecruitmentRules.check(_state.board, _state.stockpile, _state.army, _state.get_squad_capacity(), unit)
+	var result := RecruitmentRules.check(_state.board, _state.stockpile, _state.army, _state.get_squad_capacity(), unit,
+			_state.recruit_cost(unit.unit_id))
 	return "" if result == RecruitmentRules.Result.OK else RecruitmentRules.describe(result, unit, _state.buildings, _state.terrains)
 
 

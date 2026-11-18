@@ -47,11 +47,11 @@ const ATTACK_DEFEAT_COMPENSATION := 0.25
 const ANNEX_THRESHOLD := 0.15
 ## Rows/columns of wild land the kingdom board gains for every CLANS_PER_EXPANSION annexations,
 ## on the sides in EXPANSION_ORDER (clockwise from the top) whatever the clans' direction,
-## EXPANSION_LIMIT times at most (2 rounds: 12×12 → 20×20, after 16 annexations).
+## EXPANSION_LIMIT times at most (3 rounds: 12×12 → 24×24, after 24 annexations; M18e).
 const ANNEX_EXPANSION := 2
 const CLANS_PER_EXPANSION := 2
 const EXPANSION_ORDER: Array[Vector2i] = [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT]
-const EXPANSION_LIMIT := 8
+const EXPANSION_LIMIT := 12
 const PEACE_BASE_CHANCE := 0.1
 const PEACE_LOSSES_WEIGHT := 0.8
 const PEACE_TRIBUTE_PER_POINT := 100.0
@@ -373,7 +373,7 @@ func peace_chance(clan_id: StringName, tribute: Dictionary[StringName, int]) -> 
 	var front := fronts[clan_id]
 	var chance := PEACE_BASE_CHANCE + PEACE_LOSSES_WEIGHT * front.losses_share() \
 			+ _diplomacy.clans[clan_id].relation / 200.0 + _diplomacy.value_of(tribute) / PEACE_TRIBUTE_PER_POINT \
-			+ _diplomacy.envoy * Diplomacy.ENVOY_CHANCE
+			+ _diplomacy.envoy * Diplomacy.ENVOY_CHANCE + _diplomacy.origin_chance
 	return clampf(chance, 0.0, PEACE_MAX_CHANCE)
 
 

@@ -41,6 +41,7 @@ const TEST_FILES := [
 	"res://tests/test_battle_events.gd",
 	"res://tests/test_m16f_units.gd",
 	"res://tests/test_m18c_diplomacy.gd",
+	"res://tests/test_m18d_variety.gd",
 	"res://tests/test_ruler.gd",
 	"res://tests/test_counsel.gd",
 ]
@@ -50,6 +51,8 @@ func _initialize() -> void:
 	# Older tests expect buildings at once; test_construction.gd switches this off for its own tests.
 	KingdomState.instant_construction = true
 	KingdomState.castle_needs_clans = false
+	KingdomState.origins_on = false
+	KingdomState.shuffle_clans = false
 	# Never the player's achievements (M18b).
 	AchievementStore.use_file("user://test_achievements.cfg")
 	var total := 0

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ClanData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/diplomacy/clan_data.gd" id="1_clan"]
+
+[resource]
+script = ExtResource("1_clan")
+clan_id = &"golden_sands"
+display_name = "Kim Sa Bộ Lạc"
+description = "Bộ lạc giữa biển cát vàng, đoàn lạc đà nối dài theo cồn cát."
+color = Color(0.88, 0.72, 0.2, 1)
+grid = Vector2i(0, 5)
+personality = 2
+military_strength = 180
+surplus = Array[StringName]([&"horses"])
+deficit = Array[StringName]([&"wood"])
+start_relation = 10
+base_relation = 15
+friends = Array[StringName]([&"iron_cavalry"])
+army_units = Dictionary[StringName, float]({&"elite_swordsman": 1.0, &"elite_spearman": 1.0, &"royal_swordguard": 2.0, &"royal_pikeguard": 2.0, &"marksman_archer": 2.0, &"crossbow_elite": 1.0, &"lancer_cavalry": 1.0, &"elite_musketeer": 1.0, &"light_artillery": 1.0, &"shield_guard": 1.0})

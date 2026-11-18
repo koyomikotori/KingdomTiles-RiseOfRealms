@@ -52,8 +52,8 @@
 		"tu_uyen": [["neutral", "Đã đến lúc nhìn ra thiên hạ. Xin Chúa công bấm \"Ngoại giao\" trên thanh trên cùng."]]
 	},
 	"clan": {
-		"linh_nhi": [["happy", "Đây là bản đồ các gia tộc, ta ở góc trên bên trái. Bấm vào một gia tộc gần ta để xem quan hệ, tặng quà, giao thương hay kết minh!"]],
-		"tu_uyen": [["neutral", "Đây là bản đồ thiên hạ, ta ở góc trên bên trái. Xin bấm vào một gia tộc gần ta: xem quan hệ, tặng lễ, giao thương, kết minh."]]
+		"linh_nhi": [["happy", "Đây là bản đồ các gia tộc, thành ta nằm ở rìa bản đồ, cắm cờ màu của ta. Bấm vào một gia tộc gần ta để xem quan hệ, tặng quà, giao thương hay kết minh!"]],
+		"tu_uyen": [["neutral", "Đây là bản đồ thiên hạ, thành ta nằm nơi rìa, cờ mang màu của ta. Xin bấm vào một gia tộc gần ta: xem quan hệ, tặng lễ, giao thương, kết minh."]]
 	},
 	"war": {
 		"linh_nhi": [["concerned", "Gia tộc giáp ranh thì đánh được. Đánh tới khi họ yếu thì sáp nhập, đất ta rộng thêm! Còn liên minh thì cũng tính là đã thống nhất. Cấp thành cao cần thống nhất đủ số gia tộc đó nha."]],

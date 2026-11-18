@@ -32,12 +32,12 @@ func _all_clans(state: KingdomState) -> Array[StringName]:
 func test_uniting_every_clan_wins_and_allies_count() -> void:
 	var state := _state()
 	var ids := _all_clans(state)
-	check_eq(ids.size(), 24, "24 clans on the map")
-	_annex(state, ids.slice(0, 20))
-	_ally(state, ids.slice(20, 23))
-	check_eq(state.victory.check(state), Victory.NO_PATH, "23 of 24")
-	check_eq(state.victory.progress(state), {"united": 23, "total": 24}, "Progress")
-	_ally(state, ids.slice(23))
+	check_eq(ids.size(), 35, "35 clans on the map")
+	_annex(state, ids.slice(0, 30))
+	_ally(state, ids.slice(30, 34))
+	check_eq(state.victory.check(state), Victory.NO_PATH, "34 of 35")
+	check_eq(state.victory.progress(state), {"united": 34, "total": 35}, "Progress")
+	_ally(state, ids.slice(34))
 	check_eq(state.victory.check(state), Victory.Path.CONQUEST, "Every clan annexed or allied")
 	check_eq(state.victory.check(state), Victory.NO_PATH, "Reported only once")
 	check_eq(state.victory.won_path, Victory.Path.CONQUEST, "Remembered")
@@ -52,13 +52,15 @@ func test_castle_levels_need_united_clans() -> void:
 	check_eq(state.check_castle_upgrade(), KingdomState.CastleResult.OK, "An ally counts")
 	state.upgrade_castle()
 	check_eq(state.castle_level, 2, "Level 2")
-	check_eq(state.check_castle_upgrade(), KingdomState.CastleResult.NEEDS_CLANS, "Level 3 needs three")
+	check_eq(state.check_castle_upgrade(), KingdomState.CastleResult.NEEDS_CLANS, "Level 3 needs four")
 	_annex(state, [&"north_wolves", &"east_merchants"])
-	check_eq(state.check_castle_upgrade(), KingdomState.CastleResult.OK, "1 ally + 2 annexed")
+	check_eq(state.check_castle_upgrade(), KingdomState.CastleResult.NEEDS_CLANS, "1 ally + 2 annexed is not enough")
+	_annex(state, [&"west_fortress"])
+	check_eq(state.check_castle_upgrade(), KingdomState.CastleResult.OK, "1 ally + 3 annexed")
 	var needed: Array[int] = []
 	for level in state.castle_levels:
 		needed.append(level.required_clans)
-	check_eq(needed, [0, 1, 3, 6, 10, 15] as Array[int], "1 / 3 / 6 / 10 / 15 clans")
+	check_eq(needed, [0, 1, 4, 8, 14, 21] as Array[int], "1 / 4 / 8 / 14 / 21 clans (M18e)")
 	KingdomState.castle_needs_clans = false
 
 

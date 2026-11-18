@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ClanData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/diplomacy/clan_data.gd" id="1_clan"]
+
+[resource]
+script = ExtResource("1_clan")
+clan_id = &"beacon_towers"
+display_name = "Phong Hỏa Đài"
+description = "Chuỗi đài lửa hiệu trên dãy núi trọc, khói báo tin bốc lên mỗi chiều."
+color = Color(0.6, 0.35, 0.2, 1)
+grid = Vector2i(5, 4)
+personality = 1
+military_strength = 430
+surplus = Array[StringName]([&"wood"])
+deficit = Array[StringName]([&"food"])
+start_relation = -10
+base_relation = -15
+friends = Array[StringName]([&"ink_river"])
+army_units = Dictionary[StringName, float]({&"royal_swordguard": 2.0, &"royal_pikeguard": 2.0, &"marksman_archer": 2.0, &"crossbow_elite": 1.0, &"heavy_cavalry": 2.0, &"elite_musketeer": 2.0, &"heavy_artillery": 1.0, &"shield_guard": 1.0})

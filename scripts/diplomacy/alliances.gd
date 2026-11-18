@@ -61,7 +61,7 @@ func alliance_chance(clan_id: StringName) -> float:
 	var chance := ALLIANCE_BASE_CHANCE + (clan.relation - Diplomacy.TIER_THRESHOLDS[Diplomacy.Tier.CLOSE - 1]) \
 			/ ALLIANCE_RELATION_SCALE + Diplomacy.AGREEMENT_PERSONALITY[clan.data.personality] \
 			- minf(ALLIANCE_MAX_THREAT_PENALTY, _diplomacy.threat / ALLIANCE_THREAT_SCALE) \
-			+ _diplomacy.envoy * Diplomacy.ENVOY_CHANCE
+			+ _diplomacy.envoy * Diplomacy.ENVOY_CHANCE + _diplomacy.origin_chance
 	return clampf(chance, 0.0, ALLIANCE_MAX_CHANCE)
 
 
@@ -115,7 +115,7 @@ func pact_chance(clan_id: StringName) -> float:
 	var clan := _diplomacy.clans[clan_id]
 	var chance := PACT_BASE_CHANCE + (clan.relation - Diplomacy.TIER_THRESHOLDS[Diplomacy.Tier.NEUTRAL - 1]) \
 			/ PACT_RELATION_SCALE + Diplomacy.AGREEMENT_PERSONALITY[clan.data.personality] \
-			+ _diplomacy.envoy * Diplomacy.ENVOY_CHANCE
+			+ _diplomacy.envoy * Diplomacy.ENVOY_CHANCE + _diplomacy.origin_chance
 	return clampf(chance, 0.0, ALLIANCE_MAX_CHANCE)
 
 

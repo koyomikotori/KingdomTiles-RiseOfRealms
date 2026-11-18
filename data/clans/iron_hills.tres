@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"iron_hills"
 display_name = "Thiết Sơn Môn"
-description = "Dòng họ thợ mỏ luyện sắt, binh khí tốt, tính khí nóng nảy."
+description = "Dòng họ thợ mỏ luyện sắt giữa vùng đồi quặng, lò rèn đỏ lửa ngày đêm."
 color = Color(0.75, 0.82, 0.41, 1)
 grid = Vector2i(3, 1)
 personality = 1

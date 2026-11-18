@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"dragon_gate"
 display_name = "Long Môn Quan"
-description = "Cửa ải hiểm yếu canh giữ con đường vào đất Kim Ưng."
+description = "Cửa ải hiểm yếu giữa hai vách núi, tường đá cao chắn ngang con đường độc đạo."
 color = Color(0.82, 0.41, 0.47, 1)
 grid = Vector2i(3, 4)
 personality = 1

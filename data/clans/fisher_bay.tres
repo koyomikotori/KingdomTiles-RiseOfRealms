@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"fisher_bay"
 display_name = "Ngư Vịnh"
-description = "Làng chài nơi vịnh biển, nhiều cá muối để đổi chác."
+description = "Làng chài nơi vịnh biển lặng sóng, thuyền câu nằm kín bãi cát."
 color = Color(0.76, 0.41, 0.82, 1)
 grid = Vector2i(0, 4)
 personality = 2

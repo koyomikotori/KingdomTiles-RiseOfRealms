@@ -1250,3 +1250,44 @@ Hai sự kiện ngẫu nhiên (nhóm "Trong vương quốc"), mỗi sự kiện 
   - 3 **khung chân dung** chúa công (Ngọc bích, Son đỏ, Bạch ngân), thay khung vàng mặc định.
   - Danh hiệu và khung chọn trong cửa sổ Chúa công (← / →); lưu theo ván cùng chúa công.
 - Thống kê cuối ván để sau.
+
+## 31. Chơi lại đa dạng: xuất thân chúa công, xáo gia tộc (M18d, đã chốt)
+
+### Xuất thân chúa công
+- Xuất thân đi theo trang phục của kiểu chân dung (không chọn riêng):
+  - long bào (Thiên tử, Nữ hoàng) → **Thiên tử**;
+  - giáp trụ (Bá vương, Nữ tướng quân) → **Võ tướng**;
+  - Nho phục (Mưu chủ, Nữ mưu chủ) → **Mưu sĩ**.
+- Lợi thế nhỏ (số liệu trong `RulerOrigin`, chỉnh dễ):
+
+| Xuất thân | Lợi thế |
+|---|---|
+| Thiên tử | Tướng sĩ (tướng, mưu sĩ) nhận kinh nghiệm +10%; cơ hội ngoại giao +10% (thỏa thuận, gia hạn, liên minh, bất tương xâm, nghị hòa, đòi cống nạp); giá trao đổi với gia tộc tốt hơn 10%; tài nguyên khởi đầu +50% |
+| Võ tướng | Có sẵn 1 tướng 3★; đơn vị lính nhận kinh nghiệm +10% từ mọi nguồn (huấn luyện, trận đánh, thảo phạt); tuyển lính rẻ hơn 10% |
+| Mưu sĩ | Có sẵn 1 mưu sĩ 3★; sản lượng công trình sản xuất +10%; lương thực nuôi quân (lính + tướng) −10% |
+
+- Hiện ở cửa sổ Chúa công (đổi kiểu thì thấy ngay), dòng chúa công ở màn Ván mới và ở cửa sổ Thành chính.
+- Áp dụng cho cả ván cũ (theo kiểu chân dung đã lưu); tướng / mưu sĩ và tài nguyên khởi đầu chỉ có ở ván mới.
+- Nguồn thu có thêm dòng "Xuất thân Mưu sĩ (thêm sản lượng)" và "Xuất thân Mưu sĩ (giảm lương thực nuôi quân)".
+
+### Xáo trộn gia tộc mỗi ván
+- Ván mới nào cũng xáo (không có ô tắt); vào ván mới thấy bản đồ, không xem trước.
+- **Vị trí:** 24 gia tộc đổi ô trên lưới 5×5. Mỗi ô giữ sức mạnh và loại lính của nó (ô gần nhà yếu, ô xa mạnh), gia tộc đứng ở ô nào nhận sức mạnh của ô đó, dao động ±20% (làm tròn 5).
+- **Tính cách:** xáo lại, giữ đúng số lượng mỗi loại (5 Ôn hòa, 9 Hiếu chiến, 5 Thương nhân, 5 Cô lập); ít nhất một trong hai gia tộc giáp nhà là Ôn hòa. Quan hệ ban đầu / gốc theo tính cách: Ôn hòa 20 / 25, Hiếu chiến −10 / −15, Thương nhân 10 / 15, Cô lập −5 / 0.
+- **Hàng dư / thiếu:** mỗi gia tộc 1 thứ dư, 1 thứ thiếu khác nhau, chọn ngẫu nhiên trong 6 loại hàng.
+- **Bạn bè:** ghép lại các cặp trong số gia tộc giáp nhau (cùng số cặp như dữ liệu gốc, mỗi gia tộc tối đa 2 bạn), không ghép gia tộc Cô lập.
+- Bố cục được lưu trong ván (`clan_layout`); ván cũ không có bố cục thì giữ bản đồ cố định.
+- Đổi tên ba gia tộc có hướng: Lang Tộc Phương Bắc → **Lang Tộc Bạch Nha**, Điền Trang Nam Lâm → **Điền Trang Thanh Lâm**, Thương Hội Đông Hải → **Thương Hội Kim Hải**. Mã gia tộc giữ nguyên.
+- 24 mô tả chỉ còn tả vùng đất và con người: không nói hướng, tính cách hay hàng dư / thiếu (bảng gia tộc đã có dòng riêng cho chúng).
+
+## 32. Bản đồ gia tộc 6×6 (M18e, đã chốt)
+
+- Bản đồ chiến dịch luôn là lưới **6×6**: 35 gia tộc (24 cũ + 11 mới), thay cho 5×5.
+- 11 gia tộc mới: Bạch Hạc Sơn Trang, Kim Sa Bộ Lạc, Tử Trúc Am, Thiết Kỵ Doanh, Vân Vụ Cốc, Xích Viêm Trại, Lưu Ly Thành, Bích Hồ Đảo, Phong Hỏa Đài, Thanh Y Môn, Mặc Thủy Trấn. Tính cách cả bản đồ: 7 Ôn hòa, 13 Hiếu chiến, 8 Thương nhân, 7 Cô lập.
+- **Thành của ta** đặt ngẫu nhiên trên một ô ở rìa bản đồ mỗi ván (20 ô rìa), không còn luôn ở góc. Gia tộc giáp nhà: 2 (ở góc) hoặc 3.
+- Sức mạnh mỗi ô theo khoảng cách tới nhà (±20%, làm tròn 5): 1 bước 45, 2: 65, 3: 95, 4: 140, 5: 180, 6: 240, 7: 300, 8: 380, 9: 430, 10: 480 lính. Loại lính: 1–2 bước lính nông dân, 3–4 tinh binh, 5–6 cấm quân, 7+ cấm quân hạng nặng (kỵ binh nặng, pháo nặng).
+- Ít nhất một gia tộc giáp nhà là Ôn hòa (như M18d).
+- **Đất vương quốc** nở 2 hàng mỗi 2 lần thôn tính, xoay vòng trên → phải → dưới → trái, tối đa 12 lần: 12×12 → **24×24** sau 24 lần thôn tính; 11 gia tộc cuối không nở thêm.
+- **Cấp thành** 2–6 cần thống nhất 1 / 4 / 8 / 14 / 21 gia tộc.
+- Thắng ván vẫn là thôn tính hoặc liên minh hết mọi gia tộc (35).
+- Bản lưu lên phiên bản 5; bản lưu cũ (bản đồ 5×5) không tải được nữa, phải bắt đầu ván mới.

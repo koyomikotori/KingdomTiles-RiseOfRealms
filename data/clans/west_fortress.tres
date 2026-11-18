@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"west_fortress"
 display_name = "Hắc Sơn Bảo"
-description = "Pháo đài trên núi đen phía Tây. Khép kín, ít giao thiệp, giữ của nhưng thiếu lương thực."
+description = "Pháo đài đá dựng trên ngọn núi đen, cổng thành đóng kín quanh năm."
 color = Color(0.45, 0.4, 0.5, 1)
 grid = Vector2i(1, 1)
 personality = 3
