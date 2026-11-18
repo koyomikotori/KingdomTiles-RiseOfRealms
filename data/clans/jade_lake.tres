@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ClanData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/diplomacy/clan_data.gd" id="1_clan"]
+
+[resource]
+script = ExtResource("1_clan")
+clan_id = &"jade_lake"
+display_name = "Bích Hồ Đảo"
+description = "Hòn đảo giữa hồ biếc, nhà thủy tạ nối nhau bằng cầu gỗ."
+color = Color(0.2, 0.6, 0.45, 1)
+grid = Vector2i(3, 5)
+personality = 2
+military_strength = 380
+surplus = Array[StringName]([&"food"])
+deficit = Array[StringName]([&"ore"])
+start_relation = 10
+base_relation = 15
+friends = Array[StringName]([&"flame_peak"])
+army_units = Dictionary[StringName, float]({&"royal_swordguard": 2.0, &"royal_pikeguard": 2.0, &"marksman_archer": 2.0, &"crossbow_elite": 1.0, &"heavy_cavalry": 2.0, &"elite_musketeer": 2.0, &"heavy_artillery": 1.0, &"shield_guard": 1.0})

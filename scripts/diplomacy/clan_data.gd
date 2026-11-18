@@ -1,6 +1,6 @@
 class_name ClanData
 extends Resource
-## Static definition of a clan on the campaign map (GDD §15, M14b): a 5×5 grid with the kingdom
+## Static definition of a clan on the campaign map (GDD §15, M14b): a 6×6 grid (M18e) with the kingdom
 ## in the top-left corner (HOME) and one clan on each other square. One .tres per clan in data/clans/.
 
 ## A side of the kingdom board (where an invasion takes land).
@@ -9,8 +9,10 @@ enum Personality { PEACEFUL, AGGRESSIVE, MERCHANT, ISOLATED }
 
 const DIRECTION_NAMES: Array[String] = ["Ở xa", "Phía Bắc", "Phía Đông", "Phía Nam", "Phía Tây"]
 const PERSONALITY_NAMES: Array[String] = ["Ôn hòa", "Hiếu chiến", "Thương nhân", "Cô lập"]
-## The campaign map is GRID_SIZE × GRID_SIZE squares; the kingdom starts on HOME.
-const GRID_SIZE := 5
+## The campaign map is GRID_SIZE × GRID_SIZE squares (6×6 since M18e). The fixed map of
+## data/clans/ (tests) has the kingdom on HOME; a new game puts it on a random edge square
+## (ClanLayout, Diplomacy.home).
+const GRID_SIZE := 6
 const HOME := Vector2i.ZERO
 
 @export var clan_id: StringName
@@ -39,7 +41,7 @@ const HOME := Vector2i.ZERO
 @export var friends: Array[StringName] = []
 
 
-## Steps from the kingdom's starting corner (1..8): farther clans are stronger.
+## Steps from HOME on the fixed map (1..10): farther clans are stronger.
 func ring() -> int:
 	return grid_distance(grid, HOME)
 

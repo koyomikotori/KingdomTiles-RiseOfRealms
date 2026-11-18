@@ -1279,3 +1279,15 @@ Hai sự kiện ngẫu nhiên (nhóm "Trong vương quốc"), mỗi sự kiện 
 - Bố cục được lưu trong ván (`clan_layout`); ván cũ không có bố cục thì giữ bản đồ cố định.
 - Đổi tên ba gia tộc có hướng: Lang Tộc Phương Bắc → **Lang Tộc Bạch Nha**, Điền Trang Nam Lâm → **Điền Trang Thanh Lâm**, Thương Hội Đông Hải → **Thương Hội Kim Hải**. Mã gia tộc giữ nguyên.
 - 24 mô tả chỉ còn tả vùng đất và con người: không nói hướng, tính cách hay hàng dư / thiếu (bảng gia tộc đã có dòng riêng cho chúng).
+
+## 32. Bản đồ gia tộc 6×6 (M18e, đã chốt)
+
+- Bản đồ chiến dịch luôn là lưới **6×6**: 35 gia tộc (24 cũ + 11 mới), thay cho 5×5.
+- 11 gia tộc mới: Bạch Hạc Sơn Trang, Kim Sa Bộ Lạc, Tử Trúc Am, Thiết Kỵ Doanh, Vân Vụ Cốc, Xích Viêm Trại, Lưu Ly Thành, Bích Hồ Đảo, Phong Hỏa Đài, Thanh Y Môn, Mặc Thủy Trấn. Tính cách cả bản đồ: 7 Ôn hòa, 13 Hiếu chiến, 8 Thương nhân, 7 Cô lập.
+- **Thành của ta** đặt ngẫu nhiên trên một ô ở rìa bản đồ mỗi ván (20 ô rìa), không còn luôn ở góc. Gia tộc giáp nhà: 2 (ở góc) hoặc 3.
+- Sức mạnh mỗi ô theo khoảng cách tới nhà (±20%, làm tròn 5): 1 bước 45, 2: 65, 3: 95, 4: 140, 5: 180, 6: 240, 7: 300, 8: 380, 9: 430, 10: 480 lính. Loại lính: 1–2 bước lính nông dân, 3–4 tinh binh, 5–6 cấm quân, 7+ cấm quân hạng nặng (kỵ binh nặng, pháo nặng).
+- Ít nhất một gia tộc giáp nhà là Ôn hòa (như M18d).
+- **Đất vương quốc** nở 2 hàng mỗi 2 lần thôn tính, xoay vòng trên → phải → dưới → trái, tối đa 12 lần: 12×12 → **24×24** sau 24 lần thôn tính; 11 gia tộc cuối không nở thêm.
+- **Cấp thành** 2–6 cần thống nhất 1 / 4 / 8 / 14 / 21 gia tộc.
+- Thắng ván vẫn là thôn tính hoặc liên minh hết mọi gia tộc (35).
+- Bản lưu lên phiên bản 5; bản lưu cũ (bản đồ 5×5) không tải được nữa, phải bắt đầu ván mới.

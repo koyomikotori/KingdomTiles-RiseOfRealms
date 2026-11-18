@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ClanData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/diplomacy/clan_data.gd" id="1_clan"]
+
+[resource]
+script = ExtResource("1_clan")
+clan_id = &"ink_river"
+display_name = "Mặc Thủy Trấn"
+description = "Trấn nhỏ bên dòng sông nước đen, nổi tiếng nghề làm mực và giấy."
+color = Color(0.18, 0.18, 0.22, 1)
+grid = Vector2i(5, 5)
+personality = 3
+military_strength = 480
+surplus = Array[StringName]([&"wood"])
+deficit = Array[StringName]([&"stone"])
+start_relation = -5
+base_relation = 0
+friends = Array[StringName]([&"beacon_towers", &"blue_sword"])
+army_units = Dictionary[StringName, float]({&"royal_swordguard": 2.0, &"royal_pikeguard": 2.0, &"marksman_archer": 2.0, &"crossbow_elite": 1.0, &"heavy_cavalry": 2.0, &"elite_musketeer": 2.0, &"heavy_artillery": 1.0, &"shield_guard": 1.0})

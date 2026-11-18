@@ -131,46 +131,54 @@ func test_no_background_without_origins() -> void:
 
 func test_layout_keeps_the_map_fair() -> void:
 	var clans := ClanData.load_all()
-	var by_square := {}
 	var personalities := {}
 	var pairs := 0
 	for clan in clans:
-		by_square[clan.grid] = clan
 		personalities[clan.personality] = personalities.get(clan.personality, 0) + 1
 		pairs += clan.friends.size()
-	for seed_value in [1, 2, 3, 4, 5, 6, 7, 8]:
+	var homes := {}
+	for seed_value in range(1, 13):
 		var layout := ClanLayout.roll(clans, _rng(seed_value))
-		check_eq(layout.size(), clans.size(), "Seed %d: every clan placed" % seed_value)
+		var home := Vector2i(layout.home[0], layout.home[1])
+		homes[home] = true
+		check(ClanLayout.edge_squares().has(home), "Seed %d: home on the edge %s" % [seed_value, home])
+		var entries: Dictionary = layout.clans
+		check_eq(entries.size(), clans.size(), "Seed %d: every clan placed" % seed_value)
 		var squares := {}
 		var counts := {}
 		var peaceful_near := false
 		var made := 0
-		for clan_id in layout:
-			var entry: Dictionary = layout[clan_id]
+		for clan_id in entries:
+			var entry: Dictionary = entries[clan_id]
 			var square := Vector2i(entry.grid[0], entry.grid[1])
 			squares[square] = true
-			var slot: ClanData = by_square[square]
+			var distance := ClanData.grid_distance(square, home)
+			var expected := ClanLayout.strength_at(distance)
 			counts[entry.personality] = counts.get(entry.personality, 0) + 1
-			if slot.ring() == 1 and entry.personality == ClanData.Personality.PEACEFUL:
+			if distance == 1 and entry.personality == ClanData.Personality.PEACEFUL:
 				peaceful_near = true
-			check(entry.strength >= slot.military_strength * 0.8 - 3 and entry.strength <= slot.military_strength * 1.2 + 3,
-					"Seed %d %s: strength near its square's" % [seed_value, clan_id])
+			check(entry.strength >= expected * 0.8 - 3 and entry.strength <= expected * 1.2 + 3,
+					"Seed %d %s: strength for %d steps" % [seed_value, clan_id, distance])
 			check_eq(entry.strength % ClanLayout.STRENGTH_STEP, 0, "Rounded")
-			check_eq(entry.army.size(), slot.army_units.size(), "Army of its square")
+			check_eq(entry.army, ClanLayout.army_at(distance), "Army for its distance")
 			check(entry.surplus[0] != entry.deficit[0], "Surplus and deficit differ")
 			check(entry.friends.size() <= ClanLayout.MAX_FRIENDS, "At most two friends")
 			for friend in entry.friends:
-				var other: Dictionary = layout[friend]
+				var other: Dictionary = entries[friend]
 				check(other.friends.has(clan_id), "Friends both ways")
 				check(absi(other.grid[0] - entry.grid[0]) + absi(other.grid[1] - entry.grid[1]) == 1, "Friends border")
 				check(entry.personality != ClanData.Personality.ISOLATED, "No isolated friends")
 			made += entry.friends.size()
 		check_eq(squares.size(), clans.size(), "Seed %d: one clan per square" % seed_value)
-		check(not squares.has(ClanData.HOME), "Home stays the kingdom's")
+		check(not squares.has(home), "Home stays the kingdom's")
 		check_eq(counts, personalities, "Seed %d: same personalities" % seed_value)
 		check(peaceful_near, "Seed %d: a peaceful neighbor" % seed_value)
-		check(made <= pairs and made >= pairs - 6, "Seed %d: about as many friends (%d of %d)" % [seed_value, made, pairs])
+		check(made <= pairs and made >= pairs - 8, "Seed %d: about as many friends (%d of %d)" % [seed_value, made, pairs])
+	check(homes.size() > 4, "Home moves between games (%d places)" % homes.size())
 	check(ClanLayout.roll(clans, _rng(1)) != ClanLayout.roll(clans, _rng(2)), "Different games, different maps")
+	check_eq(ClanLayout.edge_squares().size(), 20, "20 edge squares on 6×6")
+	check_eq(ClanLayout.army_at(2), ClanLayout.ARMY_TIERS[0], "Peasants close by")
+	check_eq(ClanLayout.army_at(10), ClanLayout.ARMY_TIERS[3], "Heavy armies far away")
 
 
 func test_new_games_shuffle_and_save_the_map() -> void:
@@ -198,13 +206,21 @@ func test_new_games_shuffle_and_save_the_map() -> void:
 			check(a.grid == b.grid and a.personality == b.personality and a.surplus == b.surplus
 					and a.friends == b.friends and a.army_units == b.army_units, "%s loaded as saved" % clan_id)
 			check_eq(copy.wars.fronts[clan_id].max_strength, state.wars.fronts[clan_id].max_strength, "Strength loaded")
+		check_eq(copy.diplomacy.home, state.diplomacy.home, "Home loaded")
+		check_eq(state.diplomacy.territory(), [state.diplomacy.home] as Array[Vector2i], "The territory starts at home")
+		var neighbors := 0
+		for clan_id in state.diplomacy.clans:
+			if state.diplomacy.borders(clan_id):
+				neighbors += 1
+		check(neighbors == 2 or neighbors == 3, "Two or three neighbors at the start (%d)" % neighbors)
 		var old := state.to_save()
 		old.erase("clan_layout")
 		KingdomState.shuffle_clans = false
 		var plain := _state({}, 5)
 		plain.load_save(JSON.parse_string(JSON.stringify(old)))
-		check(plain.clan_layout.is_empty(), "Older saves keep the fixed map")
-		check_eq(plain.diplomacy.clans[&"north_wolves"].data.grid, Vector2i(1, 0), "Fixed squares"))
+		check(plain.clan_layout.is_empty(), "No layout: the fixed map")
+		check_eq(plain.diplomacy.clans[&"north_wolves"].data.grid, Vector2i(1, 0), "Fixed squares")
+		check_eq(plain.diplomacy.home, ClanData.HOME, "Home in the corner"))
 
 
 func test_renamed_clans_and_plain_descriptions() -> void:

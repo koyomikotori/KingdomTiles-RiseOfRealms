@@ -14,14 +14,14 @@ func _state() -> KingdomState:
 	return state
 
 
-func test_every_second_annexation_adds_land_clockwise_eight_times() -> void:
+func test_every_second_annexation_adds_land_clockwise_twelve_times() -> void:
 	var sides: Array[Vector2i] = []
 	for i in 5:
 		sides.append(Wars.expansion_side(i))
 	check_eq(sides, [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP] as Array[Vector2i],
 			"Top, right, bottom, left, then round again")
-	check_eq(Wars.expansion_side(7), Vector2i.LEFT, "The 8th still adds land")
-	check_eq(Wars.expansion_side(8), Vector2i.ZERO, "Then the board stops growing")
+	check_eq(Wars.expansion_side(11), Vector2i.LEFT, "The 12th still adds land (M18e)")
+	check_eq(Wars.expansion_side(12), Vector2i.ZERO, "Then the board stops growing")
 	var state := _state()
 	var got: Array[Vector2i] = []
 	var needed: Array[int] = []
@@ -36,10 +36,10 @@ func test_every_second_annexation_adds_land_clockwise_eight_times() -> void:
 	var ids := state.wars.fronts.keys()
 	var count := 4
 	for clan_id: StringName in ids:
-		if not state.wars.fronts[clan_id].annexed and count < 16:
+		if not state.wars.fronts[clan_id].annexed and count < 24:
 			state.board.expand(state.wars.annex(clan_id), Wars.ANNEX_EXPANSION)
 			count += 1
-	check_eq([state.board.width, state.board.height], [20, 20], "Sixteen annexations: 20×20")
+	check_eq([state.board.width, state.board.height], [24, 24], "24 annexations: 24×24 (M18e)")
 	check_eq(state.wars.annexations_to_expand(), 0, "Full size")
 	for clan_id: StringName in ids:
 		if not state.wars.fronts[clan_id].annexed:

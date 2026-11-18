@@ -5,10 +5,11 @@ extends RefCounted
 ## by step on load; newer ones are refused. Files are written to a temp file first and then
 ## renamed, so a crash never leaves a half-written save.
 
-const SAVE_VERSION := 4
+const SAVE_VERSION := 5
 ## Saves older than this cannot be loaded: v4 (M14b) replaced the world of 6 clans with the
-## 24-clan campaign map, which an old game cannot be moved onto.
-const OLDEST_LOADABLE := 4
+## 24-clan campaign map, and v5 (M18e) the 5×5 map with the 6×6 one of 35 clans; an old game
+## cannot be moved onto the new map.
+const OLDEST_LOADABLE := 5
 const AUTO_SLOT := "auto"
 const MANUAL_SLOTS := 3
 const DEFAULT_FOLDER := "user://saves"
@@ -69,7 +70,7 @@ func load_slot(slot: String) -> Dictionary:
 	if version < 1 or not data.has("game"):
 		return {"error": "Bản lưu không hợp lệ."}
 	if version < OLDEST_LOADABLE:
-		return {"error": "Bản lưu từ phiên bản cũ (bản đồ 6 gia tộc), không tải được với chế độ chiến dịch. Hãy bắt đầu ván mới."}
+		return {"error": "Bản lưu từ phiên bản cũ (bản đồ gia tộc nhỏ hơn), không tải được với bản đồ 6×6 mới. Hãy bắt đầu ván mới."}
 	return {"game": migrate(data.game, version)}
 
 

@@ -37,7 +37,7 @@ const PAGES := [
 		"Tab Xây dựng: chọn công trình rồi bấm lên ô trống. Công trình mất vài lượt để xây xong và tốn phí duy trì mỗi lượt.",
 		"Bấm vào công trình để nâng cấp, di chuyển hoặc phá bỏ.",
 		"# Thành chính",
-		"Thành chính mở khóa công trình và giới hạn mới. Muốn lên cấp thành, bạn phải đã thôn tính (hoặc liên minh với) đủ số gia tộc.",
+		"Thành chính mở khóa công trình và giới hạn mới. Muốn lên cấp thành, bạn phải đã thôn tính (hoặc liên minh với) đủ số gia tộc: 1 / 4 / 8 / 14 / 21 cho cấp 2–6. Cứ 2 gia tộc bị thôn tính, đất vương quốc nở thêm, tối đa 24×24.",
 		"Bấm vào thành để Chiêu hiền: chiêu mộ tướng và mưu sĩ.",
 		"# Thiếu tài nguyên",
 		"Không đủ lương nuôi quân thì lính bỏ trốn. Không đủ phí duy trì thì công trình tạm ngừng tác dụng.",
@@ -68,7 +68,7 @@ const PAGES := [
 	]],
 	["Ngoại giao", [
 		"# Bản đồ chiến dịch",
-		"Nút Ngoại giao mở bản đồ 24 gia tộc. Gia tộc giáp ranh có thể tuyên chiến và tấn công nhau; gia tộc trong 2 bước có thể giao thương, tặng quà, ký hợp đồng, bất tương xâm và liên minh.",
+		"Nút Ngoại giao mở bản đồ 6×6 với 35 gia tộc; mỗi ván thành ta nằm ở một ô khác trên rìa bản đồ. Gia tộc giáp ranh có thể tuyên chiến và tấn công nhau; gia tộc trong 2 bước có thể giao thương, tặng quà, ký hợp đồng, bất tương xâm và liên minh.",
 		"Mưu sĩ giữ chức Ngoại giao giúp gia tộc khác dễ đồng ý hơn và bớt cảnh giác khi vương quốc lớn mạnh.",
 		"# Giao thương",
 		"Mỗi gia tộc chỉ có một lượng hàng để đổi, hồi dần mỗi lượt; hết hàng thì phải đợi hoặc tìm gia tộc khác. Bán dồn một thứ cho cùng gia tộc thì giá giảm dần. Mỗi gia tộc thỉnh thoảng cần gấp một thứ và trả giá cao hơn cho thứ đó.",
