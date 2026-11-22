@@ -41,7 +41,7 @@ var raid_won_turn := -100
 var annexed_turn := -100
 ## An event's outcome (force_raid): bandits come at the start of the next turn (M16b).
 var raid_forced := false
-## M16e: this clan invades at the start of the next turn (an agent's warning), or &"".
+## M16e: this clan invades at the start of the next turn (EventOutcomeData.force_invasion), or &"".
 var invasion_forced: StringName = &""
 ## M16e: the battle an answer led to, waiting to be fought ({"kind", "clan_id", "event_id"};
 ## EventBattles), or {}. Not saved: the autosave comes after the battle.
@@ -230,7 +230,7 @@ func _conditions_hold(state: KingdomState, event: EventData) -> bool:
 		return false
 	if event.needs_annexed_last_turn and annexed_turn != state.turn - 1:
 		return false
-	if event.needs_general_slot and state.generals.generals.size() >= Generals.MAX_GENERALS:
+	if event.needs_general_slot and state.generals.generals.size() >= state.generals.max_generals:
 		return false
 	if event.needs_war and not state.wars.fronts.values().any(func(front: Wars.Front) -> bool: return front.at_war):
 		return false
@@ -276,10 +276,6 @@ func _matching_clans(state: KingdomState, event: EventData) -> Array[StringName]
 		if (at_war and not event.clan_may_be_at_war and not event.clan_must_be_at_war) \
 				or (event.clan_must_be_at_war and not at_war):
 			continue
-		if event.clan_must_have_agent and not _agent_can_strike(state, clan_id):
-			continue
-		if event.clan_must_host_agent and state.agents.agent_on(clan_id) == null:
-			continue
 		if event.clan_must_border and not state.wars.is_neighbor(clan_id):
 			continue
 		if event.clan_must_have_general and not _fields_general(state, clan_id):
@@ -296,15 +292,6 @@ func _matching_clans(state: KingdomState, event: EventData) -> Array[StringName]
 			continue
 		result.append(clan_id)
 	return result
-
-
-## An agent is on a mission in the clan, which fields a general or an advisor.
-func _agent_can_strike(state: KingdomState, clan_id: StringName) -> bool:
-	if state.agents.agent_on(clan_id) == null:
-		return false
-	state.clan_officers.ensure(clan_id, state.wars, state.difficulty)
-	var staff := state.clan_officers.staff(clan_id)
-	return staff.general != null or staff.advisor != null
 
 
 func _fields_general(state: KingdomState, clan_id: StringName) -> bool:
@@ -374,7 +361,7 @@ func can_choose(state: KingdomState, choice: EventChoiceData, clan_id: StringNam
 func block_reason(state: KingdomState, choice: EventChoiceData, clan_id: StringName = &"") -> String:
 	if not state.stockpile.can_afford(cost_of(choice)):
 		return "Không đủ tài nguyên."
-	if choice.needs_officer_slot and state.generals.generals.size() >= Generals.MAX_GENERALS \
+	if choice.needs_officer_slot and state.generals.generals.size() >= state.generals.max_generals \
 			and state.advisors.is_full():
 		return "Đã đủ tướng và mưu sĩ, không còn chỗ."
 	if choice.target_officer != &"" and clan_id != &"":
@@ -407,13 +394,10 @@ static func _squads_home(state: KingdomState) -> int:
 func choice_chance(state: KingdomState, choice: EventChoiceData, clan_id: StringName = &"") -> float:
 	if choice.success_chance < 0.0:
 		return -1.0
-	var chance := choice.success_chance + choice.chance_per_police_level * state.police_level()
+	var chance := choice.success_chance
 	var envoy := state.advisors.active(&"diplomacy")
 	if envoy != null:
 		chance += choice.chance_per_envoy_star * envoy.stars
-	var agent := state.agents.agent_on(clan_id) if clan_id != &"" else null
-	if agent != null:
-		chance += choice.chance_per_agent_star * agent.stars
 	return clampf(chance, 0.0, MAX_CHANCE)
 
 
@@ -485,7 +469,7 @@ static func tone(outcome: EventOutcomeData, changes: Array[String]) -> StringNam
 		good = true
 	if outcome.relation < 0 or outcome.relation_all < 0 or outcome.clan_strength > 0 or outcome.declare_war \
 			or outcome.force_raid or outcome.force_uprising or outcome.force_invasion or outcome.commander_dies \
-			or outcome.commander_wounded or outcome.agent_exposed or outcome.raid_chance_factor > 1.0 or morale_bad:
+			or outcome.commander_wounded or outcome.raid_chance_factor > 1.0 or morale_bad:
 		bad = true
 	if good and bad:
 		return &"event_mixed"
@@ -650,7 +634,7 @@ func _apply_war(state: KingdomState, rng: RandomNumberGenerator, outcome: EventO
 	if outcome.prisoner_joins and clan_id != &"":
 		var stars_range := PRISONER_STARS[clampi(state.wars.tier(clan_id), 0, PRISONER_STARS.size() - 1)]
 		var stars := rng.randi_range(stars_range.x, stars_range.y)
-		var room_general := state.generals.generals.size() < Generals.MAX_GENERALS
+		var room_general := state.generals.generals.size() < state.generals.max_generals
 		var as_general := room_general and (state.advisors.is_full() or rng.randf() < 0.5)
 		if as_general:
 			var general := state.generals.generate(stars)
@@ -666,12 +650,6 @@ func _apply_war(state: KingdomState, rng: RandomNumberGenerator, outcome: EventO
 		if target != "":
 			changes.append("%s %s của %s %s" % ["Tướng" if choice.target_officer == &"general" else "Mưu sĩ", target,
 					_clan_name(state, clan_id), "đã chết" if killed else "bị thương nặng"])
-	if outcome.agent_exposed and clan_id != &"":
-		var agent := state.agents.agent_on(clan_id)
-		if agent != null:
-			var killed := state.agents.expose(agent, state.diplomacy, rng.randf())
-			changes.append("Đặc vụ %s bị lộ %s" % [agent.name, "và bị giết" if killed else "và phải trốn về"])
-			changes.append("Quan hệ với %s %+d" % [_clan_name(state, clan_id), Agents.CAUGHT_RELATION])
 
 
 ## The M16e effects: morale changes, the commander's fate, a detachment's losses, a warned invasion.

@@ -125,29 +125,9 @@ static func _diplomacy_items(state: KingdomState, report: Dictionary) -> Array[D
 			treaty_news.append("Hiệp định bất tương xâm với %s đã hết hạn" % clan_name)
 		else:
 			treaty_news.append("Liên minh với %s đã hết hạn" % clan_name)
-	# Agents (GDD §8 M14e): who is where, then this turn's news.
-	var agents: Array[String] = []
-	var caught: Array[String] = []
-	for entry: Dictionary in report.get("agents", []):
-		var clan_name: String = clans[entry.clan_id].data.display_name
-		match entry.event:
-			&"done":
-				agents.append("%s đã xong nhiệm vụ %s ở %s, trở về" % [entry.name,
-						Agent.MISSION_NAMES[entry.mission].to_lower(), clan_name])
-			&"recalled":
-				agents.append("%s trở về vì %s đã sáp nhập vào vương quốc" % [entry.name, clan_name])
-			&"caught":
-				caught.append("%s bị %s phát hiện và đã trốn về (quan hệ −%d)" % [entry.name, clan_name, -Agents.CAUGHT_RELATION])
-			&"killed":
-				caught.append("%s bị %s bắt và giết (quan hệ −%d)" % [entry.name, clan_name, -Agents.CAUGHT_RELATION])
-	for agent in state.agents.agents:
-		if agent.is_busy():
-			agents.append("%s: %s ở %s, còn %d lượt" % [agent.name, Agent.MISSION_NAMES[agent.mission].to_lower(),
-					clans[agent.target].data.display_name, agent.turns_left])
 	return [_item(&"declared", "Vừa bị tuyên chiến", declared, true), _item(&"wars", "Đang chiến tranh", wars, true),
 			_item(&"truces", "Đình chiến", truces), _item(&"trade", "Hợp đồng giao thương", trade),
-			_item(&"allies", "Đang liên minh", allies), _item(&"treaty_news", "Liên minh thay đổi", treaty_news),
-			_item(&"agents_caught", "Đặc vụ bị lộ", caught, true), _item(&"agents", "Đặc vụ", agents)]
+			_item(&"allies", "Đang liên minh", allies), _item(&"treaty_news", "Liên minh thay đổi", treaty_news)]
 
 
 static func _army_items(state: KingdomState, report: Dictionary) -> Array[Dictionary]:

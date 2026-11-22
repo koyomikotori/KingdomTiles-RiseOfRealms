@@ -19,9 +19,8 @@ weight = 1.0
 [sub_resource type="Resource" id="choice_0"]
 script = ExtResource("2_choice")
 text = "Cho người điều tra"
-success_chance = 0.4
-chance_per_police_level = 0.1
-hint = "Thành công: dẹp ổ đạo tặc, thu của cải. Thất bại: đạo tặc kéo đến lượt sau. Mỗi cấp Sở cảnh sát +10%."
+success_chance = 0.5
+hint = "Thành công: dẹp ổ đạo tặc, thu của cải. Thất bại: đạo tặc kéo đến lượt sau."
 outcomes = Array[ExtResource("3_outcome")]([SubResource("outcome_0_0"), SubResource("outcome_0_1")])
 
 [sub_resource type="Resource" id="outcome_1_0"]

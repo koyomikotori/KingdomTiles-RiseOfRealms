@@ -177,7 +177,7 @@ func end_turn(wars: Wars) -> void:
 				officer.wounded_turns = maxi(0, officer.wounded_turns - 1)
 
 
-## An agent strikes at the clan's general or advisor (M16b): wounded or, with `killed`, gone
+## Someone strikes at the clan's general or advisor (M16b): wounded or, with `killed`, gone
 ## for VACANCY_TURNS turns. Returns the officer's name ("" when the clan has none of that kind).
 func assassinate(clan_id: StringName, kind: StringName, killed: bool) -> String:
 	var s := staff(clan_id)

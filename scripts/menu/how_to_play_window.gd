@@ -55,7 +55,7 @@ const PAGES := [
 	]],
 	["Tướng sĩ", [
 		"# Tướng và mưu sĩ",
-		"Tab Tướng sĩ liệt kê tướng, mưu sĩ và đặc vụ; bấm vào một người để cộng điểm, trang bị đồ, giao chức hoặc sa thải. Tướng sĩ càng nhiều sao càng giỏi và có hình, hào quang riêng.",
+		"Tab Tướng sĩ liệt kê tướng và mưu sĩ; bấm vào một người để cộng điểm, trang bị đồ, giao chức hoặc sa thải. Tướng sĩ càng nhiều sao càng giỏi và có hình, hào quang riêng.",
 		"Lò rèn chế tạo trang bị; thắng trận cũng có thể nhặt được trang bị, kể cả đồ Huyền thoại có tên riêng.",
 		"# Đột phá",
 		"Tướng sĩ đã đạt cấp tối đa có thể đột phá để nâng thêm cấp và trần chỉ số. Cần tài nguyên và Bí kíp (thắng thảo phạt hoặc mua ở chợ đen).",
@@ -78,8 +78,6 @@ const PAGES := [
 		"# Chiến tranh",
 		"Tuyên chiến với gia tộc giáp ranh (hoặc bị họ tuyên chiến), rồi tấn công họ từ bản đồ. Thắng thì được chiến lợi phẩm và làm gia tộc yếu đi; khi quân số của họ xuống thấp, họ đầu hàng và bị thôn tính.",
 		"Cứ thôn tính 2 gia tộc, bản đồ vương quốc rộng thêm. Thua trận xâm lược thì mất đất ở rìa.",
-		"# Đặc vụ",
-		"Sở cảnh sát cho phép cử đặc vụ tới gia tộc khác để tăng quan hệ hoặc phá hoại (mỗi gia tộc 1 đặc vụ). Đặc vụ ở càng lâu càng dễ bị lộ.",
 	]],
 	["Thảo phạt", [
 		"# Quân nổi loạn",
@@ -90,7 +88,17 @@ const PAGES := [
 		"Thắng hết các ải thì vùng đỏ được dẹp, đội về nhà mang theo kinh nghiệm, tài nguyên, trang bị và Bí kíp; mọi gia tộc cũng quý vương quốc hơn. Thua một trận là cả đội tan.",
 		"Tướng nổi loạn có thể thách đấu tay đôi giữa đường; có thể chọn trước khi xuất quân là nhận hay tránh.",
 		"# Sự kiện",
-		"Mỗi lượt có thể có vài sự kiện: thương nhân, thiên tai, tù binh, tướng địch thách đấu, đặc vụ báo tin… Cố vấn kể lại tình hình; mỗi lựa chọn ghi rõ cái giá phải trả, còn kết quả chỉ biết sau khi chọn. Có sự kiện dẫn thẳng vào trận đánh.",
+		"Mỗi lượt có thể có vài sự kiện: thương nhân, thiên tai, tù binh, tướng địch thách đấu… Cố vấn kể lại tình hình; mỗi lựa chọn ghi rõ cái giá phải trả, còn kết quả chỉ biết sau khi chọn. Có sự kiện dẫn thẳng vào trận đánh.",
+	]],
+	["Thiên hạ", [
+		"# Phân Chia Thiên Hạ",
+		"Thống nhất cả 35 gia tộc là thắng. Khi đó có thể chọn \"Chinh phạt thiên hạ\": đồng minh xin quy phục và mở ra bản đồ 30 trấn của ta cùng năm quốc gia lớn (nút \"Thiên hạ\" trên thanh trên cùng).",
+		"# Đạo quân",
+		"Lập đạo quân ở kinh đô của ta: 1 tướng và tối đa 20 đơn vị. Lính không theo đạo nào ở lại giữ nhà. Mỗi lượt một đạo quân đi một chặng đường.",
+		"Chọn đạo quân rồi bấm trấn địch kề bên để công thành. Quân giữ trấn có tường thành nên khó đánh hơn; kinh đô càng khó. Đạo quân chỉ được bổ sung lính khi đứng ở trấn của ta.",
+		"# Trấn và thái thú",
+		"Mỗi trấn của ta thêm 5 chỗ cho quân. Trấn chiếm được còn nộp tài nguyên mỗi lượt. Cử một tướng hoặc mưu sĩ làm thái thú để trấn nộp đủ và có dân binh giữ thành.",
+		"Nước mất trấn sẽ tìm cách đánh chiếm lại. Chiếm kinh đô một nước thì nước đó bị diệt, các trấn còn lại về tay ta.",
 	]],
 ]
 

@@ -14,8 +14,6 @@ signal move_requested(origin: Vector2i)
 signal demolished(building_name: String, refund: Dictionary)
 ## An upgrade was paid and started (the window closes); `text` says when it will be finished.
 signal construction_started(text: String)
-## "Giao nhiệm vụ" on an idle agent (Sở cảnh sát, GDD §8 M14e): the kingdom scene opens the map.
-signal agent_mission_requested(agent: Agent)
 
 const ACCENT := UiPalette.ACCENT
 ## Every tab page (and the confirm line under it) shares one fixed area: pages scroll instead of
@@ -30,9 +28,7 @@ const CANDIDATE_PORTRAIT_SCALE := 1
 
 enum Action { NONE, UPGRADE, MOVE, DEMOLISH, CUSTOM, CANCEL_UPGRADE }
 
-const AGENT_HIRE_TAB := "Chiêu mộ đặc vụ"
 const FORGE_TAB := "Rèn"
-const AGENTS_TAB := "Đặc vụ"
 
 var _state: KingdomState
 var _origin: Vector2i
@@ -55,9 +51,6 @@ var _recruit_box: VBoxContainer
 ## The forge's "Rèn" tab (GDD §8 "Trang bị", M12e) and what it is set to make.
 var _forge_box: VBoxContainer
 var _forge_kind: StringName = &"general"
-## The Sở cảnh sát's tabs (GDD §8 M14e).
-var _agent_hire_box: VBoxContainer
-var _agent_box: VBoxContainer
 var _forge_slot: StringName = &"weapon"
 
 
@@ -106,10 +99,6 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 		_recruit_box = _tab_box("Chiêu hiền")
 		state.generals.changed.connect(_refresh)
 		state.advisors.changed.connect(_refresh)
-	if cell.building_id == KingdomState.POLICE_ID:
-		_agent_hire_box = _tab_box(AGENT_HIRE_TAB)
-		_agent_box = _tab_box(AGENTS_TAB)
-		state.agents.changed.connect(_refresh)
 	_tabs.tab_changed.connect(func(tab: int) -> void: tab_shown.emit(_tabs.get_tab_title(tab)))
 	for i in _tabs.get_tab_count():
 		if _tabs.get_tab_title(i) == start_tab:
@@ -242,8 +231,6 @@ func _refresh() -> void:
 		_refresh_building_upgrade(cell)
 		if _forge_box != null:
 			_refresh_forge()
-		if _agent_box != null:
-			_refresh_agents()
 		return
 	_refresh_generals()
 	_refresh_castle_upgrade()
@@ -270,7 +257,7 @@ func _fill_building_effects(view: RequirementView, cell: CellData, level: int, n
 				unlocked.append(unit)
 			else:
 				waiting += 1
-	var has_effects := not produced.is_empty() or _building.replenish_per_level > 0.0 or not effects.is_empty() \
+	var has_effects := not produced.is_empty() or _building.replenish_per_level > 0.0 or not effects.is_empty() 			or (_building.enables_replenishment and level > 1) \
 			or not unlocked.is_empty() or waiting > 0
 	if has_effects:
 		view.header("Cấp %d nhận được" % level if next else "Tác dụng")
@@ -284,6 +271,12 @@ func _fill_building_effects(view: RequirementView, cell: CellData, level: int, n
 		var share := _percent(_building.replenish_per_level * level)
 		view.gain("Tăng tốc hồi quân %s → %s" % [_percent(_building.replenish_per_level * (level - 1)), share]
 				if next else "Tăng tốc hồi quân %s" % share)
+	if _building.enables_replenishment and level > 1:
+		var training := roundi(Experience.TRAINING_XP_PER_LEVEL * (level - 1))
+		view.gain("Huấn luyện +%d → +%d kinh nghiệm mỗi lượt" % [training - roundi(Experience.TRAINING_XP_PER_LEVEL), training]
+				if next else "Huấn luyện +%d kinh nghiệm mỗi lượt" % training)
+		if level == Experience.ELITE_TRAINING_LEVEL:
+			view.gain("Huấn luyện lính lên tới %s" % Experience.SQUAD_LEVEL_NAMES.back())
 	for effect in effects:
 		view.gain(effect)
 	view.units("Mở tuyển:", unlocked)
@@ -562,71 +555,6 @@ func _choice_button(text: String, chosen: bool, on_pressed: Callable) -> Button:
 	return button
 
 
-# --- Agents (Sở cảnh sát, GDD §8 M14e) ---------------------------------------------------
-
-func _refresh_agents() -> void:
-	var agents := _state.agents
-	var slots := _state.agent_slots()
-	for box: VBoxContainer in [_agent_hire_box, _agent_box]:
-		for child in box.get_children():
-			box.remove_child(child)
-			child.queue_free()
-	_agent_hire_box.add_child(_muted(("Đặc vụ trả một lần khi tuyển, không tốn phí nuôi. Đang có %d/%d đặc vụ (mỗi cấp sở giữ thêm 1). "
-			+ "Ứng viên tới %d sao (cấp thành), danh sách mới sau %d lượt.") % [agents.agents.size(), slots, _state.castle_level,
-			maxi(0, Agents.CANDIDATE_TURNS - (_state.turn - agents.candidates_turn))]))
-	for i in agents.candidates.size():
-		var candidate := agents.candidates[i]
-		var cost := Agents.cost_of(candidate.stars)
-		var result := agents.check_recruit(_state.stockpile, i, slots)
-		var button := _button("Tuyển", _ask_custom.bind("Tuyển đặc vụ %s %s? Trả %s (một lần)." % [candidate.name,
-				candidate.star_text(), UiFormat.amounts(cost, _resource_types)], _recruit_agent.bind(i)))
-		button.disabled = result != Agents.Result.OK
-		button.custom_minimum_size = Vector2(110, 44)
-		var reason := "" if result == Agents.Result.OK or result == Agents.Result.CANNOT_AFFORD else Agents.describe(result)
-		_agent_hire_box.add_child(_candidate_row(candidate, _agent_text(candidate), reason, [button], cost))
-	var refresh := _button("Làm mới ngay (%s)" % UiFormat.amounts(Agents.REFRESH_COST, _resource_types),
-			_ask_custom.bind("Đổi danh sách đặc vụ ngay? Trả %s." % UiFormat.amounts(Agents.REFRESH_COST, _resource_types),
-			func() -> void: agents.buy_refresh(_state.stockpile, _state.castle_level, _state.turn)))
-	refresh.disabled = not _state.stockpile.can_afford(Agents.REFRESH_COST)
-	_agent_hire_box.add_child(refresh)
-
-	_agent_box.add_child(_muted(("Mỗi nhiệm vụ %d lượt, sang bất kỳ gia tộc nào, mỗi gia tộc một đặc vụ. Lượt đầu có %s%% bị lộ, "
-			+ "mỗi lượt sau +%d%%: bị lộ thì có thể bị giết (40%% − 5%% × sao), không thì trốn về; quan hệ với gia tộc đó −%d.") % [
-			Agents.MISSION_TURNS, String.num(Agents.detect_chance(_state.police_level()) * 100, 1),
-			roundi(Agents.DETECT_PER_TURN * 100), -Agents.CAUGHT_RELATION]))
-	if agents.agents.is_empty():
-		_agent_box.add_child(_muted("Chưa có đặc vụ nào: tuyển ở tab %s." % AGENT_HIRE_TAB))
-	for agent in agents.agents:
-		var status := "Đang rảnh."
-		var buttons: Array = []
-		if agent.is_busy():
-			status = "%s ở %s, còn %d lượt · lượt này %s%% bị lộ." % [Agent.MISSION_NAMES[agent.mission],
-					_state.diplomacy.clans[agent.target].data.display_name, agent.turns_left,
-					String.num(Agents.current_detect_chance(agent, _state.police_level()) * 100, 1)]
-		else:
-			var send := _button("Giao nhiệm vụ", func() -> void:
-				agent_mission_requested.emit(agent)
-				close())
-			send.custom_minimum_size = Vector2(150, 44)
-			buttons.append(send)
-		var dismiss := _button("Sa thải", _ask_custom.bind("Sa thải đặc vụ %s? Không hoàn lại tiền tuyển." % agent.name,
-				func() -> void: agents.dismiss(agent)))
-		dismiss.custom_minimum_size = Vector2(110, 44)
-		buttons.append(dismiss)
-		_agent_box.add_child(_candidate_row(agent, _agent_text(agent), status, buttons))
-
-
-func _agent_text(agent: Agent) -> String:
-	return "Đặc vụ %s %s · %s\nTăng quan hệ +%d/lượt · Phá hoại −%s%% hồi quân" % [agent.name, agent.star_text(),
-			agent.level_text(), agent.relation_gain(), String.num(agent.sabotage_share() * 100, 1)]
-
-
-func _recruit_agent(index: int) -> void:
-	var name := _state.agents.candidates[index].name
-	if _state.recruit_agent(index) == Agents.Result.OK:
-		set_status("Đặc vụ %s đã nhận việc!" % name)
-		Sfx.play(&"level_up")
-
 # --- Generals (castle only) ---------------------------------------------------------------
 
 func _refresh_generals() -> void:
@@ -636,7 +564,7 @@ func _refresh_generals() -> void:
 		_recruit_box.remove_child(child)
 		child.queue_free()
 	_recruit_box.add_child(_muted("Ứng viên tướng và mưu sĩ tới %d sao (cấp thành). Đang có %d/%d tướng, %d/%d mưu sĩ. Danh sách mới sau %d lượt." % [
-			_state.castle_level, generals.generals.size(), Generals.MAX_GENERALS, advisors.advisors.size(),
+			_state.castle_level, generals.generals.size(), generals.max_generals, advisors.advisors.size(),
 			Advisors.MAX_ADVISORS, maxi(0, Generals.CANDIDATE_TURNS - (_state.turn - generals.candidates_turn))]))
 	for i in generals.candidates.size():
 		var candidate := generals.candidates[i]
@@ -651,7 +579,7 @@ func _refresh_generals() -> void:
 		button.custom_minimum_size = Vector2(110, 44)
 		var reason := ""
 		if result == Generals.RecruitResult.NO_ROOM:
-			reason = "Đã đủ %d mưu sĩ." % Advisors.MAX_ADVISORS if is_advisor else "Đã đủ %d tướng." % Generals.MAX_GENERALS
+			reason = "Đã đủ %d mưu sĩ." % Advisors.MAX_ADVISORS if is_advisor else "Đã đủ %d tướng." % generals.max_generals
 		var upkeep := generals.ranks[candidate.stars].upkeep
 		if is_advisor:
 			_recruit_box.add_child(_advisor_row(candidate as Advisor, reason, [button], cost, upkeep))

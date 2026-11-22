@@ -204,10 +204,6 @@ func clan_declares_war(clan_id: StringName) -> bool:
 	return true
 
 
-## Regrowth share taken off a clan by the kingdom's agents (Agents.sabotage_on, GDD §8 M14e);
-## unset in tests that build Wars alone.
-var sabotage: Callable
-
 ## End of turn (`turn` is the turn that ends): armies grow stronger and regrow, truces count
 ## down, wars keep relations hostile, and hostile neighbours may declare war. Returns the clans
 ## that declared war this turn.
@@ -218,7 +214,7 @@ func end_turn(rng: RandomNumberGenerator, turn: int = 1) -> Array[StringName]:
 		if front.annexed:
 			continue
 		front.max_strength = max_strength_at(clan_id, turn + 1)
-		var regen := maxf(0.0, STRENGTH_REGEN_SHARE - (sabotage.call(clan_id) if sabotage.is_valid() else 0.0))
+		var regen := STRENGTH_REGEN_SHARE
 		front.strength = mini(front.max_strength, front.strength + ceili(front.max_strength * regen))
 		front.truce_turns = maxi(0, front.truce_turns - 1)
 		front.turns_since_invasion += 1

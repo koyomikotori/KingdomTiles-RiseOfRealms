@@ -1,14 +1,14 @@
 class_name ImportantNews
 extends RefCounted
 ## The start-of-turn news that cannot wait in the notice column (GDD §15, M14g): wars declared,
-## agents caught, the commander or the military advisor hurt in the turn's battle, deserters,
+## the commander or the military advisor hurt in the turn's battle, deserters,
 ## allies leaving, the castle in danger. Shown in ImportantReportWindow after the turn's battle
 ## and before the events. Pure: built from the state, the end_turn() report and the result of the
 ## turn's raid or invasion (empty when there was none).
 
 ## Which news the counselors talk about first (M16i).
 const COUNSEL_ORDER: Array[StringName] = [&"news_castle_danger", &"news_war", &"news_officer",
-		&"news_uprising", &"news_ally_left", &"news_deserted", &"news_agent"]
+		&"news_uprising", &"news_ally_left", &"news_deserted"]
 
 
 ## [{"title", "lines": Array[String], "topic": Counsel topic, "context"}]; empty when nothing
@@ -22,16 +22,6 @@ static func build(state: KingdomState, report: Dictionary, battle: Dictionary = 
 	_add(result, "Bị tuyên chiến", declared, &"news_war",
 			{"clan": clans[report.war_declared[0]].data.display_name} if not declared.is_empty() else {})
 
-	var agents: Array[String] = []
-	for entry: Dictionary in report.get("agents", []):
-		var clan_name: String = clans[entry.clan_id].data.display_name
-		match entry.event:
-			&"caught":
-				agents.append("Đặc vụ %s bị %s phát hiện, đã trốn về (quan hệ −%d)." % [entry.name, clan_name,
-						-Agents.CAUGHT_RELATION])
-			&"killed":
-				agents.append("Đặc vụ %s bị %s bắt và giết (quan hệ −%d)." % [entry.name, clan_name, -Agents.CAUGHT_RELATION])
-	_add(result, "Đặc vụ bị lộ", agents, &"news_agent")
 
 	var officers: Array[String] = []
 	var general: Dictionary = battle.get("general", {})

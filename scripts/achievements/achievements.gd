@@ -19,7 +19,7 @@ const FAST_WIN_TURN := 150
 ## Measures read from KingdomState.stats.
 const STAT_MEASURES: Array[StringName] = [&"battles_won", &"items_forged", &"expeditions_cleared",
 		&"spars_won", &"memories_won", &"market_buys", &"events_answered", &"tutorial_finished",
-		&"commanders_lost", &"agents_caught", &"deserted", &"duels_won"]
+		&"commanders_lost", &"deserted", &"duels_won"]
 
 static var _all: Array[Dictionary] = []
 
@@ -92,15 +92,10 @@ static func measure(what: StringName, state: KingdomState) -> int:
 			return state.wars.count_annexed()
 		&"agreements":
 			return state.diplomacy.agreements.size()
-		&"agents_on_mission":
-			var count := 0
-			for agent in state.agents.agents:
-				count += 1 if agent.mission != Agent.NO_MISSION else 0
-			return count
 		&"officers":
 			return state.generals.generals.size() + state.advisors.advisors.size()
 		&"full_court":
-			return 1 if state.generals.generals.size() >= Generals.MAX_GENERALS and state.advisors.is_full() else 0
+			return 1 if state.generals.generals.size() >= state.generals.max_generals and state.advisors.is_full() else 0
 		&"best_stars", &"best_level", &"limit_breaks":
 			var value := 0
 			for officer: Officer in _officers(state):

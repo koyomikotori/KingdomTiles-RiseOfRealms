@@ -14,6 +14,8 @@ class Squad:
 	var xp := 0.0
 	## On an expedition (M14i): no battles at home, no replenishment, cannot be disbanded.
 	var away := false
+	## What keeps an away squad busy in the realm phase (Realm, M18f), for the UI; "" = an expedition. Not saved.
+	var duty := ""
 
 	func _init(p_unit_id: StringName, p_soldiers: int, p_xp: float = 0.0) -> void:
 		unit_id = p_unit_id
@@ -59,13 +61,19 @@ func add_xp(squad: Squad, amount: float) -> void:
 		changed.emit()
 
 
-## Barracks training: every squad gains Experience.TRAINING_XP, but never trains past
-## Experience.TRAINING_MAX_LEVEL (squads already above it keep their XP).
-func train() -> void:
-	var cap: float = Experience.SQUAD_LEVEL_XP[Experience.TRAINING_MAX_LEVEL]
+## Barracks training: every squad gains `amount`, but never trains past
+## Experience.TRAINING_MAX_LEVEL (squads already above it keep their XP), or with `elite` on to the
+## top level at Experience.ELITE_TRAINING_SHARE speed past it.
+func train(amount: float = Experience.TRAINING_XP, elite: bool = false) -> void:
+	var veteran: float = Experience.SQUAD_LEVEL_XP[Experience.TRAINING_MAX_LEVEL]
+	var cap: float = Experience.SQUAD_LEVEL_XP.back() if elite else veteran
 	for squad in squads:
-		if squad.xp < cap:
-			squad.xp = minf(cap, squad.xp + Experience.TRAINING_XP * xp_rate)
+		if squad.xp >= cap:
+			continue
+		var gain := amount * xp_rate
+		if squad.xp >= veteran:
+			gain *= Experience.ELITE_TRAINING_SHARE
+		squad.xp = minf(cap, squad.xp + gain)
 	changed.emit()
 
 

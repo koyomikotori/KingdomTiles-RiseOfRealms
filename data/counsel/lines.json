@@ -221,18 +221,6 @@
 			["neutral", "Nếu chưa đủ sức, nghị hòa sớm cũng là một nước cờ."]
 		]
 	},
-	"news_agent": {
-		"linh_nhi": [
-			["concerned", "Đặc vụ của mình bị lộ rồi ạ… Tiểu nữ lo cho họ quá."],
-			["surprised", "Ơ! Người của mình bị phát hiện rồi! Bên đó canh gác kỹ thật…"],
-			["concerned", "Hu, mong là lần sau đặc vụ của mình may mắn hơn…"]
-		],
-		"tu_uyen": [
-			["concerned", "Đặc vụ bị lộ. Quan hệ với gia tộc đó sẽ xấu đi."],
-			["neutral", "Một đặc vụ đã bị phát hiện. Ở càng lâu, nguy cơ bị lộ càng cao."],
-			["neutral", "Đừng để đặc vụ ở một nơi quá lâu. Sổ sách cho thấy rủi ro tăng mỗi lượt."]
-		]
-	},
 	"news_officer": {
 		"linh_nhi": [
 			["concerned", "Tướng sĩ của mình có người bị thương, có người… Chúa công xem báo cáo đi ạ, tiểu nữ không nỡ đọc."],

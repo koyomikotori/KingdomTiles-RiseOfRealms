@@ -9,6 +9,8 @@ signal changed
 enum RecruitResult { OK, NO_ROOM, CANNOT_AFFORD, GONE }
 
 const MAX_GENERALS := 3
+## The cap in this game: MAX_GENERALS, Realm.MAX_GENERALS in the realm phase (set by KingdomState).
+var max_generals := MAX_GENERALS
 const CANDIDATES := 3
 ## Turns between two new candidate lists.
 const CANDIDATE_TURNS := 5
@@ -134,7 +136,7 @@ func check_recruit(stockpile: Stockpile, index: int) -> RecruitResult:
 func has_room_for(officer: Officer) -> bool:
 	if officer is Advisor:
 		return advisors != null and not advisors.is_full()
-	return generals.size() < MAX_GENERALS
+	return generals.size() < max_generals
 
 
 ## Hires candidate `index`. The first general becomes the commander; an advisor joins `advisors`.
@@ -153,7 +155,7 @@ func recruit(stockpile: Stockpile, index: int) -> RecruitResult:
 
 ## Adds a general (recruited, or from an event). False when there is no room.
 func add(general: General) -> bool:
-	if generals.size() >= MAX_GENERALS:
+	if generals.size() >= max_generals:
 		return false
 	generals.append(general)
 	if commander == null:
@@ -206,6 +208,24 @@ func active_commander() -> General:
 	return commander if commander != null and commander.is_ready() else null
 
 
+## Who leads the kingdom's battles at home: the commander when able to fight, otherwise the ready
+## general with the most stars stands in (the commander is away with an army or wounded), or null.
+func home_leader() -> General:
+	if active_commander() != null:
+		return commander
+	var best: General = null
+	for general in generals:
+		if general.is_ready() and (best == null or general.stars > best.stars):
+			best = general
+	return best
+
+
+## The general standing in for an absent commander at home, or null.
+func stand_in() -> General:
+	var leader := home_leader()
+	return leader if leader != commander else null
+
+
 func get_upkeep() -> Dictionary[StringName, int]:
 	var total: Dictionary[StringName, int] = {}
 	for general in generals:
@@ -237,10 +257,10 @@ func active_trait(general: General, board: BoardData, defending: bool) -> Genera
 	return data if data != null and data.is_active(board, defending) else null
 
 
-## Puts the active commander at the head of `side`: their bonuses on every unit of the kingdom's
+## Puts the home leader (the commander or a stand-in) at the head of `side`: their bonuses on every unit of the kingdom's
 ## own army (not on units lent by allies) and their bodyguard as a unit of its own.
 func lead(side: BattleSide, board: BoardData, defending: bool) -> void:
-	var general := active_commander()
+	var general := home_leader()
 	if general == null:
 		return
 	lead_officer(side, general, active_trait(general, board, defending))
@@ -319,8 +339,12 @@ func _trait_applies(trait_data: GeneralTraitData, unit: BattleSide.Unit) -> bool
 ## battle XP (Experience.general_battle_xp, wounded or not; items may add more).
 ## Returns {"name", "fate": &"none" | &"dead" | &"wounded", "xp": int, "levels": int}.
 func after_battle(record: BattleRecord, side: int) -> Dictionary:
+	return after_battle_of(home_leader(), record, side)
+
+
+## after_battle for any general who led `side` (an army of the realm phase, M18f).
+func after_battle_of(general: General, record: BattleRecord, side: int) -> Dictionary:
 	var battle_side := record.sides[side]
-	var general := commander
 	if battle_side.general_name.is_empty() or general == null:
 		return {"name": "", "fate": &"none", "xp": 0, "levels": 0}
 	var fate := &"none"

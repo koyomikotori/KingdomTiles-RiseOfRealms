@@ -119,7 +119,7 @@ func _refresh_pick() -> void:
 	if _advisor != null and _advisor.post != Advisor.NO_POST:
 		_pick_box.add_child(_muted("Mưu sĩ giữ chức %s: chức này tạm mất tác dụng tới khi họ về." % Advisors.POST_NAMES[_advisor.post]))
 	if _general != null and _general == _state.generals.commander:
-		_pick_box.add_child(_muted("Tổng tướng đi vắng: quân ở nhà đánh không có tướng cho tới khi về."))
+		_pick_box.add_child(_muted("Tổng tướng đi vắng: tướng ở nhà nhiều sao nhất tạm chỉ huy quân giữ nhà."))
 	if _general != null:
 		var duel := _check_box("Nhận lời thách đấu của tướng nổi loạn", _accept_duels)
 		duel.toggled.connect(func(on: bool) -> void: _accept_duels = on)

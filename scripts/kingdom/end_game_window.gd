@@ -4,6 +4,9 @@ extends ModalWindow
 ## keep playing; after a defeat only loading a save or going back to the menu are left. It cannot
 ## be closed with Esc.
 
+## "Chinh phạt thiên hạ" was chosen: the kingdom scene starts the realm phase (M18f).
+signal realm_requested
+
 const VICTORY_COLOR := Color(0.62, 0.42, 0.08)
 const DEFEAT_COLOR := UiPalette.WARNING
 
@@ -38,6 +41,13 @@ func open(state: KingdomState, path: int, system: SaveSystem, host: Node) -> voi
 			body.add_child(unlocked)
 	body.add_child(HSeparator.new())
 	body.add_child(_label(_statistics(), 15))
+	if won and state.can_start_realm():
+		var realm_note := _label("Năm quốc gia lớn vẫn đứng ngoài kia. Chinh phạt thiên hạ để mở giai đoạn Phân Chia Thiên Hạ, hoặc chơi tiếp như cũ (mở sau bằng nút Thiên hạ).", 15)
+		realm_note.add_theme_color_override("font_color", VICTORY_COLOR)
+		body.add_child(realm_note)
+		add_action("Chinh phạt thiên hạ", func() -> void:
+			realm_requested.emit()
+			close())
 	if won:
 		add_action("Chơi tiếp", close)
 	else:

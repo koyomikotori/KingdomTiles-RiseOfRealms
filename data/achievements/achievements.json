@@ -17,7 +17,6 @@
 	{"id": "land_100", "category": "economy", "title": "Đất rộng người đông", "description": "Lãnh thổ đạt 100 ô.", "measure": "cells", "target": 100, "reward": {"color": "b5562a", "name": "Đất son"}},
 	{"id": "full_granary", "category": "economy", "title": "Kho đầy lẫm chật", "description": "Có 1000 lương thực trong kho.", "measure": "food", "target": 1000},
 	{"id": "limit_break", "category": "officers", "title": "Phá vỡ giới hạn", "description": "Đột phá giới hạn cho một tướng sĩ.", "measure": "limit_breaks", "target": 1},
-	{"id": "spy_network", "category": "diplomacy", "title": "Tai mắt khắp nơi", "description": "3 đặc vụ cùng làm nhiệm vụ.", "measure": "agents_on_mission", "target": 3},
 	{"id": "black_market", "category": "adventure", "title": "Khách quen chợ đen", "description": "Mua 5 món ở chợ đen trong một ván.", "measure": "market_buys", "target": 5, "reward": {"color": "3b2f5c", "name": "Tím than"}},
 	{"id": "events_30", "category": "adventure", "title": "Trăm sự lo toan", "description": "Giải quyết 30 sự kiện trong một ván.", "measure": "events_answered", "target": 30},
 
@@ -46,7 +45,6 @@
 	{"id": "victory_legend", "category": "conquest", "title": "Huyền thoại", "description": "Chiến thắng ở độ khó Huyền thoại.", "measure": "won_difficulty", "target": 4, "reward": {"color": "e8e4dc", "name": "Bạch kim"}},
 
 	{"id": "deserters", "category": "military", "title": "Bụng đói đầu gối phải bò", "description": "Lính đào ngũ vì thiếu lương.", "measure": "deserted", "target": 1, "hidden": true},
-	{"id": "agent_caught", "category": "diplomacy", "title": "Lộ tẩy", "description": "Một đặc vụ bị bắt.", "measure": "agents_caught", "target": 1, "hidden": true},
 	{"id": "commander_lost", "category": "military", "title": "Tướng ngã ngựa", "description": "Tổng tướng tử trận.", "measure": "commanders_lost", "target": 1, "hidden": true},
 	{"id": "duel_win", "category": "adventure", "title": "Một chọi một", "description": "Tướng thắng một trận đấu tay đôi.", "measure": "duels_won", "target": 1, "hidden": true, "reward": {"honor": "Võ Thánh"}},
 	{"id": "defeat", "category": "conquest", "title": "Nước mất nhà tan", "description": "Để mất thành chính.", "measure": "lost", "target": 1, "hidden": true}

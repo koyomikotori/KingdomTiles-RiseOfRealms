@@ -192,7 +192,7 @@ func _refresh() -> void:
 ## "Đang thảo phạt" or the wound under the role ("" when ready).
 func _status_text(officer: Officer) -> String:
 	if officer.away:
-		return "\nĐang đi thảo phạt"
+		return "\n" + officer.away_title()
 	return "" if officer.wounded_turns <= 0 else "\nBị thương, còn %d lượt" % officer.wounded_turns
 
 
@@ -443,7 +443,7 @@ func _add_limit_break() -> void:
 	var needed := LimitBreak.scrolls_needed(_officer)
 	view.requirement("Bí kíp đột phá: %d/%d" % [_state.scrolls, needed], _state.scrolls >= needed)
 	if _officer.away:
-		view.requirement("Đang đi thảo phạt", false)
+		view.requirement(_officer.away_title(), false)
 	view.header("Chi phí")
 	view.costs(LimitBreak.cost(_officer), _state.stockpile)
 	view.header("Nhận được")

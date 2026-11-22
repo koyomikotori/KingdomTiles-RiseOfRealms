@@ -68,8 +68,8 @@
 		"tu_uyen": [["concerned", "Từ lượt 8, đạo tặc có thể nổi dậy ở rìa lãnh thổ (ô đỏ), lan dần về thành. Bấm vào vùng ấy để cử quân Thảo phạt; thắng trọn các ải sẽ được Bí kíp đột phá."]]
 	},
 	"agents_market": {
-		"linh_nhi": [["surprised", "Còn nữa! Sở cảnh sát cho tuyển đặc vụ cài vào gia tộc khác. Cứ 8 lượt thì chợ đen ghé một lần. Sự kiện ngẫu nhiên thì Linh Nhi sẽ kể cho người nghe!"]],
-		"tu_uyen": [["neutral", "Ngoài ra: Sở cảnh sát cho tuyển đặc vụ nằm vùng ở gia tộc khác; chợ đen ghé mỗi 8 lượt; sự kiện bất ngờ sẽ do thần bẩm báo."]]
+		"linh_nhi": [["surprised", "Còn nữa! Cứ 8 lượt thì chợ đen ghé một lần. Sự kiện ngẫu nhiên thì Linh Nhi sẽ kể cho người nghe!"]],
+		"tu_uyen": [["neutral", "Ngoài ra: chợ đen ghé mỗi 8 lượt; sự kiện bất ngờ sẽ do thần bẩm báo."]]
 	},
 	"goal": {
 		"linh_nhi": [["happy", "Vậy là đủ rồi! Muốn đọc lại thì xem mục Cách chơi ở menu chính. Linh Nhi tin Chúa công sẽ thống nhất thiên hạ. Cố lên!"]],

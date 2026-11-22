@@ -36,7 +36,7 @@ const CATEGORY_NAMES: Array[String] = ["Sản xuất", "Quân sự", "Hành chí
 ## building whose upkeep is paid (KingdomState.building_effect): `effects` once per building,
 ## `level_effects` times its level. Ids: trade_capacity, trade_price, plunder_protection,
 ## food_upkeep_cut, production_bonus, officer_xp, wound_healing, commander_survival, retreat_keep,
-## agent_slots, army_morale (M16f).
+## army_morale (M16f).
 @export var effects: Dictionary[StringName, float] = {}
 @export var level_effects: Dictionary[StringName, float] = {}
 ## Effects that do not grow evenly (the temple, M16f): effect id -> one amount per level
@@ -74,7 +74,6 @@ const EFFECT_TEXTS: Dictionary[StringName, String] = {
 	&"wound_healing": "vết thương hồi nhanh gấp đôi",
 	&"commander_survival": "tổng tướng gục ngã ít chết hơn %d%%",
 	&"retreat_keep": "thua trận quân còn sống giữ thêm %d%%",
-	&"agent_slots": "giữ được %d đặc vụ",
 	&"army_morale": "+%s nhuệ khí cho quân ta",
 }
 const PERCENT_EFFECTS: Array[StringName] = [&"trade_price", &"plunder_protection", &"food_upkeep_cut",

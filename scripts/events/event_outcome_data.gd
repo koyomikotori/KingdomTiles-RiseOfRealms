@@ -54,8 +54,6 @@ extends Resource
 @export var prisoner_joins: bool = false
 ## The choice's target_officer of the event clan is hit: wounded or killed, half and half.
 @export var assassinate: bool = false
-## The agent in the event clan is exposed: may be killed (Agents.kill_chance), else comes home.
-@export var agent_exposed: bool = false
 @export_group("M16e")
 ## A battle follows (EventBattles.KINDS: &"duel", &"breakout", &"surprise", &"rescue").
 @export var battle: StringName = &""

@@ -16,8 +16,7 @@ var _map: WorldMapView
 var _panel: ClanPanel
 
 
-## With `agent`, the map opens to send that agent (GDD §8 M14e): picking a clan opens the agent dialog.
-func open(state: KingdomState, resource_types: Array[ResourceTypeData], agent: Agent = null) -> void:
+func open(state: KingdomState, resource_types: Array[ResourceTypeData]) -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var background := ColorRect.new()
@@ -31,8 +30,6 @@ func open(state: KingdomState, resource_types: Array[ResourceTypeData], agent: A
 	var top := HBoxContainer.new()
 	var title := Label.new()
 	title.text = "Bản đồ thế giới — Ngoại giao (lượt %d)" % state.turn
-	if agent != null:
-		title.text = "Chọn gia tộc để cử đặc vụ %s" % agent.name
 	title.add_theme_font_size_override("font_size", 20)
 	title.theme_type_variation = &"WoodLabel"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -72,11 +69,6 @@ func open(state: KingdomState, resource_types: Array[ResourceTypeData], agent: A
 	scroll.add_child(panel_margin)
 	_map.clan_selected.connect(_panel.show_clan)
 	_map.clan_selected.connect(func(clan_id: StringName) -> void: clan_shown.emit(clan_id))
-	if agent != null:
-		_panel.preferred_agent = agent
-		_map.clan_selected.connect(func(clan_id: StringName) -> void:
-			if not state.wars.fronts[clan_id].annexed and not agent.is_busy() and state.agents.agent_on(clan_id) == null:
-				_panel.open_dialog(AgentDialog.new()))
 	_panel.attack_requested.connect(func(clan_id: StringName) -> void: attack_requested.emit(clan_id))
 	_map.setup_wars(state.wars)
 

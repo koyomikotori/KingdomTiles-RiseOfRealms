@@ -133,22 +133,21 @@ func test_notices_list_what_is_going_on() -> void:
 func test_important_news_only_for_what_cannot_wait() -> void:
 	var state := _state()
 	var calm := {"completed": [{"name": "Nông trại", "level": 2, "upgrade": true}], "replenished": {&"swordsman": 3},
-			"deserted": {}, "castle_in_danger": false, "agents": [{"name": "A", "clan_id": &"north_wolves",
-			"mission": Agent.RELATIONS, "event": &"done", "levels": 0}]}
-	check(ImportantNews.build(state, calm).is_empty(), "Building, replenishing, missions done: nothing important")
+			"deserted": {}, "castle_in_danger": false}
+	check(ImportantNews.build(state, calm).is_empty(), "Building, replenishing: nothing important")
 	check(ImportantNews.build(state, {}, {"general": {"fate": &"none"}}).is_empty(), "A battle nobody was hurt in")
 	var report := {"war_declared": [&"north_wolves"] as Array[StringName], "deserted": {&"swordsman": 4},
 			"castle_in_danger": true, "treaties": [{"clan_id": &"south_farmers", "event": &"alliance_broken"},
-			{"clan_id": &"south_farmers", "event": &"alliance_ended"}],
-			"agents": [{"name": "Bảo", "clan_id": &"north_wolves", "mission": Agent.SABOTAGE, "event": &"killed", "levels": 0}]}
+			{"clan_id": &"south_farmers", "event": &"alliance_ended"}]}
 	var battle := {"general": {"name": "Khải", "fate": &"dead"}, "advisor": {"name": "Phong", "fate": &"wounded"}}
 	var news := ImportantNews.build(state, report, battle)
 	var titles := news.map(func(n: Dictionary) -> String: return n.title)
-	check_eq(titles, ["Bị tuyên chiến", "Đặc vụ bị lộ", "Tướng sĩ", "Lính đào ngũ", "Đồng minh rời bỏ",
+	check_eq(titles, ["Bị tuyên chiến", "Tướng sĩ", "Lính đào ngũ", "Đồng minh rời bỏ",
 			"Thành chính nguy hiểm"], "Every kind, in order")
-	check_eq(news[2].lines.size(), 2, "The commander and the advisor")
-	check(news[2].lines[0].contains("tử trận"), "The commander died")
-	check_eq(news[4].lines.size(), 1, "An alliance running out is not important")
+	check_eq(news[1].lines.size(), 2, "The commander and the advisor")
+	check(news[1].lines[0].contains("tử trận"), "The commander died")
+	check_eq(news[3].lines.size(), 1, "An alliance running out is not important")
+
 
 func test_old_saves_are_refused() -> void:
 	var folder := "user://test_campaign_saves"
