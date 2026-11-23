@@ -35,9 +35,7 @@ var _equip_box: VBoxContainer
 ## The slot shown in the Trang bị tab.
 var _slot: StringName = &"weapon"
 ## Item waiting for a second press on "Phân rã".
-var _dismantling: Item
 ## "Đột phá" was pressed once and waits for the second press.
-var _break_armed := false
 var _spar_button: Button
 var _spar_reason: Label
 
@@ -284,7 +282,6 @@ func _fill_equipment() -> void:
 		button.custom_minimum_size = Vector2.ONE * (ItemIcon.SIZE * 2 + 12)
 		button.pressed.connect(func() -> void:
 			_slot = slot
-			_dismantling = null
 			_fill_equipment())
 		var center := CenterContainer.new()
 		center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -398,14 +395,14 @@ func _storage_row(item: Item) -> Control:
 		if result != Equipment.Result.OK:
 			set_status(Equipment.describe(result), false))
 	wear.custom_minimum_size = Vector2(80, 36)
-	var dismantle := _button("Chắc chắn?" if _dismantling == item else "Phân rã", func() -> void:
-		if _dismantling != item:
-			_dismantling = item
-			_fill_equipment()
-			return
-		_dismantling = null
-		var refund := _state.equipment.dismantle(item, _state.stockpile)
-		set_status("Đã phân rã %s, lấy lại %s." % [item.display_name, UiFormat.amounts(refund, _resource_types)]))
+	var dismantle := _button("Phân rã", func() -> void:
+		ConfirmWindow.ask(self, "Phân rã", "Phân rã %s? Món đồ sẽ mất hẳn." % item.display_name,
+				func(view: RequirementView) -> void:
+					view.amounts("Lấy lại:", _state.equipment.dismantle_value(item), true),
+				"Phân rã", func() -> void:
+					var refund := _state.equipment.dismantle(item, _state.stockpile)
+					set_status("Đã phân rã %s, lấy lại %s." % [item.display_name, UiFormat.amounts(refund, _resource_types)]),
+				true))
 	dismantle.custom_minimum_size = Vector2(100, 36)
 	for button in [wear, dismantle]:
 		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -450,20 +447,24 @@ func _add_limit_break() -> void:
 	var cap := _officer.stat_cap(Generals.STAT_MAX)
 	view.gain("Chỉ số tối đa %d → %d" % [cap, cap + LimitBreak.STAT_STEP])
 	view.gain("Cấp tối đa %d → %d" % [_officer.max_level(), _officer.max_level() + LimitBreak.LEVEL_STEP])
-	var button := _button("Chắc chắn?" if _break_armed else "Đột phá", _limit_break)
+	var button := _button("Đột phá", _ask_limit_break)
 	button.custom_minimum_size = Vector2(160, 40)
 	button.disabled = _state.check_limit_break(_officer) != LimitBreak.Result.OK
 	_stats.add_child(_row([button]))
 
 
-## A break spends a lot: the first press asks, the second breaks through.
+## A break spends a lot: the confirmation window shows the cost and the gains first (GDD §34).
+func _ask_limit_break() -> void:
+	var cap := _officer.stat_cap(Generals.STAT_MAX)
+	ConfirmWindow.ask(self, "Đột phá", "Đột phá cho %s?" % _officer.name, func(view: RequirementView) -> void:
+		view.costs(LimitBreak.cost(_officer), _state.stockpile, "Chi phí:")
+		view.line(&"scroll", "%d Bí kíp đột phá (đang có %d)" % [LimitBreak.scrolls_needed(_officer), _state.scrolls])
+		view.gain("Chỉ số tối đa %d → %d" % [cap, cap + LimitBreak.STAT_STEP])
+		view.gain("Cấp tối đa %d → %d" % [_officer.max_level(), _officer.max_level() + LimitBreak.LEVEL_STEP]),
+		"Đột phá", _limit_break)
+
+
 func _limit_break() -> void:
-	if not _break_armed:
-		_break_armed = true
-		set_status("Bấm lần nữa để đột phá cho %s." % _officer.name, false)
-		_refresh()
-		return
-	_break_armed = false
 	var result := _state.limit_break(_officer)
 	if result == LimitBreak.Result.OK:
 		Sfx.play(&"upgrade")
@@ -485,11 +486,15 @@ func _make_commander() -> void:
 	set_status("%s giờ là tổng tướng." % _officer.name)
 
 
-## Dismissal cannot be undone: the first press asks, the second dismisses.
+## Dismissal cannot be undone: the confirmation window asks first (GDD §34).
 func _dismiss() -> void:
-	if _dismiss_button.text == "Sa thải":
-		_dismiss_button.text = "Chắc chắn?"
-		set_status("Bấm lần nữa để sa thải %s. Không hoàn tác được." % _officer.name, false)
-		return
+	ConfirmWindow.ask(self, "Sa thải", "Sa thải %s %s?" % [_officer.name, _officer.star_text()],
+			func(view: RequirementView) -> void:
+				view.note("Trang bị đang đeo được cất về kho.")
+				view.requirement("Không thể hoàn tác", false),
+			"Sa thải", _dismiss_now, true)
+
+
+func _dismiss_now() -> void:
 	# Their items go back to storage.
 	_state.dismiss_officer(_officer)

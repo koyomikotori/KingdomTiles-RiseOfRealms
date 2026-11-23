@@ -142,10 +142,17 @@ func test_marching_and_sieges() -> void:
 	state.realm.form(state, general, force_squads)
 	var force: Realm.Force = state.realm.forces[0]
 	var east := RealmMap.town_id(0, RealmMap.Slot.EAST)
-	check_eq(state.realm.move(force, RealmMap.town_id(2, RealmMap.Slot.NORTH)), Realm.Result.NOT_NEIGHBOR, "Only along roads")
-	check_eq(state.realm.move(force, east), Realm.Result.OK, "Marched east")
-	check_eq(state.realm.move(force, Realm.HOME_CAPITAL), Realm.Result.ALREADY_MOVED, "One road a turn")
-	force.moved = false
+	check_eq(state.realm.order(force, RealmMap.town_id(2, RealmMap.Slot.NORTH), 1), Realm.Result.NOT_NEIGHBOR, "Only along roads")
+	check_eq(state.realm.order(force, east, 1), Realm.Result.OK, "Ordered east")
+	check_eq([force.town, force.order, force.target], [Realm.HOME_CAPITAL, Realm.MOVE, east], "Waits for the end of the turn")
+	check_eq(state.realm.cancel_order(force), Realm.Result.OK, "Cancelled")
+	check(not force.has_order(), "No order left")
+	check_eq(state.realm.cancel_order(force), Realm.Result.NO_ORDER, "Nothing to cancel")
+	state.realm.order(force, east, 1)
+	var report := state.realm.end_turn(state)
+	check_eq(force.town, east, "Marched when the turn ended")
+	check(not force.has_order(), "The order is spent")
+	check_eq(report.marched.size(), 1, "Reported")
 	var target := -1
 	for id in RealmMap.neighbors(east):
 		if state.realm.towns[id].owner != Realm.PLAYER:
@@ -159,20 +166,54 @@ func test_marching_and_sieges() -> void:
 	var nation := town.owner
 	town.garrison = 30
 	var food := state.stockpile.get_amount(&"food")
-	var simulator := state.start_siege(force, target)
+	var simulator := state.start_siege([force], target)
 	check(simulator != null, "The siege starts")
 	var walls := simulator.record.sides[BattleRecord.DEFENDER].units[0]
 	check(walls.defense_mult > 1.0, "Defenders behind walls")
-	var result := state.finish_siege(force, target, _run(simulator))
+	var result := state.finish_siege([force], target, _run(simulator))
 	check(result.won, "Thirty soldiers fall to twenty royal squads")
 	check_eq(town.owner, Realm.PLAYER, "The town is ours")
 	check_eq(force.town, target, "The army stands in it")
-	check(force.moved, "And waits for the next turn")
+	check(not force.has_order(), "No order after the siege")
 	check_eq(state.stockpile.get_amount(&"food"), food + Realm.CAPTURE_LOOT[&"food"], "Loot taken")
 	check_eq(state.realm.captured_towns().size(), 1, "One town captured")
 	check_eq(result.destroyed, &"", "The nation stands")
 	check(state.realm.nations[nation].destroyed == false, "Not destroyed")
 	check_eq(state.realm.squad_bonus(), Realm.TOWN_SQUADS * 6, "Five home towns and the new one")
+
+
+func test_orders_home_and_due_sieges() -> void:
+	var state := _realm_state()
+	var general := _general(state, 5)
+	state.realm.form(state, general, _squads(state, &"royal_swordguard", 5, 400.0))
+	var force: Realm.Force = state.realm.forces[0]
+	check_eq(state.realm.check_home(force), Realm.Result.ALREADY_HOME, "Already at the capital")
+	var east := RealmMap.town_id(0, RealmMap.Slot.EAST)
+	force.town = east
+	check_eq(state.realm.route(east, Realm.HOME_CAPITAL), [Realm.HOME_CAPITAL] as Array[int], "One road home")
+	check_eq(state.realm.order_home(force, 2), Realm.Result.OK, "Ordered home")
+	check_eq(state.realm.next_town(force), Realm.HOME_CAPITAL, "Next stop the capital")
+	state.realm.end_turn(state)
+	check_eq(force.town, Realm.HOME_CAPITAL, "Home")
+	check(not force.has_order(), "The way home ends there")
+	force.town = east
+	var target := -1
+	for id in RealmMap.neighbors(east):
+		if state.realm.towns[id].owner != Realm.PLAYER:
+			target = id
+	check_eq(state.realm.order(force, target, 5), Realm.Result.OK, "Siege ordered")
+	check_eq(force.order, Realm.SIEGE, "A siege order")
+	check(state.realm.due_sieges(5).is_empty(), "Not this turn")
+	check_eq(state.realm.due_sieges(6).size(), 1, "At the start of the next one")
+	state.realm.end_turn(state)
+	check_eq(force.town, east, "A siege does not move the army at the end of the turn")
+	var copy := _state(9)
+	copy.load_save(JSON.parse_string(JSON.stringify(state.to_save())))
+	var saved: Realm.Force = copy.realm.forces[0]
+	check_eq([saved.order, saved.target, saved.order_turn], [Realm.SIEGE, target, 5], "The order is saved")
+	check(not ForceCompare.odds(10, 30) == ForceCompare.Odds.EASY, "Few against many")
+	check_eq(ForceCompare.odds(100, 30), ForceCompare.Odds.EASY, "Many against few")
+	check_eq(ForceCompare.odds(100, 90, 0.5), ForceCompare.Odds.HARD, "Walls tip it")
 
 
 func test_a_lost_siege() -> void:
@@ -185,7 +226,7 @@ func test_a_lost_siege() -> void:
 	var target := RealmMap.town_id(1, RealmMap.Slot.WEST)
 	var town := state.realm.towns[target]
 	town.garrison = 2000
-	var result := state.finish_siege(force, target, _run(state.start_siege(force, target)))
+	var result := state.finish_siege([force], target, _run(state.start_siege([force], target)))
 	check(not result.won, "One peasant squad cannot take the town")
 	check(town.owner != Realm.PLAYER, "The town holds")
 	check(town.garrison <= 2000, "Its losses count")
@@ -206,7 +247,7 @@ func test_taking_a_capital_destroys_the_nation() -> void:
 	force.town = RealmMap.town_id(nation.region, RealmMap.Slot.WEST)
 	state.realm.towns[force.town].owner = Realm.PLAYER
 	state.realm.towns[capital].garrison = 20
-	var result := state.finish_siege(force, capital, _run(state.start_siege(force, capital)))
+	var result := state.finish_siege([force], capital, _run(state.start_siege([force], capital)))
 	check(result.won, "Taken")
 	check_eq(result.destroyed, nation.id, "The nation fell")
 	check(nation.destroyed, "Marked destroyed")
@@ -216,31 +257,149 @@ func test_taking_a_capital_destroys_the_nation() -> void:
 			return town.nation == nation.id).is_empty(), "A destroyed nation cannot strike back")
 
 
-func test_governors_and_what_towns_give() -> void:
+func test_what_towns_give() -> void:
 	var state := _realm_state()
 	var town := state.realm.towns[RealmMap.town_id(1, RealmMap.Slot.NORTH)]
-	var general := _general(state, 4)
-	check_eq(state.realm.assign_governor(state, general, town.id), Realm.Result.NOT_CAPTURED, "Only captured towns")
-	state.realm.capture(state, town)
-	var plain := state.realm.town_yield(town)
-	check_eq(plain[&"food"], roundi(Realm.TOWN_YIELD[&"food"] * Realm.UNGOVERNED_SHARE), "Half without a governor")
 	var before: int = state.get_turn_yield().get(&"food", 0)
-	var capacity := state.get_squad_capacity()
-	check_eq(state.realm.assign_governor(state, general, town.id), Realm.Result.OK, "Governor appointed")
-	check(general.away and general.away_text().begins_with("trấn thủ"), "The governor stays there")
-	var governed := state.realm.town_yield(town)
-	check(governed[&"food"] > Realm.TOWN_YIELD[&"food"], "A governor raises it (%d)" % governed[&"food"])
-	check_eq(state.get_turn_yield().get(&"food", 0), before - plain[&"food"] + governed[&"food"], "In the kingdom's yield")
+	state.realm.capture(state, town)
+	var given := state.realm.town_yield(town)
+	check_eq(given[&"food"], Realm.TOWN_YIELD[&"food"], "The full yield, no governor needed")
+	check_eq(state.get_turn_yield().get(&"food", 0), before + given[&"food"], "In the kingdom's yield")
 	check(state.get_income_breakdown()[&"food"].any(func(entry: Dictionary) -> bool: return entry.source == &"towns"),
 			"Its own income line")
-	check_eq(state.get_squad_capacity(), capacity, "Capacity does not depend on the governor")
-	check(state.realm.militia_soldiers(town) > Realm.MILITIA_BASE, "Võ lực adds militia")
-	var advisor := state.advisors.generate(3)
-	state.advisors.add(advisor)
-	check_eq(state.realm.assign_governor(state, advisor, town.id), Realm.Result.HAS_GOVERNOR, "One per town")
-	state.realm.remove_governor(state, town.id)
-	check(not general.away, "Back home")
-	check_eq(state.realm.assign_governor(state, advisor, town.id), Realm.Result.OK, "Advisors govern too")
+	check_eq(state.realm.militia_soldiers(town), Realm.MILITIA_BASE, "Its militia")
+	var capital := state.realm.towns[RealmMap.town_id(1, RealmMap.CAPITAL)]
+	state.realm.capture(state, capital)
+	check_eq(state.realm.town_yield(capital)[&"food"], Realm.TOWN_YIELD[&"food"] * Realm.CAPITAL_YIELD, "A capital gives more")
+
+
+func test_revolt_chances() -> void:
+	var state := _realm_state()
+	var nation := state.realm.nation_in(1)
+	var town := state.realm.towns[RealmMap.town_id(nation.region, RealmMap.Slot.WEST)]
+	check_eq(state.realm.revolt_chance(town, state.turn), 0.0, "Not one of our captured towns")
+	state.realm.capture(state, town)
+	check_eq(state.realm.revolt_chance(town, state.turn), 0.0, "Not right after it fell")
+	var later := state.turn + Realm.REVOLT_GRACE
+	check_eq(state.realm.revolt_chance(town, later), Realm.REVOLT_CHANCE, "Unguarded")
+	state.realm.form(state, _general(state), _squads(state, &"swordsman", 1))
+	state.realm.forces[0].town = town.id
+	check_eq(state.realm.revolt_chance(town, later), Realm.REVOLT_GUARDED, "An army holds it")
+	nation.destroyed = true
+	check_eq(state.realm.revolt_chance(town, later), Realm.REVOLT_PACIFIED, "Its nation is gone")
+	check_eq(state.realm.revolt_chance(state.realm.towns[Realm.HOME_CAPITAL], later), 0.0, "Never at home")
+
+
+func test_an_unguarded_town_revolts() -> void:
+	var state := _realm_state()
+	var nation := state.realm.nation_in(2)
+	var town := state.realm.towns[RealmMap.town_id(nation.region, RealmMap.Slot.EAST)]
+	state.realm.capture(state, town)
+	nation.destroyed = true
+	town.captured_turn = -50
+	var lost := false
+	for i in 400:
+		var report := state.realm.end_turn(state)
+		if not report.revolted.is_empty():
+			check_eq(report.revolted[0].town, town.id, "That town")
+			lost = true
+			break
+	check(lost, "It rose in time")
+	check_eq(town.owner, Realm.REBELS, "Its nation is gone: the rebels hold it")
+	check(town.garrison > 0, "With a garrison")
+	check_eq(state.realm.owner_name(town, state.kingdom_name), Realm.REBEL_NAME, "Named")
+	var data: Dictionary = JSON.parse_string(JSON.stringify(state.to_save()))
+	var copy := _state(9)
+	copy.load_save(data)
+	check_eq(copy.realm.towns[town.id].owner, Realm.REBELS, "Saved")
+	check_eq(copy.realm.nations[Realm.REBELS].name, Realm.REBEL_NAME, "The rebels' name")
+	# Taking it back.
+	var general := _general(state, 5)
+	state.realm.form(state, general, _squads(state, &"royal_swordguard", 10, 400.0))
+	var force: Realm.Force = state.realm.forces[0]
+	var next: int = RealmMap.neighbors(town.id)[0]
+	state.realm.towns[next].owner = Realm.PLAYER
+	force.town = next
+	town.garrison = 10
+	var result := state.finish_siege([force], town.id, _run(state.start_siege([force], town.id)))
+	check(result.won, "Ten rebels fall")
+	check_eq(town.owner, Realm.PLAYER, "Ours again")
+	check_eq(result.destroyed, &"", "No nation destroyed by it")
+
+
+func test_a_guarded_town_fights_its_rebels() -> void:
+	var state := _realm_state()
+	var nation := state.realm.nation_in(1)
+	var town := state.realm.towns[RealmMap.town_id(nation.region, RealmMap.Slot.WEST)]
+	state.realm.capture(state, town)
+	town.captured_turn = -50
+	state.realm.form(state, _general(state, 5), _squads(state, &"royal_swordguard", 10, 400.0))
+	state.realm.forces[0].town = town.id
+	var found := false
+	for i in 300:
+		state.realm.end_turn(state)
+		if not state.realm.pending_revolt.is_empty():
+			found = true
+			break
+	check(found, "A revolt came")
+	check_eq(state.realm.pending_revolt.town, town.id, "In the guarded town")
+	check_eq(town.owner, Realm.PLAYER, "Not lost before the battle")
+	var copy := _state(9)
+	copy.load_save(JSON.parse_string(JSON.stringify(state.to_save())))
+	check_eq(copy.realm.pending_revolt.town, town.id, "The revolt is saved")
+	var simulator := state.start_revolt()
+	check(simulator != null, "The rebels attack")
+	check(simulator.record.sides[BattleRecord.DEFENDER].general_name != "", "The army defends")
+	var result := state.finish_revolt(_run(simulator))
+	check(result.won, "Ten royal squads put it down")
+	check_eq(town.owner, Realm.PLAYER, "Held")
+	check(state.realm.pending_revolt.is_empty(), "Over")
+
+
+func test_a_joint_siege() -> void:
+	var state := _realm_state()
+	var east := RealmMap.town_id(0, RealmMap.Slot.EAST)
+	var weak := _general(state, 1)
+	var strong := _general(state, 5)
+	state.realm.form(state, weak, _squads(state, &"swordsman", 3))
+	state.realm.form(state, strong, _squads(state, &"swordsman", 2))
+	var first: Realm.Force = state.realm.forces[0]
+	var second: Realm.Force = state.realm.forces[1]
+	first.town = east
+	second.town = east
+	var target := -1
+	for id in RealmMap.neighbors(east):
+		if state.realm.towns[id].owner != Realm.PLAYER:
+			target = id
+	check_eq(state.realm.order(first, target, 5), Realm.Result.OK, "First ordered")
+	check_eq(state.realm.order(second, target, 5), Realm.Result.OK, "Second ordered")
+	check_eq(state.realm.besiegers(target).size(), 2, "Both against it")
+	var groups := state.realm.due_siege_groups(6)
+	check_eq(groups.size(), 1, "One battle")
+	check_eq(groups[0].size(), 2, "Two armies in it")
+	check_eq(Realm.leader_of(groups[0]), second, "The better general leads")
+	state.realm.towns[target].garrison = 20
+	var simulator := state.start_siege(groups[0], target)
+	var side := simulator.record.sides[BattleRecord.ATTACKER]
+	check(side.units.size() >= 5, "Every squad of both armies (%d)" % side.units.size())
+	check_eq(side.general_name, strong.name, "Led by the better general")
+	var result := state.finish_siege(groups[0], target, _run(simulator))
+	check(result.won, "Five squads against twenty")
+	check_eq(result.armies, 2, "Reported")
+	for force in state.realm.forces:
+		check_eq(force.town, target, "Both moved in")
+		check(not force.has_order(), "Orders spent")
+
+
+func test_armies_march_together() -> void:
+	var state := _realm_state()
+	state.realm.form(state, _general(state), _squads(state, &"swordsman", 1))
+	state.realm.form(state, _general(state), _squads(state, &"swordsman", 1))
+	var to: int = RealmMap.neighbors(Realm.HOME_CAPITAL)[0]
+	for force in state.realm.forces:
+		check_eq(state.realm.order(force, to, state.turn), Realm.Result.OK, "Ordered")
+	state.realm.end_turn(state)
+	check_eq(state.realm.forces_at(to).size(), 2, "Both arrived the next turn")
 
 
 func test_armies_replenish_on_kingdom_towns() -> void:
@@ -249,16 +408,20 @@ func test_armies_replenish_on_kingdom_towns() -> void:
 	state.realm.form(state, _general(state), squads)
 	var force: Realm.Force = state.realm.forces[0]
 	squads[0].soldiers = 5
-	squads[1].soldiers = 5
-	force.moved = true
+	squads[1].soldiers = 19
 	state.realm.end_turn(state)
-	check_eq(squads[0].soldiers, 5, "Not after marching")
-	check(not force.moved, "Orders reset")
-	state.realm.end_turn(state)
-	check_eq(squads[0].soldiers, 5 + ceili(20 * Realm.CAPITAL_REPLENISH), "Faster at the capital")
+	check_eq(squads[0].soldiers, 5 + Realm.CAPITAL_REPLENISH, "+3 at the capital")
+	check_eq(squads[1].soldiers, 20, "Never past full")
 	force.town = RealmMap.town_id(0, RealmMap.Slot.EAST)
+	force.order = Realm.SIEGE
+	force.target = RealmMap.town_id(1, RealmMap.Slot.WEST)
 	state.realm.end_turn(state)
-	check_eq(squads[1].soldiers, 9 + ceili(20 * Realm.ARMY_REPLENISH), "Slower in other towns")
+	check_eq(squads[0].soldiers, 8 + Realm.ARMY_REPLENISH, "+1 in other towns, orders or not")
+	var nation := state.realm.nation_in(1)
+	var capital := state.realm.towns[nation.capital()]
+	state.realm.capture(state, capital)
+	check_eq(state.realm.replenish_at(capital.id), Realm.CAPITAL_REPLENISH, "+3 in a capital we took")
+	check_eq(state.realm.replenish_at(RealmMap.town_id(2, RealmMap.Slot.WEST)), 0, "Nothing on enemy land")
 
 
 func test_garrisons_regrow() -> void:
@@ -276,8 +439,6 @@ func test_counterattacks() -> void:
 	state.realm.capture(state, lost)
 	check(state.realm.counter_targets(state.turn).is_empty(), "Not right after it fell")
 	check_eq(state.realm.counter_targets(state.turn + Realm.COUNTER_GRACE).size(), 1, "Later it can be struck")
-	var governor := _general(state)
-	state.realm.assign_governor(state, governor, lost.id)
 	var found := false
 	for i in 40:
 		var report := state.end_turn()
@@ -292,8 +453,6 @@ func test_counterattacks() -> void:
 				check_eq(lost.owner, Realm.PLAYER, "Held")
 			else:
 				check_eq(lost.owner, nation.id, "Lost again")
-				check(lost.governor == null and not governor.away, "The governor came home")
-				check_eq(result.governor, governor.name, "Reported")
 			break
 	check(found, "A counterattack came within 40 turns")
 
@@ -328,7 +487,7 @@ func test_the_realm_is_saved() -> void:
 	state.realm.capture(state, town)
 	var advisor := state.advisors.generate(2)
 	state.advisors.add(advisor)
-	state.realm.assign_governor(state, advisor, town.id)
+	advisor.away = true
 	var data: Dictionary = JSON.parse_string(JSON.stringify(state.to_save()))
 	var copy := _state(9)
 	copy.load_save(data)
@@ -345,8 +504,11 @@ func test_the_realm_is_saved() -> void:
 	check_eq(force.squads.size(), 3, "Its squads")
 	check_eq(force.town, RealmMap.town_id(0, RealmMap.Slot.SOUTH), "Where it stands")
 	check(force.general.away and force.general.duty != "", "Away again with its duty")
-	var governor := copy.realm.towns[town.id].governor
-	check(governor != null and governor.name == advisor.name and governor.away, "The governor")
+	# A governor saved before M18g comes home.
+	data.realm.towns[town.id]["governor"] = {"kind": "advisor", "index": copy.advisors.advisors.size() - 1}
+	var old := _state(9)
+	old.load_save(data)
+	check(not old.advisors.advisors.back().away, "An old governor is free again")
 	var plain := _state(4)
 	plain.load_save(JSON.parse_string(JSON.stringify(_state(4).to_save())))
 	check(not plain.realm.active and plain.generals.max_generals == 3, "Older games are not in it")

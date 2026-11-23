@@ -53,7 +53,7 @@ func start(simulator: BattleSimulator, player_side: int, title: String) -> void:
 	layout.add_child(_build_top_bar(title))
 	layout.add_child(_build_middle(simulator))
 	layout.add_child(_build_controls())
-	_select_speed(0)
+	_select_speed(mini(GameSettings.battle_speed(), BattlePlayback.SPEEDS.size() - 1), false)
 	Sfx.play(&"battle_start")
 
 
@@ -260,8 +260,11 @@ func _toggle_pause() -> void:
 	_pause_button.text = Touch.keys("Tiếp tục (Space)" if _playback.paused else "Tạm dừng (Space)")
 
 
-func _select_speed(index: int) -> void:
+## `remember`: keep it for the next battle (GameSettings, M18g).
+func _select_speed(index: int, remember := true) -> void:
 	_playback.speed = BattlePlayback.SPEEDS[index]
+	if remember:
+		GameSettings.set_battle_speed(index)
 	for i in _speed_buttons.size():
 		_speed_buttons[i].set_pressed_no_signal(i == index)
 

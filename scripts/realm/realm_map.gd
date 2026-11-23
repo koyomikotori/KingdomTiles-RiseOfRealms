@@ -1,31 +1,44 @@
 class_name RealmMap
 extends RefCounted
-## The fixed map of the realm phase (Phân Chia Thiên Hạ, GDD §33, M18f-a): six regions of five
-## towns on a 3×2 grid, the kingdom always in the top-left region. Each region is a diamond: the
-## capital in the middle (slot CAPITAL), four towns around it joined to it and to each other in a
-## ring; neighboring regions are joined by two roads. Which nation sits in which of the other five
-## regions is shuffled each game (Realm.start). Also the five nations' fixed data (NATIONS).
+## The fixed map of the realm phase (Phân Chia Thiên Hạ, GDD §33, M18f-a; redrawn in M18g): six
+## regions of five towns, the kingdom always in region 0 (top-left). Towns are placed by hand so
+## each region has its own shape, and ROADS only join towns that are close (114–162 map units), so
+## one road is one turn's march everywhere and a far town takes several. Which nation sits in which
+## of the other five regions is shuffled each game (Realm.start). Also the five nations' fixed data
+## (NATIONS).
 ##
-## Towns are numbered region × TOWNS_PER_REGION + slot. Positions are in map units
-## (MAP_SIZE), for RealmMapView.
+## Towns are numbered region × TOWNS_PER_REGION + slot; the slot names are only rough directions
+## inside the region. Positions are in map units (MAP_SIZE), for RealmMapView.
 
 const REGIONS := 6
 const TOWNS_PER_REGION := 5
 const TOWN_COUNT := REGIONS * TOWNS_PER_REGION
+## Regions laid out 3 × 2 for their distance from the kingdom (region_distance).
 const GRID := Vector2i(3, 2)
-const REGION_SIZE := 320.0
-const MAP_SIZE := Vector2(960, 640)
+const MAP_SIZE := Vector2(980, 650)
 ## Slots: north, west, capital, east, south.
 enum Slot { NORTH, WEST, CAPITAL, EAST, SOUTH }
 const CAPITAL := Slot.CAPITAL
-const SLOT_POSITIONS: Array[Vector2] = [Vector2(160, 52), Vector2(52, 160), Vector2(160, 160), Vector2(268, 160),
-		Vector2(160, 268)]
-## Roads inside a region (slot pairs): the capital to every town, then the ring.
-const REGION_ROADS: Array[Vector2i] = [Vector2i(2, 0), Vector2i(2, 1), Vector2i(2, 3), Vector2i(2, 4),
-		Vector2i(0, 1), Vector2i(0, 3), Vector2i(4, 1), Vector2i(4, 3)]
-## Roads to the region on the right (left slot, right slot) and to the region below (top, bottom).
-const EAST_ROADS: Array[Vector2i] = [Vector2i(3, 1), Vector2i(0, 0)]
-const SOUTH_ROADS: Array[Vector2i] = [Vector2i(4, 0), Vector2i(3, 3)]
+## Every town's place on the map, by id.
+const POSITIONS: Array[Vector2] = [
+	Vector2(170, 60), Vector2(70, 170), Vector2(190, 175), Vector2(290, 120), Vector2(140, 280),
+	Vector2(440, 70), Vector2(380, 190), Vector2(510, 165), Vector2(620, 85), Vector2(560, 270),
+	Vector2(780, 60), Vector2(715, 175), Vector2(830, 180), Vector2(925, 110), Vector2(870, 290),
+	Vector2(60, 400), Vector2(120, 520), Vector2(230, 440), Vector2(330, 360), Vector2(250, 580),
+	Vector2(450, 380), Vector2(380, 500), Vector2(510, 490), Vector2(640, 400), Vector2(560, 600),
+	Vector2(760, 390), Vector2(700, 520), Vector2(830, 480), Vector2(920, 400), Vector2(880, 590),
+]
+## Every road (lower id first): the shortest pairs that cross no other road, none longer than 165.
+const ROADS: Array[Vector2i] = [
+	Vector2i(0, 1), Vector2i(0, 2), Vector2i(0, 3), Vector2i(1, 2), Vector2i(1, 4), Vector2i(2, 3), Vector2i(2, 4),
+	Vector2i(3, 5), Vector2i(3, 6), Vector2i(4, 15), Vector2i(5, 6), Vector2i(5, 7), Vector2i(6, 7), Vector2i(7, 8),
+	Vector2i(7, 9), Vector2i(8, 10), Vector2i(8, 11), Vector2i(9, 20), Vector2i(9, 23), Vector2i(10, 11),
+	Vector2i(10, 12), Vector2i(10, 13), Vector2i(11, 12), Vector2i(12, 13), Vector2i(12, 14), Vector2i(14, 25),
+	Vector2i(14, 28), Vector2i(15, 16), Vector2i(16, 17), Vector2i(16, 19), Vector2i(17, 18), Vector2i(17, 19),
+	Vector2i(18, 20), Vector2i(18, 21), Vector2i(19, 21), Vector2i(20, 21), Vector2i(20, 22),
+	Vector2i(21, 22), Vector2i(22, 23), Vector2i(22, 24), Vector2i(23, 25), Vector2i(23, 26), Vector2i(24, 26),
+	Vector2i(25, 26), Vector2i(25, 27), Vector2i(25, 28), Vector2i(26, 27), Vector2i(27, 28), Vector2i(27, 29),
+]
 ## The kingdom's region.
 const HOME_REGION := 0
 
@@ -89,29 +102,14 @@ static func region_distance(region: int) -> int:
 	return cell.x + cell.y
 
 
-## Where the town is drawn: its slot in its region, nudged a little so the map looks less like a grid.
+## Where the town is drawn (map units).
 static func position(town: int) -> Vector2:
-	var cell := region_cell(region_of(town))
-	var nudge := Vector2(float((town * 37) % 23 - 11), float((town * 53) % 23 - 11)) * 1.6
-	if is_capital(town):
-		nudge *= 0.4
-	return Vector2(cell) * REGION_SIZE + SLOT_POSITIONS[slot_of(town)] + nudge
+	return POSITIONS[town]
 
 
 ## Every road as a pair of towns (lower id first).
 static func roads() -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	for region in REGIONS:
-		for road in REGION_ROADS:
-			result.append(_pair(town_id(region, road.x), town_id(region, road.y)))
-		var cell := region_cell(region)
-		if cell.x + 1 < GRID.x:
-			for road in EAST_ROADS:
-				result.append(_pair(town_id(region, road.x), town_id(region + 1, road.y)))
-		if cell.y + 1 < GRID.y:
-			for road in SOUTH_ROADS:
-				result.append(_pair(town_id(region, road.x), town_id(region + GRID.x, road.y)))
-	return result
+	return ROADS
 
 
 static func _pair(a: int, b: int) -> Vector2i:

@@ -136,12 +136,8 @@ func _rebuild_squad_list(state: KingdomState) -> void:
 		button.text = "Giải tán"
 		button.focus_mode = Control.FOCUS_NONE
 		button.add_theme_font_size_override("font_size", 12)
-		# Disbanding cannot be undone: the first click asks for confirmation.
-		button.pressed.connect(func() -> void:
-			if button.text == "Giải tán":
-				button.text = "Chắc chắn?"
-			else:
-				disband_requested.emit(squad))
+		# Disbanding cannot be undone: the kingdom scene asks in a confirmation window (GDD §34).
+		button.pressed.connect(func() -> void: disband_requested.emit(squad))
 		button.disabled = squad.away
 		row.add_child(button)
 

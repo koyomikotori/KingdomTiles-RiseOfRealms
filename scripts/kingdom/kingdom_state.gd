@@ -367,6 +367,12 @@ func place_piece(index: int, origin: Vector2i) -> PlacementRules.Result:
 
 
 ## Lays the foundation; the building is finished after its build_turns (GDD §8, M12d).
+## Whether `building_id` can be built at `origin` now (BuildRules.check with this kingdom's cost).
+func check_build(building_id: StringName, origin: Vector2i) -> BuildRules.Result:
+	var building := buildings[building_id]
+	return BuildRules.check(board, stockpile, building, origin, castle_level, building_cost(building), has_free_builder())
+
+
 func build(building_id: StringName, origin: Vector2i) -> BuildRules.Result:
 	var building := buildings[building_id]
 	var result := BuildRules.apply(board, stockpile, building, origin, castle_level, building_cost(building),
@@ -455,7 +461,7 @@ func _advance_construction() -> Array[Dictionary]:
 			board.set_building_level(origin, cell.building_level + 1)
 		var data: BuildingData = buildings.get(cell.building_id)
 		finished.append({"name": data.display_name if data != null else String(cell.building_id),
-				"level": cell.building_level, "upgrade": upgrading})
+				"level": cell.building_level, "upgrade": upgrading, "origin": origin})
 	if castle_turns > 0:
 		castle_turns -= 1
 		if castle_turns == 0:
@@ -604,6 +610,32 @@ func half_refund(amounts: Dictionary[StringName, int]) -> Dictionary[StringName,
 
 func recruit(unit_id: StringName) -> RecruitmentRules.Result:
 	return RecruitmentRules.apply(board, stockpile, army, get_squad_capacity(), units[unit_id], recruit_cost(unit_id))
+
+
+## How many squads of `unit_id` the stockpile and the free squad slots allow now (M18g batches;
+## other requirements are RecruitmentRules.check's).
+func affordable_recruits(unit_id: StringName) -> int:
+	var count := get_squad_capacity() - army.count_squads()
+	var cost := recruit_cost(unit_id)
+	for resource_id in cost:
+		if cost[resource_id] > 0:
+			count = mini(count, stockpile.get_amount(resource_id) / cost[resource_id])
+	return maxi(0, count)
+
+
+## Recruits `count` squads at once, all or nothing: returns how many were recruited (0 or count).
+func recruit_many(unit_id: StringName, count: int) -> int:
+	if count <= 0 or affordable_recruits(unit_id) < count:
+		return 0
+	if RecruitmentRules.check(board, stockpile, army, get_squad_capacity(), units[unit_id],
+			recruit_cost(unit_id)) != RecruitmentRules.Result.OK:
+		return 0
+	var done := 0
+	for i in count:
+		if recruit(unit_id) != RecruitmentRules.Result.OK:
+			break
+		done += 1
+	return done
 
 
 ## What a squad costs: its recruit_cost, less the Võ tướng's discount (GDD §31).
@@ -1482,13 +1514,23 @@ func start_realm() -> Array[StringName]:
 	return joined
 
 
-## The siege of `town` by `force` (Realm.create_siege); null when it cannot happen now.
-func start_siege(force: Realm.Force, town: int) -> BattleSimulator:
-	return realm.create_siege(self, force, town)
+## The siege of `town` by the armies of `group` together (Realm.create_siege); null when it cannot
+## happen now.
+func start_siege(group: Array, town: int) -> BattleSimulator:
+	return realm.create_siege(self, group, town)
 
 
-func finish_siege(force: Realm.Force, town: int, record: BattleRecord) -> Dictionary:
-	return realm.finish_siege(self, force, town, record)
+func finish_siege(group: Array, town: int, record: BattleRecord) -> Dictionary:
+	return realm.finish_siege(self, group, town, record)
+
+
+## The revolt waiting at the start of the turn (Realm.create_revolt); null without one.
+func start_revolt() -> BattleSimulator:
+	return realm.create_revolt(self)
+
+
+func finish_revolt(record: BattleRecord) -> Dictionary:
+	return realm.finish_revolt(self, record)
 
 
 ## Applies the turn's counterattack (end_turn's "pending_counter").

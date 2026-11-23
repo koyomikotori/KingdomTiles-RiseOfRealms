@@ -42,11 +42,7 @@ var _upgrade: Label
 var _info_view: RequirementView
 var _upgrade_view: RequirementView
 var _upgrade_button: Button
-var _confirm_box: VBoxContainer
-var _confirm_text: Label
-var _pending := Action.NONE
 ## What CUSTOM does once confirmed (recruit, refresh, appoint, dismiss).
-var _custom: Callable
 var _recruit_box: VBoxContainer
 ## The forge's "Rèn" tab (GDD §8 "Trang bị", M12e) and what it is set to make.
 var _forge_box: VBoxContainer
@@ -62,16 +58,6 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 	_is_castle = cell.building_id == BoardData.CASTLE_ID
 	_building = state.buildings.get(cell.building_id)
 	var body := build_frame(_title(), ACCENT, WIDTH_SHARE_BUILDING)
-	_confirm_box = VBoxContainer.new()
-	_confirm_box.visible = false
-	_confirm_text = _label("", 15)
-	_confirm_text.add_theme_color_override("font_color", ACCENT)
-	_confirm_box.add_child(_confirm_text)
-	var confirm := _button("Xác nhận", _on_confirm_pressed)
-	confirm.custom_minimum_size = Vector2(140, 44)
-	var cancel := _button("Hủy", _cancel_action)
-	cancel.custom_minimum_size = Vector2(140, 44)
-	_confirm_box.add_child(_row([confirm, cancel]))
 	if _turns_left() > 0:
 		_open_construction(body, cell)
 		return
@@ -103,11 +89,10 @@ func open(state: KingdomState, origin: Vector2i, start_tab: String = "") -> void
 	for i in _tabs.get_tab_count():
 		if _tabs.get_tab_title(i) == start_tab:
 			_tabs.current_tab = i
-	area.add_child(_confirm_box)
 	if _is_castle or (_building != null and _building.is_upgradable()):
 		_upgrade_button = add_action("Nâng cấp", _ask.bind(Action.UPGRADE))
 	if not _is_castle:
-		add_action("Di chuyển", _ask.bind(Action.MOVE))
+		add_action("Di chuyển", _do.bind(Action.MOVE))
 		add_action("Phá hủy", _ask.bind(Action.DEMOLISH), true)
 	state.stockpile.changed.connect(_refresh)
 	_refresh()
@@ -128,7 +113,6 @@ func _open_construction(body: VBoxContainer, cell: CellData) -> void:
 			else "\nThành vẫn giữ các giới hạn của cấp %d; Chiêu hiền mở lại khi nâng cấp xong." % _state.castle_level
 	text += "\nĐội thợ: %d/%d đang làm." % [_state.builders_busy(), _state.builder_limit()]
 	body.add_child(_label(text, 15))
-	body.add_child(_confirm_box)
 	if upgrading:
 		add_action("Hủy nâng cấp", _ask.bind(Action.CANCEL_UPGRADE), true)
 	else:
@@ -257,7 +241,8 @@ func _fill_building_effects(view: RequirementView, cell: CellData, level: int, n
 				unlocked.append(unit)
 			else:
 				waiting += 1
-	var has_effects := not produced.is_empty() or _building.replenish_per_level > 0.0 or not effects.is_empty() 			or (_building.enables_replenishment and level > 1) \
+	var has_effects := not produced.is_empty() or _building.replenish_per_level > 0.0 or not effects.is_empty() \
+			or (_building.enables_replenishment and level > 1) \
 			or not unlocked.is_empty() or waiting > 0
 	if has_effects:
 		view.header("Cấp %d nhận được" % level if next else "Tác dụng")
@@ -309,12 +294,16 @@ func _refresh_castle_upgrade() -> void:
 	view.header("Chi phí")
 	view.costs(_state.castle_upgrade_cost(), _state.stockpile)
 	view.line(&"time", "%d lượt" % _state.castle_upgrade_turns())
+	_fill_castle_gains(view, next)
+	_upgrade_button.disabled = _state.check_castle_upgrade() != KingdomState.CastleResult.OK
+
+
+func _fill_castle_gains(view: RequirementView, next: CastleLevelData) -> void:
 	view.header("Cấp %d nhận được" % next.level)
 	view.gain("+%d chỗ cho đơn vị lính" % next.squad_capacity)
 	view.gain("+1 chỗ cho mỗi loại công trình, +1 đội thợ")
 	view.gain("Công trình nâng được tới cấp %d" % next.level)
 	view.gain("Tuyển tướng và mưu sĩ tới %d sao" % next.level)
-	_upgrade_button.disabled = _state.check_castle_upgrade() != KingdomState.CastleResult.OK
 
 
 ## "✓ Đội thợ rảnh (1/3 đang làm)".
@@ -377,47 +366,47 @@ func _units_unlocked(level: int) -> Array[UnitData]:
 	return list
 
 
-## First step of an action: say what it will do and wait for confirmation.
+## First step of a costly action: the confirmation window (GDD §34) with what it costs and gives.
 func _ask(action: Action) -> void:
-	_pending = action
 	match action:
 		Action.UPGRADE:
-			_tabs.current_tab = 1
 			if _is_castle:
-				_confirm_text.text = "Nâng thành chính lên cấp %d? Trả %s, xong sau %d lượt." % [_state.castle_level + 1,
-						UiFormat.amounts(_state.castle_upgrade_cost(), _resource_types), _state.castle_upgrade_turns()]
+				var next := _state.next_castle_level()
+				if next == null:
+					return
+				ConfirmWindow.ask(self, "Nâng cấp thành chính", "Nâng thành chính lên cấp %d?" % next.level,
+						func(view: RequirementView) -> void:
+							view.costs(_state.castle_upgrade_cost(), _state.stockpile, "Chi phí:")
+							view.line(&"time", "Xong sau %d lượt" % _state.castle_upgrade_turns())
+							_fill_castle_gains(view, next),
+						"Nâng cấp", _do.bind(action))
 			else:
-				_confirm_text.text = "Nâng %s lên cấp %d? Trả %s, xong sau %d lượt (ngừng hoạt động tới khi xong)." % [
-						_building.display_name, _state.board.get_building_level(_origin) + 1,
-						UiFormat.amounts(_state.building_upgrade_cost(_origin), _resource_types),
-						_state.building_upgrade_turns(_origin)]
+				var cell := _state.board.get_cell(_origin)
+				ConfirmWindow.ask(self, "Nâng cấp", "Nâng %s lên cấp %d?" % [_building.display_name, cell.building_level + 1],
+						func(view: RequirementView) -> void:
+							view.costs(_state.building_upgrade_cost(_origin), _state.stockpile, "Chi phí:")
+							view.line(&"time", "Xong sau %d lượt (ngừng hoạt động trong lúc nâng cấp)" % _state.building_upgrade_turns(_origin))
+							_fill_building_effects(view, cell, cell.building_level + 1, true),
+						"Nâng cấp", _do.bind(action))
 		Action.CANCEL_UPGRADE:
 			var cell := _state.board.get_cell(_origin)
 			var cost := _state.next_castle_level().cost if _is_castle else _building.upgrade_cost(cell.building_level + 1)
-			var back := UiFormat.amounts(_state.half_refund(cost), _resource_types)
-			_confirm_text.text = "Hủy nâng cấp? Hoàn lại %s; công trình giữ cấp hiện tại." % (back if not back.is_empty() else "không gì")
-		Action.MOVE:
-			_confirm_text.text = "Di chuyển %s? Bảng sẽ đóng; chọn ô mới trên bản đồ (miễn phí, đúng địa hình, trong lãnh thổ). Esc để hủy." % _building.display_name
+			var back := _state.half_refund(cost)
+			ConfirmWindow.ask(self, "Hủy nâng cấp", "Hủy nâng cấp? Công trình giữ cấp hiện tại.",
+					func(view: RequirementView) -> void:
+						view.amounts("Hoàn lại:", back, true)
+						view.note("Chỉ hoàn lại một nửa chi phí."),
+					"Hủy nâng cấp", _do.bind(action), true)
 		Action.DEMOLISH:
-			var refund := UiFormat.amounts(_state.demolish_refund(_building.building_id), _resource_types)
-			_confirm_text.text = "Phá hủy %s? Hoàn lại %s. Không thể hoàn tác." % [
-					_building.display_name + (" đang xây" if _turns_left() > 0 else ""), refund if not refund.is_empty() else "không gì"]
-	_show_confirm(true)
+			var refund := _state.demolish_refund(_building.building_id)
+			ConfirmWindow.ask(self, "Phá hủy", "Phá hủy %s?" % (_building.display_name + (" đang xây" if _turns_left() > 0 else "")),
+					func(view: RequirementView) -> void:
+						view.amounts("Hoàn lại:", refund, true)
+						view.requirement("Không thể hoàn tác", false),
+					"Phá hủy", _do.bind(action), true)
 
 
-func _cancel_action() -> void:
-	_pending = Action.NONE
-	_show_confirm(false)
-
-
-## The confirm line takes its room from the tab page above it (same fixed area).
-func _show_confirm(shown: bool) -> void:
-	_confirm_box.visible = shown
-
-
-func _on_confirm_pressed() -> void:
-	var action := _pending
-	_cancel_action()
+func _do(action: Action) -> void:
 	match action:
 		Action.UPGRADE:
 			if _is_castle and _state.upgrade_castle() == KingdomState.CastleResult.OK:
@@ -443,16 +432,12 @@ func _on_confirm_pressed() -> void:
 			Sfx.play(&"demolish")
 			demolished.emit("Đã phá hủy %s" % _building.display_name, _state.demolish(_origin))
 			close()
-		Action.CUSTOM:
-			_custom.call()
 
 
-## Like _ask, for the generals tabs: `text` says what will happen, `on_confirm` does it.
-func _ask_custom(text: String, on_confirm: Callable) -> void:
-	_pending = Action.CUSTOM
-	_custom = on_confirm
-	_confirm_text.text = text
-	_show_confirm(true)
+## The confirmation window for the castle tabs: `question`, optional icon lines from `fill`.
+func _ask_custom(question: String, on_confirm: Callable, fill: Callable = Callable(), title: String = "Xác nhận",
+		confirm_text: String = "Xác nhận", danger: bool = false) -> void:
+	ConfirmWindow.ask(self, title, question, fill, confirm_text, on_confirm, danger)
 
 
 # --- Forge -------------------------------------------------------------------------------
@@ -508,13 +493,19 @@ func _refresh_forge() -> void:
 	view.header("Nhận được")
 	view.gain("1 món ngẫu nhiên: %s" % ", ".join(parts))
 	view.note("Nâng cấp xưởng để dễ ra đồ hiếm; Huyền thoại chỉ có từ chiến lợi phẩm và sự kiện.")
-	var start := _button("Rèn", func() -> void:
+	var forge_text := "Rèn %s cho %s?" % [_forge_slot_name(_forge_kind, _forge_slot).to_lower(),
+			"tướng" if _forge_kind == &"general" else "mưu sĩ"]
+	var start := _button("Rèn", _ask_custom.bind(forge_text, func() -> void:
 		var started := _state.start_forge(_forge_kind, _forge_slot)
 		if started == Equipment.Result.OK:
 			set_status("Bắt đầu rèn, xong sau %d lượt." % Equipment.FORGE_TURNS)
 			Sfx.play(&"forge")
 		else:
-			set_status(Equipment.describe(started), false))
+			set_status(Equipment.describe(started), false),
+		func(view: RequirementView) -> void:
+			view.costs(Equipment.forge_cost(level), _state.stockpile, "Chi phí:")
+			view.line(&"time", "Xong sau %d lượt" % Equipment.FORGE_TURNS)
+			view.gain("1 món ngẫu nhiên: %s" % ", ".join(parts)), "Rèn đồ", "Rèn"))
 	start.custom_minimum_size = Vector2(140, 40)
 	start.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	start.disabled = result != Equipment.Result.OK
@@ -572,9 +563,11 @@ func _refresh_generals() -> void:
 		var role := "mưu sĩ" if is_advisor else "tướng"
 		var cost := generals.cost_of(candidate)
 		var result := generals.check_recruit(_state.stockpile, i)
-		var button := _button("Tuyển", _ask_custom.bind("Tuyển %s %s %s? Trả %s; phí nuôi %s mỗi lượt." % [role, candidate.name,
-				candidate.star_text(), UiFormat.amounts(cost, _resource_types),
-				UiFormat.amounts(generals.ranks[candidate.stars].upkeep, _resource_types)], _recruit.bind(i)))
+		var hire_upkeep := generals.ranks[candidate.stars].upkeep
+		var button := _button("Tuyển", _ask_custom.bind("Tuyển %s %s %s?" % [role, candidate.name, candidate.star_text()],
+				_recruit.bind(i), func(view: RequirementView) -> void:
+					view.costs(cost, _state.stockpile, "Chi phí:")
+					view.amounts("Phí nuôi mỗi lượt:", hire_upkeep), "Chiêu hiền", "Tuyển"))
 		button.disabled = result != Generals.RecruitResult.OK
 		button.custom_minimum_size = Vector2(110, 44)
 		var reason := ""
@@ -586,8 +579,8 @@ func _refresh_generals() -> void:
 		else:
 			_recruit_box.add_child(_general_row(candidate as General, reason, [button], cost, upkeep))
 	var refresh := _button("Làm mới ngay (%s)" % UiFormat.amounts(Generals.REFRESH_COST, _resource_types),
-			_ask_custom.bind("Đổi danh sách ứng viên ngay? Trả %s." % UiFormat.amounts(Generals.REFRESH_COST, _resource_types),
-			_buy_refresh))
+			_ask_custom.bind("Đổi danh sách ứng viên ngay?", _buy_refresh, func(view: RequirementView) -> void:
+				view.costs(Generals.REFRESH_COST, _state.stockpile, "Chi phí:"), "Làm mới ứng viên", "Làm mới"))
 	refresh.disabled = not _state.stockpile.can_afford(Generals.REFRESH_COST)
 	_recruit_box.add_child(refresh)
 

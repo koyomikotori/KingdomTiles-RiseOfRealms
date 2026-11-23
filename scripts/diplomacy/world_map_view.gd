@@ -28,6 +28,8 @@ const WORLD_SIZE := CELL * ClanData.GRID_SIZE + MARGIN * 2.0
 const JITTER := Vector2(0.22, 0.18)
 ## Map art is drawn ×2.
 const ART_SCALE := 2.0
+## How far (art pixels) the fort's wall foot sits below its node center.
+const FORT_FOOT := 6.6
 const EDGE_BANDS := 6
 const EDGE_BAND_WIDTH := 10.0
 const EDGE_COLOR := Color(0.45, 0.3, 0.15, 0.22)
@@ -365,7 +367,7 @@ func _draw_node(center: Vector2, banner: Color, tier: Color, label: String, sele
 	var fort := GameArt.world(&"fort")
 	if fort != null:
 		var draw_size := fort.get_size() * ART_SCALE
-		var rect := Rect2(center - Vector2(draw_size.x * 0.5, draw_size.y * 0.7), draw_size)
+		var rect := Rect2(center - Vector2(draw_size.x * 0.5, draw_size.y - FORT_FOOT * ART_SCALE), draw_size)
 		draw_texture_rect(fort, rect, false, Color(1, 1, 1, alpha))
 		var team := GameArt.world(&"fort_team")
 		if team != null:
