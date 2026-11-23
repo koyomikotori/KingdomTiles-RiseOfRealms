@@ -1,24 +1,4 @@
 {
-	"agent_assassin": {
-		"linh_nhi": [
-			["surprised", "Chúa công! Đặc vụ của ta ở {clan} báo về: họ đã tìm được đường tiếp cận người cầm quân bên đó! Mình... có ra tay không ạ?"],
-			["concerned", "Tin mật từ {clan}: đặc vụ của ta đã áp sát được người cầm quân của họ. Tiểu nữ hồi hộp quá, Chúa công định thế nào ạ?"]
-		],
-		"tu_uyen": [
-			["neutral", "Đặc vụ ở {clan} báo: đã có đường tiếp cận người cầm quân của họ. Ra tay hay chờ, xin Chúa công định đoạt."],
-			["concerned", "Chúa công, người của ta trong {clan} đã đến đủ gần tướng địch. Cơ hội như vậy không nhiều, nhưng lộ thì mất người."]
-		]
-	},
-	"agent_warning": {
-		"linh_nhi": [
-			["concerned", "Chúa công ơi, đặc vụ của ta ở {clan} gửi tin khẩn: họ sắp kéo quân sang đánh mình! Nhưng... tin này chưa chắc đúng đâu ạ."],
-			["surprised", "Tin khẩn từ {clan}! Đặc vụ nói quân họ sắp tràn sang. Tiểu nữ không biết có phải tin thật không nữa, Chúa công tính sao ạ?"]
-		],
-		"tu_uyen": [
-			["concerned", "Đặc vụ ở {clan} báo tin: chúng sắp xuất quân đánh ta. Tin chưa được kiểm chứng, Chúa công nên cân nhắc."],
-			["neutral", "Chúa công, có tin {clan} chuẩn bị tấn công. Nguồn tin là người của ta, nhưng chưa thể khẳng định là thật."]
-		]
-	},
 	"ally_request": {
 		"linh_nhi": [
 			["concerned", "Chúa công, thành của {clan} vừa bị bão làm hư hại, họ gửi sứ giả xin mình ít gỗ với đá để dựng lại ạ."],

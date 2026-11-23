@@ -1,7 +1,7 @@
 class_name WorldMapView
 extends Control
 ## Draws the campaign map (GDD §15, M14b) as an old map on paper (GDD §13, M12c), bigger than the
-## view: drag it with the mouse (or a finger) to look around. The 5×5 grid of the campaign sits on
+## view: drag it with the mouse (or a finger) to look around. The 6×6 grid of the campaign sits on
 ## the land with every fort nudged off its square, dirt roads winding between neighbouring
 ## squares, two rivers and a lake, mountain chains, forests, hills and hamlets grouped in regions.
 ## Each clan is a fort flying its banner color on a patch tinted by the relation tier, with icons
@@ -28,6 +28,8 @@ const WORLD_SIZE := CELL * ClanData.GRID_SIZE + MARGIN * 2.0
 const JITTER := Vector2(0.22, 0.18)
 ## Map art is drawn ×2.
 const ART_SCALE := 2.0
+## How far (art pixels) the fort's wall foot sits below its node center.
+const FORT_FOOT := 6.6
 const EDGE_BANDS := 6
 const EDGE_BAND_WIDTH := 10.0
 const EDGE_COLOR := Color(0.45, 0.3, 0.15, 0.22)
@@ -58,6 +60,7 @@ var _offset := Vector2.ZERO
 var _pressing := false
 var _dragging := false
 var _press_position := Vector2.ZERO
+var _centered := false
 ## Built once (_build_layout): fort positions by square, roads, rivers, the lake, decorations.
 var _squares: Dictionary[Vector2i, Vector2] = {}
 var _roads: Array[PackedVector2Array] = []
@@ -80,7 +83,19 @@ func setup(diplomacy: Diplomacy) -> void:
 	# The parchment is a tiled texture.
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	_build_layout()
-	resized.connect(func() -> void: _scroll_by(Vector2.ZERO))
+	# Opens on the kingdom (its home may be anywhere on the edge, M18e) once the view has a size.
+	resized.connect(func() -> void:
+		if not _centered and size.x > 0.0:
+			_centered = true
+			center_on(_position_of(KINGDOM_ID))
+		else:
+			_scroll_by(Vector2.ZERO))
+
+
+## Scrolls so `at` (map coordinates) is in the middle of the view, as far as the map allows.
+func center_on(at: Vector2) -> void:
+	_offset = at - size * 0.5
+	_scroll_by(Vector2.ZERO)
 
 
 ## Shows war markers, annexed clans and clans that became neighbours.
@@ -102,7 +117,7 @@ func square_position(square: Vector2i) -> Vector2:
 
 func _position_of(id: StringName) -> Vector2:
 	if id == KINGDOM_ID:
-		return square_position(ClanData.HOME)
+		return square_position(_diplomacy.home)
 	return square_position(_diplomacy.clans[id].data.grid)
 
 
@@ -352,7 +367,7 @@ func _draw_node(center: Vector2, banner: Color, tier: Color, label: String, sele
 	var fort := GameArt.world(&"fort")
 	if fort != null:
 		var draw_size := fort.get_size() * ART_SCALE
-		var rect := Rect2(center - Vector2(draw_size.x * 0.5, draw_size.y * 0.7), draw_size)
+		var rect := Rect2(center - Vector2(draw_size.x * 0.5, draw_size.y - FORT_FOOT * ART_SCALE), draw_size)
 		draw_texture_rect(fort, rect, false, Color(1, 1, 1, alpha))
 		var team := GameArt.world(&"fort_team")
 		if team != null:

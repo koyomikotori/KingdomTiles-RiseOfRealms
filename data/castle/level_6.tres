@@ -7,4 +7,4 @@ script = ExtResource("1_castle")
 level = 6
 cost = Dictionary[StringName, int]({&"stone": 80, &"ore": 50, &"hardwood": 45, &"horses": 20})
 squad_capacity = 1
-required_clans = 15
+required_clans = 21

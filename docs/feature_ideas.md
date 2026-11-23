@@ -30,9 +30,12 @@ Bản Android (M15c: điện thoại thật, APK v0.3) để sau đợt này. Th
 | M18a (xong, chờ chơi thử) | Hướng dẫn chơi lần đầu: cố vấn dẫn từng bước ở ván mới, bỏ qua được | Vừa | Dùng CounselBox / chân dung cố vấn (M16i) |
 | M18b (xong, chờ chơi thử) | Thành tựu kiểu Steam: danh sách thành tựu giữ qua mọi ván, thông báo khi mở khóa, phần thưởng trang trí (thống kê cuối ván để sau) | Vừa | Lưu ở file riêng (như cài đặt), không theo save |
 | M18c (xong, chờ chơi thử) | Ngoại giao cân bằng: kho hàng ẩn của gia tộc, giá theo cung cầu, quà nhàm, gia tộc mạnh đòi cống nạp (và ta đòi lại), sứ giả xin viện trợ (gia tộc đánh nhau trên bản đồ để sau) | Vừa–khó | GDD §9.8 |
-| M18d | Chơi lại đa dạng: xuất thân chúa công (lợi thế nhỏ), xáo trộn gia tộc mỗi ván (vị trí, tính cách, sức mạnh) | Vừa–khó | Gia tộc hiện là .tres cố định trên lưới 5×5 |
-| M18e | Bản đồ gia tộc lớn hơn, nhiều gia tộc hơn | Khó | Đổi lưới 5×5, mở rộng đất, cân bằng lại cấp thành |
-| M18f | Sau khi thống nhất mọi gia tộc: giai đoạn chiến tranh giữa các quốc gia | Rất khó | Cần thiết kế riêng (bản đồ quốc gia, quân đội lớn hơn, điều kiện thắng mới) |
+| M18d (xong, chờ chơi thử) | Chơi lại đa dạng: xuất thân chúa công theo trang phục (Thiên tử / Võ tướng / Mưu sĩ), xáo trộn gia tộc mỗi ván (vị trí, tính cách, hàng dư / thiếu, sức mạnh ±20%, bạn bè) | Vừa–khó | GDD §31 |
+| M18e (xong, chờ chơi thử) | Bản đồ gia tộc 6×6 với 35 gia tộc, thành ta ngẫu nhiên trên rìa, đất tối đa 24×24, cấp thành 1 / 4 / 8 / 14 / 21 | Khó | GDD §32 |
+| M18f-a (xong, chờ chơi thử) | Phân Chia Thiên Hạ: bản đồ 30 trấn, 5 nước, đạo quân, công thành, thái thú, phản công đơn giản | Rất khó | GDD §33a–b |
+| M18g (xong, chờ chơi thử) | Tiện ích chơi: bảng xác nhận, lệnh hành quân có thể hủy, danh sách đạo quân, so sánh lực lượng, tuyển ×2/×5, nhắc việc cuối lượt, bấm thông báo, nhớ tốc độ trận; phần 2: bảng Thiên hạ gọn, đánh chung một trấn, hồi quân +1/+3, bỏ thái thú, nổi loạn, vẽ lại bản đồ | Vừa | GDD §34, §34a |
+| M18f-b | Các nước AI tấn công bằng đạo quân, trấn nổi loạn, chư hầu, ngoại giao giữa các nước | Rất khó | GDD §33 |
+| M18f-c | Chiến thắng Hoàng đế, cân bằng, hướng dẫn chơi giai đoạn thiên hạ | Khó | GDD §33 |
 
 Cần chuẩn bị trước:
 - Portrait gã chợ đen (M16d) và hai cố vấn với 4+ biểu cảm (M16i): bạn làm bằng AI như pool portrait, hoặc mình vẽ bằng script.

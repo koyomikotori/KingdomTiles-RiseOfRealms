@@ -55,13 +55,20 @@ func refresh(state: KingdomState) -> void:
 	if commander != null:
 		leader = "Tổng tướng: %s %s · Võ lực %d · Thống suất %d%s" % [commander.name, commander.star_text(),
 				commander.might, commander.command,
-				"" if commander.is_ready() else " · đang thảo phạt" if commander.away else " · bị thương, còn %d lượt" % commander.wounded_turns]
+				"" if commander.is_ready() else " · " + commander.away_text() if commander.away else " · bị thương, còn %d lượt" % commander.wounded_turns]
+	var stand_in := state.generals.stand_in()
+	if stand_in != null:
+		leader += "\nTạm chỉ huy ở nhà: %s %s" % [stand_in.name, stand_in.star_text()]
+	if state.can_replenish():
+		replenish += " Huấn luyện +%d kinh nghiệm mỗi lượt, tới %s." % [roundi(state.training_xp()),
+				Experience.SQUAD_LEVEL_NAMES.back() if state.elite_training()
+				else Experience.SQUAD_LEVEL_NAMES[Experience.TRAINING_MAX_LEVEL]]
 	var strategist := "Mưu sĩ Quân sự: chưa có (giao chức ở tab Tướng sĩ)."
 	var advisor := state.advisors.holder(&"military")
 	if advisor != null:
 		strategist = "Mưu sĩ Quân sự: %s %s · Mưu lược %d · %d mưu kế%s" % [advisor.name, advisor.star_text(),
 				advisor.strategy, advisor.stratagems.size(),
-				"" if advisor.is_ready() else " · đang thảo phạt" if advisor.away else " · bị thương, còn %d lượt" % advisor.wounded_turns]
+				"" if advisor.is_ready() else " · " + advisor.away_text() if advisor.away else " · bị thương, còn %d lượt" % advisor.wounded_turns]
 	_summary_label.text = "Đơn vị: %d/%d · %d lính · Nuôi quân, tướng, mưu sĩ: %s/lượt\n%s\n%s\n%s" % [
 			state.army.count_squads(), state.get_squad_capacity(), state.army.count_soldiers(),
 			upkeep if not upkeep.is_empty() else "0", replenish, leader, strategist]
@@ -120,7 +127,7 @@ func _rebuild_squad_list(state: KingdomState) -> void:
 		if level > 0:
 			level_text = Experience.SQUAD_LEVEL_MARKS[level] + " " + level_text
 		var label := _small_label("%s · %s — %d/%d lính%s" % [unit.display_name, level_text, squad.soldiers, unit.squad_size,
-				" · đang thảo phạt" if squad.away else ""])
+				(" · " + (squad.duty if squad.duty != "" else "đang thảo phạt")) if squad.away else ""])
 		# Understrength squads show in the warning color, the others in their tier color (M13b).
 		label.add_theme_color_override("font_color", WARNING_COLOR if squad.soldiers < unit.squad_size else unit.tier_color(false))
 		info.add_child(label)
@@ -129,12 +136,8 @@ func _rebuild_squad_list(state: KingdomState) -> void:
 		button.text = "Giải tán"
 		button.focus_mode = Control.FOCUS_NONE
 		button.add_theme_font_size_override("font_size", 12)
-		# Disbanding cannot be undone: the first click asks for confirmation.
-		button.pressed.connect(func() -> void:
-			if button.text == "Giải tán":
-				button.text = "Chắc chắn?"
-			else:
-				disband_requested.emit(squad))
+		# Disbanding cannot be undone: the kingdom scene asks in a confirmation window (GDD §34).
+		button.pressed.connect(func() -> void: disband_requested.emit(squad))
 		button.disabled = squad.away
 		row.add_child(button)
 

@@ -2,7 +2,7 @@ class_name MoraleEffects
 extends RefCounted
 ## Lasting changes to the starting morale ("nhuệ khí tối đa") of the kingdom's army or its enemies
 ## (GDD §21, M16e), left by events: a duel won or lost, a refused challenge, a stolen letter, an
-## agent's warning. Owned by KingdomState (saved). Each entry is
+## enemy leak. Owned by KingdomState (saved). Each entry is
 ## {"side": KINGDOM | ENEMY, "amount": int, "clan_id": StringName (&"" = every battle,
 ##  ClanOfficers.BANDITS = raids and other battles against bandits),
 ##  "turns": int (> 0: every matching battle for that many more turns; ONCE: the next matching

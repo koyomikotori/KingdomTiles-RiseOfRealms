@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_clan")
 clan_id = &"north_wolves"
-display_name = "Lang Tộc Phương Bắc"
-description = "Những bộ tộc săn bắn trên vùng đồi đá lạnh giá. Thiện chiến, thiếu lương thực và hay dòm ngó đất phương Nam."
+display_name = "Lang Tộc Bạch Nha"
+description = "Những bộ tộc săn bắn trên vùng đồi đá lạnh giá, đeo nanh sói trắng làm bùa hộ thân."
 color = Color(0.75, 0.78, 0.85, 1)
 grid = Vector2i(1, 0)
 personality = 1

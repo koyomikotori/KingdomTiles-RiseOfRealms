@@ -2,7 +2,8 @@ class_name GameSettings
 extends RefCounted
 ## Player preferences kept on this computer (user://settings.cfg), apart from the saves: map effects
 ## (building animations and walkers, M13c), music and sound volumes and full screen (M14a), the
-## notice column's folded items and whether the column is open (M14b), the UI scale (M15a).
+## notice column's folded items and whether the column is open (M14b), the UI scale (M15a), the
+## last battle speed and the end-turn reminder (M18g).
 ## Changed in SettingsWindow; `changed` lets open scenes apply them at once.
 
 const PATH := "user://settings.cfg"
@@ -24,6 +25,8 @@ static var _ui_scale := AUTO_UI_SCALE
 static var _folded_notices: Array[String] = []
 static var _notices_open := true
 static var _legendary_unlocked := false
+static var _battle_speed := 0
+static var _end_turn_reminder := true
 ## Emitted after any setting changed (a static signal: listeners connect to `GameSettings.notifier.changed`).
 static var notifier := Notifier.new()
 
@@ -85,6 +88,32 @@ static func set_notices_open(open: bool) -> void:
 	_load()
 	_notices_open = open
 	_store("notices", "open", open)
+
+
+## The index of the battle / expedition speed last picked (x1 / x2 / x4), kept between battles.
+static func battle_speed() -> int:
+	_load()
+	return _battle_speed
+
+
+static func set_battle_speed(index: int) -> void:
+	_load()
+	if index == _battle_speed:
+		return
+	_battle_speed = maxi(0, index)
+	_store("game", "battle_speed", _battle_speed)
+
+
+## Whether "Kết thúc lượt" first lists unfinished business (EndTurnReminder).
+static func end_turn_reminder() -> bool:
+	_load()
+	return _end_turn_reminder
+
+
+static func set_end_turn_reminder(on: bool) -> void:
+	_load()
+	_end_turn_reminder = on
+	_store("game", "end_turn_reminder", on)
 
 
 ## Legendary difficulty opens after a game won on Normal or Hard (GDD §15 M14h).
@@ -163,3 +192,5 @@ static func _load() -> void:
 	_folded_notices.assign(file.get_value("notices", "folded", []))
 	_notices_open = bool(file.get_value("notices", "open", true))
 	_legendary_unlocked = bool(file.get_value("progress", "legendary_unlocked", false))
+	_battle_speed = maxi(0, int(file.get_value("game", "battle_speed", 0)))
+	_end_turn_reminder = bool(file.get_value("game", "end_turn_reminder", true))

@@ -69,15 +69,10 @@ const CATEGORY_NAMES: Array[String] = ["Kinh tế", "Ngoại giao", "Quân sự"
 @export var clan_may_be_at_war: bool = false
 ## M16b: only clans at war with the kingdom.
 @export var clan_must_be_at_war: bool = false
-## M16b: only clans where one of the kingdom's agents is on a mission and that field a general or
-## an advisor (ClanOfficers).
-@export var clan_must_have_agent: bool = false
 ## M16e: only clans that field a general now (ClanOfficers.fielded_general).
 @export var clan_must_have_general: bool = false
 ## M16e: only clans bordering the kingdom (they can attack it and be attacked).
 @export var clan_must_border: bool = false
-## M16e: only clans where one of the kingdom's agents is on a mission.
-@export var clan_must_host_agent: bool = false
 ## M18c: turns before the same clan can bring this event again (on top of `cooldown`).
 @export var clan_cooldown: int = 0
 ## M18c: the clan has at least this many times the kingdom's soldiers (0 = no check).

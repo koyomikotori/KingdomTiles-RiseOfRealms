@@ -20,6 +20,11 @@ const SQUAD_WIN_XP := 20.0
 ## Per turn with at least one barracks, up to TRAINING_MAX_LEVEL.
 const TRAINING_XP := 10.0
 const TRAINING_MAX_LEVEL := 1
+## Every finished barracks adds this much training a turn for each level above 1 (M18f-a balance).
+const TRAINING_XP_PER_LEVEL := 1.0
+## A barracks at this level trains squads on to the top level, at ELITE_TRAINING_SHARE speed.
+const ELITE_TRAINING_LEVEL := 6
+const ELITE_TRAINING_SHARE := 0.5
 
 ## Generals start at level 1 and reach at most GENERAL_BASE_MAX_LEVEL + stars.
 const GENERAL_BASE_MAX_LEVEL := 2

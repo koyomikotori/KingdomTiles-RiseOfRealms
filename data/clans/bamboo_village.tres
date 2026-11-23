@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"bamboo_village"
 display_name = "Trúc Lâm Trang"
-description = "Làng nghề tre trúc trù phú, dân hiền và khéo tay."
+description = "Làng nghề tre trúc giữa rừng trúc bạt ngàn, nhà sàn nối nhau bên suối."
 color = Color(0.82, 0.76, 0.41, 1)
 grid = Vector2i(2, 1)
 personality = 0

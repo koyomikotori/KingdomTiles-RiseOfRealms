@@ -5,8 +5,10 @@ extends RefCounted
 enum Result { OK, NEEDS_BUILDING, NEEDS_TERRAIN, ARMY_FULL, CANNOT_AFFORD }
 
 
-## `capacity` is the most squads the kingdom may have (KingdomState.get_squad_capacity()).
-static func check(board: BoardData, stockpile: Stockpile, army: Army, capacity: int, unit: UnitData) -> Result:
+## `capacity` is the most squads the kingdom may have (KingdomState.get_squad_capacity()); `cost`
+## replaces the unit's recruit_cost when given (KingdomState.recruit_cost, M18d).
+static func check(board: BoardData, stockpile: Stockpile, army: Army, capacity: int, unit: UnitData,
+		cost: Dictionary[StringName, int] = {}) -> Result:
 	if not missing_buildings(board, unit).is_empty():
 		return Result.NEEDS_BUILDING
 	for terrain_id in unit.required_terrain:
@@ -14,7 +16,7 @@ static func check(board: BoardData, stockpile: Stockpile, army: Army, capacity: 
 			return Result.NEEDS_TERRAIN
 	if army.count_squads() >= capacity:
 		return Result.ARMY_FULL
-	if not stockpile.can_afford(unit.recruit_cost):
+	if not stockpile.can_afford(unit.recruit_cost if cost.is_empty() else cost):
 		return Result.CANNOT_AFFORD
 	return Result.OK
 
@@ -39,11 +41,12 @@ static func describe_buildings(levels: Dictionary[StringName, int], buildings: D
 
 
 ## Recruits only when check() is OK; otherwise nothing changes and nothing is paid.
-static func apply(board: BoardData, stockpile: Stockpile, army: Army, capacity: int, unit: UnitData) -> Result:
-	var result := check(board, stockpile, army, capacity, unit)
+static func apply(board: BoardData, stockpile: Stockpile, army: Army, capacity: int, unit: UnitData,
+		cost: Dictionary[StringName, int] = {}) -> Result:
+	var result := check(board, stockpile, army, capacity, unit, cost)
 	if result != Result.OK:
 		return result
-	stockpile.spend(unit.recruit_cost)
+	stockpile.spend(unit.recruit_cost if cost.is_empty() else cost)
 	army.add_squad(unit.unit_id, unit.squad_size)
 	return Result.OK
 

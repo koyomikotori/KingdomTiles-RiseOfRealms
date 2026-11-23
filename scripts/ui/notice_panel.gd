@@ -4,7 +4,10 @@ extends PanelContainer
 ## sections of items, each a title with an arrow button on its right that folds its detail lines
 ## away (open by default; folded items are remembered by GameSettings). The « button folds the
 ## whole column into a thin strip. The cell info panel (`footer`) sits at the bottom of the column,
-## and floats in the bottom-left corner on its own while the column is folded. Read-only.
+## and floats in the bottom-left corner on its own while the column is folded. Read-only: a click on
+## an item's title emits `item_pressed` and the kingdom scene opens that place (M18g).
+
+signal item_pressed(section_id: StringName, item_id: StringName)
 
 const WIDTH := 300.0
 const FOLDED_WIDTH := 52.0
@@ -127,6 +130,12 @@ func _add_item(section_id: StringName, item: Dictionary, folded: bool) -> void:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if item.warning:
 		title.add_theme_color_override("font_color", UiPalette.WARNING)
+	title.mouse_filter = Control.MOUSE_FILTER_STOP
+	title.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	title.tooltip_text = "Bấm để xem"
+	title.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			item_pressed.emit(section_id, item.id))
 	row.add_child(title)
 	var arrow := Button.new()
 	arrow.focus_mode = Control.FOCUS_NONE

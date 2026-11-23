@@ -636,28 +636,6 @@ def magistrate(frame: int = 0) -> Canvas:
     return c
 
 
-def police(frame: int = 0) -> Canvas:
-    """A dark watch office with a gray tiled roof, two red lanterns and a board of wanted posters."""
-    c = Canvas(16, 16)
-    c.rect(2, 8, 10, 6, P["wood_dark"])
-    c.hline(2, 11, 13, P["wood_deep"])
-    for row in range(4):
-        inset = 3 - row
-        c.hline(1 + inset, 12 - inset, 4 + row, P["stone_dark"] if row < 3 else P["rock_dark"])
-    c.hline(4, 9, 4, P["stone"])
-    c.rect(5, 10, 3, 4, P["door"])
-    c.vline(13, 8, 14, P["wood"])  # notice board
-    c.rect(12, 8, 4, 3, P["wood_dark"])
-    c.px(12, 9, P["paper"])
-    c.px(14, 9, P["paper"])
-    c.px(13, 9, P["paper_shade"])
-    c.outline()
-    glow = (P["red_light"], P["red"], P["red_light"], P["gold_light"])
-    c.px(3, 9, glow[frame])  # lanterns by the door flicker
-    c.px(10, 9, glow[(frame + 2) % 4])
-    return c
-
-
 DIGITS = {
     1: ["010", "110", "010", "010", "111"], 2: ["110", "001", "010", "100", "111"],
     3: ["110", "001", "010", "001", "110"], 4: ["101", "101", "111", "001", "001"],
@@ -1009,7 +987,7 @@ def main() -> None:
                        ("lumber_mill", lumber_mill), ("mine", mine), ("war_stable", war_stable),
                        ("archery_range", archery_range), ("martial_hall", martial_hall),
                        ("military_academy", military_academy), ("market", market), ("granary", granary),
-                       ("academy", academy), ("infirmary", infirmary), ("magistrate", magistrate), ("police", police),
+                       ("academy", academy), ("infirmary", infirmary), ("magistrate", magistrate),
                        ("temple", temple)):
         anim_strip(draw).save(f"buildings/{name}_anim.png")
     barracks().save("buildings/barracks.png")
@@ -1019,7 +997,7 @@ def main() -> None:
     mine().save("buildings/mine.png")
     for name, draw in (("war_stable", war_stable), ("archery_range", archery_range), ("martial_hall", martial_hall),
                        ("military_academy", military_academy), ("market", market), ("granary", granary),
-                       ("academy", academy), ("infirmary", infirmary), ("magistrate", magistrate), ("police", police),
+                       ("academy", academy), ("infirmary", infirmary), ("magistrate", magistrate),
                        ("temple", temple)):
         draw().save(f"buildings/{name}.png")
     for name, draw in (("food", icon_food), ("wood", icon_wood), ("stone", icon_stone), ("ore", icon_ore),

@@ -57,6 +57,11 @@ var _battle_report: BattleReport
 var _battle_screen: BattleScreen
 ## Open world map; it swallows input itself.
 var _world_map: WorldMapScreen
+## The realm map (M18f) and the top-bar button that opens it.
+var _realm_screen: RealmScreen
+## The open "Chưa xong việc" window (EndTurnReminderWindow, M18g), if any.
+var _reminder: EndTurnReminderWindow
+var _realm_button: Button
 var _save_system := SaveSystem.new()
 ## Victory reached while a battle was still to be shown; the end screen waits for its report.
 var _pending_victory := Victory.NO_PATH
@@ -125,6 +130,7 @@ func _ready() -> void:
 	$UI.add_child(_notices)
 	$UI.move_child(_notices, 0)
 	_notices.setup(top_bar.get_combined_minimum_size().y, info_panel, $UI)
+	_notices.item_pressed.connect(_on_notice_pressed)
 
 	# A game picked in the main menu, or a new one.
 	var game := GameLaunch.take_pending_game()
@@ -184,6 +190,14 @@ func _ready() -> void:
 	tabs.tab_changed.connect(func(_tab: int) -> void: _clear_selection())
 	end_turn_button.pressed.connect(_on_end_turn_pressed)
 	diplomacy_button.pressed.connect(_open_world_map)
+	# "Thiên hạ" (M18f): shown once the land is united.
+	_realm_button = Button.new()
+	_realm_button.text = "Thiên hạ"
+	_realm_button.focus_mode = Control.FOCUS_NONE
+	_realm_button.tooltip_text = "Phân Chia Thiên Hạ: bản đồ các quốc gia, đạo quân, trấn."
+	diplomacy_button.add_sibling(_realm_button)
+	_realm_button.pressed.connect(_open_realm)
+	_refresh_realm_button()
 	game_menu_button.pressed.connect(_open_game_menu)
 	if game.is_empty():
 		state.give_starting_resources()
@@ -209,6 +223,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		if event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]:
 			_battle_report.close()
 			get_viewport().set_input_as_handled()
+		return
+	# Testing cheat: every resource up to KingdomState.CHEAT_RESOURCES.
+	if event.keycode == KEY_M and event.ctrl_pressed and event.shift_pressed:
+		state.cheat_fill_resources()
+		placement_status.text = "Cheat: mọi tài nguyên lên %d." % KingdomState.CHEAT_RESOURCES
+		get_viewport().set_input_as_handled()
 		return
 	match event.keycode:
 		KEY_G:
@@ -320,7 +340,6 @@ func _open_building(origin: Vector2i, start_tab: String = "") -> BuildingWindow:
 	var window := BuildingWindow.new()
 	$UI.add_child(window)
 	window.open(state, origin, start_tab)
-	window.agent_mission_requested.connect(_open_world_map)
 	if state.board.get_cell(origin).building_id == BoardData.CASTLE_ID:
 		_tutorial_event(&"castle_opened")
 		window.tab_shown.connect(func(title: String) -> void:
@@ -374,9 +393,27 @@ func _place_selected_piece(coord: Vector2i) -> void:
 	_on_cell_hovered(coord)
 
 
+## With the mouse the confirmation window asks first (GDD §34); on touch the Xây bar already did.
 func _build_selected(coord: Vector2i) -> void:
 	var building := _buildings[_selected_building]
-	var result := state.build(_selected_building, coord - _building_anchor(building))
+	var origin := coord - _building_anchor(building)
+	var check := state.check_build(_selected_building, origin)
+	if check != BuildRules.Result.OK:
+		placement_status.text = BuildRules.describe(check)
+		Sfx.play(&"error")
+		return
+	if Touch.active:
+		_build_now(building, origin, coord)
+		return
+	ConfirmWindow.ask($UI, "Xây dựng", "Xây %s ở đây?" % building.display_name, func(view: RequirementView) -> void:
+		view.costs(state.building_cost(building), state.stockpile, "Chi phí:")
+		view.line(&"time", "Xong sau %d lượt" % building.build_turns)
+		view.amounts("Phí duy trì mỗi lượt:", building.upkeep_at(1)),
+		"Xây", _build_now.bind(building, origin, coord))
+
+
+func _build_now(building: BuildingData, origin: Vector2i, coord: Vector2i) -> void:
+	var result := state.build(building.building_id, origin)
 	if result != BuildRules.Result.OK:
 		placement_status.text = BuildRules.describe(result)
 		Sfx.play(&"error")
@@ -408,13 +445,90 @@ func _open_recruit_window() -> void:
 
 
 func _on_disband_requested(squad: Army.Squad) -> void:
-	var unit_name := state.units[squad.unit_id].display_name
-	var soldiers := squad.soldiers
-	state.disband(squad)
-	placement_status.text = "Đã giải tán đơn vị %s (%d lính)." % [unit_name, soldiers]
+	var unit: UnitData = state.units[squad.unit_id]
+	ConfirmWindow.ask($UI, "Giải tán đơn vị", "Giải tán %s (%d lính, %s)?" % [unit.display_name, squad.soldiers,
+			Experience.SQUAD_LEVEL_NAMES[squad.level()]], func(view: RequirementView) -> void:
+				view.amounts("Bớt phí nuôi mỗi lượt:", unit.upkeep)
+				view.requirement("Không thể hoàn tác: lính và kinh nghiệm mất hẳn", false),
+			"Giải tán", func() -> void:
+				var soldiers := squad.soldiers
+				state.disband(squad)
+				placement_status.text = "Đã giải tán đơn vị %s (%d lính)." % [unit.display_name, soldiers], true)
 
 
+## "Kết thúc lượt": first the reminder of unfinished business (M18g) unless it is off, the tutorial
+## runs or there is nothing to say; then the turn ends.
 func _on_end_turn_pressed() -> void:
+	if _reminder != null:
+		return
+	if GameSettings.end_turn_reminder() and not state.tutorial.is_active() and not state.victory.lost:
+		var items := EndTurnReminder.items(state)
+		if not items.is_empty():
+			_clear_selection()
+			_reminder = EndTurnReminderWindow.new()
+			$UI.add_child(_reminder)
+			_reminder.open(items)
+			_reminder.closed.connect(func() -> void: _reminder = null)
+			_reminder.end_turn_confirmed.connect(_end_turn_now)
+			_reminder.jump_requested.connect(_jump_to_reminder)
+			return
+	_end_turn_now()
+
+
+## A notice title clicked (M18g): the building, window or tab it is about.
+func _on_notice_pressed(section_id: StringName, item_id: StringName) -> void:
+	if _has_selection():
+		_clear_selection()
+	if section_id == &"diplomacy":
+		_open_world_map()
+		return
+	match item_id:
+		&"constructing":
+			var origins := state.board.get_construction_origins()
+			_open_building(origins[0] if not origins.is_empty() else _castle_origin())
+		&"completed":
+			for entry: Dictionary in _last_report.get("completed", []):
+				_open_building(entry.get("origin", _castle_origin()))
+				return
+			tabs.current_tab = 1
+		&"forge":
+			if state.forge_origin() != KingdomState.NO_FORGE:
+				_open_building(state.forge_origin(), BuildingWindow.FORGE_TAB)
+		&"idle", &"upkeep":
+			tabs.current_tab = 1
+		&"uprising":
+			_open_expedition()
+		&"candidates":
+			_open_building(_castle_origin(), "Chiêu hiền")
+		&"wounded", &"healed":
+			tabs.current_tab = 3
+		_:
+			tabs.current_tab = 2
+
+
+func _castle_origin() -> Vector2i:
+	for cell in state.board.get_all_cells():
+		if cell.building_id == BoardData.CASTLE_ID and cell.coord == cell.building_origin:
+			return cell.coord
+	return Vector2i.ZERO
+
+
+## A reminder row's "Xem": the place where that business is handled.
+func _jump_to_reminder(item: Dictionary) -> void:
+	match item.key:
+		EndTurnReminder.PIECES:
+			tabs.current_tab = 0
+		EndTurnReminder.BUILDERS:
+			_open_build_window()
+		EndTurnReminder.POINTS:
+			_open_officer(item.officer)
+		EndTurnReminder.RECRUIT:
+			_open_recruit_window()
+		EndTurnReminder.ARMIES:
+			_open_realm_screen()
+
+
+func _end_turn_now() -> void:
 	_clear_selection()
 	var report := state.end_turn()
 	Sfx.play(&"end_turn")
@@ -431,20 +545,34 @@ func _on_end_turn_pressed() -> void:
 	_refresh_notices()
 	var lines: Array[String] = ["Lượt %d bắt đầu. Xem bảng thông báo bên trái." % state.turn]
 	_pending_victory = report.victory
-	if report.has("pending_invasion"):
+	if report.has("pending_counter"):
+		lines.append("%s đánh chiếm lại trấn %s!" % [_counter_nation(), state.realm.towns[report.pending_counter.town].name])
+	elif report.has("pending_invasion"):
 		lines.append("%s kéo quân xâm lược!" % _clan_name(report.pending_invasion.clan_id))
 	elif report.has("pending_raid"):
 		lines.append("Quân cướp tấn công!")
 	if not report.events.is_empty():
 		lines.append("Có %d sự kiện mới." % report.events.size())
+	for march in report.get("realm", {}).get("marched", []):
+		lines.append("Đạo quân %s đã tới %s." % [march.general, state.realm.towns[march.to].name])
+	for revolt in report.get("realm", {}).get("revolted", []):
+		var lost: Realm.Town = state.realm.towns[revolt.town]
+		lines.append("Trấn %s nổi loạn, về tay %s!" % [lost.name, state.realm.owner_name(lost, state.kingdom_name)])
+	if not state.realm.pending_revolt.is_empty():
+		lines.append("Trấn %s nổi loạn! Quân trấn giữ phải dẹp loạn." % state.realm.towns[state.realm.pending_revolt.town].name)
+	var sieges := state.realm.due_siege_groups(state.turn)
+	if not sieges.is_empty():
+		lines.append("%d trận công thành sắp diễn ra." % sieges.size())
 	placement_status.text = "\n".join(lines)
 	# With a battle at the start of the turn, the autosave, the events and the end screen wait until it is over.
-	if not report.has("pending_invasion") and not report.has("pending_raid"):
+	if not report.has("pending_invasion") and not report.has("pending_raid") and not report.has("pending_counter"):
 		_autosave()
 	# The expedition stage was fought during the night (its squads are already home): its replay
 	# plays first, then the battle that came at dawn, then the rest of the turn's start.
 	var begin := func() -> void:
-		if report.has("pending_invasion"):
+		if report.has("pending_counter"):
+			_play_counter(report.pending_counter.town, report.pending_counter.simulator)
+		elif report.has("pending_invasion"):
 			_play_invasion(report.pending_invasion.clan_id, report.pending_invasion.simulator)
 		elif report.has("pending_raid"):
 			_play_raid(report.pending_raid)
@@ -551,8 +679,6 @@ func _show_attack_report(clan_id: StringName, result: Dictionary) -> void:
 		lines.append("Bồi thường chiến phí: %s." % compensation)
 	if result.annexed:
 		lines.append(_annex_line(clan_id, result.get("expanded", Vector2i.ZERO)))
-		for entry: Dictionary in result.get("agents_recalled", []):
-			lines.append("Đặc vụ %s ở %s đã an toàn trở về." % [entry.name, _clan_name(clan_id)])
 	var title_text := "Chiến thắng!" if result.won else "Thất bại!"
 	if result.annexed:
 		title_text = "%s đã bị sáp nhập!" % _clan_name(clan_id)
@@ -713,22 +839,13 @@ func _play_expedition(index: int, after: Callable) -> void:
 		after.call())
 
 
-## The Sở cảnh sát's agents tab ("Đặc vụ" in the Tướng sĩ tab).
-func _open_agents() -> void:
-	for cell in state.board.get_all_cells():
-		if cell.building_id == KingdomState.POLICE_ID and cell.coord == cell.building_origin:
-			_open_building(cell.coord, BuildingWindow.AGENTS_TAB)
-			return
-
-
-## With `agent`, the map opens to send that agent on a mission (GDD §8 M14e).
-func _open_world_map(agent: Agent = null) -> void:
+func _open_world_map() -> void:
 	if _world_map != null:
 		return
 	_clear_selection()
 	_world_map = WorldMapScreen.new()
 	$UI.add_child(_world_map)
-	_world_map.open(state, _resource_types, agent)
+	_world_map.open(state, _resource_types)
 	_world_map.closed.connect(func() -> void: _world_map = null)
 	_world_map.attack_requested.connect(_attack_clan)
 	_world_map.clan_shown.connect(func(_clan_id: StringName) -> void: _tutorial_event(&"clan_selected"))
@@ -751,6 +868,13 @@ func _continue_turn_start() -> void:
 		$UI.add_child(intro)
 		intro.open("Khởi nghiệp", _counsel(&"game_start"))
 		intro.closed.connect(_continue_turn_start)
+		return
+	if not state.realm.pending_revolt.is_empty():
+		_play_revolt()
+		return
+	var sieges := state.realm.due_siege_groups(state.turn)
+	if not sieges.is_empty():
+		_play_due_siege(sieges[0])
 		return
 	if _news_pending:
 		_news_pending = false
@@ -819,6 +943,8 @@ func _show_end_game_if_any() -> void:
 	var window := EndGameWindow.new()
 	$UI.add_child(window)
 	window.open(state, Victory.NO_PATH if state.victory.lost else path, _save_system, $UI)
+	window.realm_requested.connect(_start_realm)
+	_refresh_realm_button()
 
 
 ## The counselors' lines on `topic` (Counsel, M16i), with the kingdom's name in the context.
@@ -866,6 +992,8 @@ func _show_battle_report(raid: Dictionary, extra_lines: Array[String] = []) -> v
 
 func _on_turn_started(turn: int) -> void:
 	turn_label.text = "Lượt %d" % turn
+	if _realm_button != null:
+		_refresh_realm_button()
 	# Each turn starts on the new land pieces, so they are never forgotten.
 	tabs.current_tab = 0
 	_refresh_economy()
@@ -1101,7 +1229,6 @@ func _build_officers_tab() -> void:
 	officers_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	officers_panel.add_theme_constant_override("separation", 6)
 	officers_panel.officer_selected.connect(_open_officer)
-	officers_panel.agents_requested.connect(_open_agents)
 	scroll.add_child(officers_panel)
 
 
@@ -1248,12 +1375,18 @@ func _income_source_text(entry: Dictionary) -> String:
 			return "Kho lương (giảm lương thực nuôi quân)"
 		&"magistrate":
 			return "Quan phủ (thêm sản lượng)"
+		&"origin_yield":
+			return "Xuất thân Mưu sĩ (thêm sản lượng)"
+		&"origin_upkeep":
+			return "Xuất thân Mưu sĩ (giảm lương thực nuôi quân)"
 		&"production":
 			return "%s ×%d (khai thác)" % [_buildings[entry.id].display_name, entry.count]
 		&"building":
 			return "%s ×%d (phí duy trì)" % [_buildings[entry.id].display_name, entry.count]
 		&"agreement":
 			return "Hợp đồng với %s" % state.diplomacy.clans[entry.id].data.display_name
+		&"towns":
+			return "Các trấn chiếm được (%d)" % entry.count
 	return String(entry.source)
 
 
@@ -1397,3 +1530,170 @@ func _tutorial_window_open() -> bool:
 		if (child is ModalWindow or child is WorldMapScreen) and (child as Control).visible and not child.is_queued_for_deletion():
 			return true
 	return false
+
+
+# --- Realm phase (Phân Chia Thiên Hạ, GDD §33, M18f) ----------------------------------------
+
+func _refresh_realm_button() -> void:
+	_realm_button.visible = state.realm.active or state.can_start_realm()
+
+
+## The top-bar "Thiên hạ": the realm map, or the start of the phase after a victory where the
+## player chose to keep playing.
+func _open_realm() -> void:
+	_clear_selection()
+	if not state.realm.active:
+		if state.can_start_realm():
+			_start_realm()
+		return
+	_open_realm_screen()
+
+
+## Starts the phase (from the victory screen or the top bar) and shows the big announcement.
+func _start_realm() -> void:
+	if not state.can_start_realm():
+		return
+	var joined: Array[String] = []
+	for clan_id in state.start_realm():
+		joined.append(_clan_name(clan_id))
+	_refresh_realm_button()
+	_refresh_notices()
+	_autosave()
+	var window := PartitionWindow.new()
+	$UI.add_child(window)
+	window.open(state, joined)
+	window.proceed.connect(_open_realm_screen)
+
+
+func _open_realm_screen(town: int = Realm.HOME_CAPITAL) -> void:
+	if _realm_screen != null:
+		return
+	_realm_screen = RealmScreen.new()
+	$UI.add_child(_realm_screen)
+	_realm_screen.open(state)
+	if town != Realm.HOME_CAPITAL:
+		_realm_screen.select_town(town)
+	_realm_screen.closed.connect(func() -> void: _realm_screen = null)
+
+
+## A siege ordered last turn (GDD §34, M18g), fought at the start of this one after the turn's
+## raid or expedition by every army ordered against that town: the orders are spent either way,
+## then the turn start goes on.
+func _play_due_siege(armies: Array) -> void:
+	var town_id: int = armies[0].target
+	var group: Array = []
+	for force: Realm.Force in armies:
+		state.realm.cancel_order(force)
+		if state.realm.check_siege(force, town_id) == Realm.Result.OK:
+			group.append(force)
+		else:
+			placement_status.text += "\nĐạo quân %s không thể công thành %s nữa." % [force.general.name,
+					state.realm.towns[town_id].name]
+	if group.is_empty():
+		_continue_turn_start()
+		return
+	_besiege(group, town_id, _continue_turn_start)
+
+
+## The armies attack the town together: the battle, its report, then `after` (or the realm map).
+func _besiege(group: Array, town_id: int, after: Callable = Callable()) -> void:
+	var simulator := state.start_siege(group, town_id)
+	if simulator == null:
+		if after.is_valid():
+			after.call()
+		return
+	if _realm_screen != null:
+		_realm_screen.close()
+	var town := state.realm.towns[town_id]
+	var nation := state.realm.nations[town.owner]
+	_play_battle(simulator, BattleRecord.ATTACKER, "Công thành %s!" % town.name, func(record: BattleRecord) -> void:
+		var result := state.finish_siege(group, town_id, record)
+		_autosave()
+		var report := BattleReport.new()
+		$UI.add_child(report)
+		var lines := report.army_loss_lines(result, state.units)
+		lines.append("%s mất %d lính, trấn còn %d." % [nation.name if nation.id == Realm.REBELS else "Quân " + nation.name,
+				result.enemy_lost, town.garrison])
+		lines.append_array(_realm_lines(result))
+		var loot := UiFormat.amounts(result.loot, _resource_types)
+		if not loot.is_empty():
+			lines.append("Thu được khi chiếm trấn: %s." % loot)
+		if result.destroyed != &"":
+			lines.append("Kinh đô thất thủ: %s bị diệt! %d trấn còn lại về tay ta." % [nation.name, result.gained.size()])
+		if result.disbanded > 0:
+			lines.append("%d đạo quân tan rã, những ai còn sống trở về kinh đô." % result.disbanded)
+		var title_text := "Chiếm được %s!" % town.name if result.won else "Công thành thất bại!"
+		var who := "Liên quân %d đạo" % result.armies if result.armies > 1 else "Đạo quân %s" % result.general.name
+		report.show_battle(title_text, result.won, "%s công thành %s." % [who, town.name],
+				record, BattleRecord.ATTACKER, lines)
+		report.add_counsel(_battle_counsel(result, &"attack_won", &"attack_lost", {"clan": nation.name}))
+		report.closed.connect(func() -> void:
+			if after.is_valid():
+				after.call()
+			else:
+				_open_realm_screen(town_id)))
+
+
+## A nation strikes back at a town it lost (end_turn's pending_counter).
+func _play_counter(town_id: int, simulator: BattleSimulator) -> void:
+	var town := state.realm.towns[town_id]
+	var nation_name := _counter_nation()
+	_play_battle(simulator, BattleRecord.DEFENDER, "%s đánh trấn %s!" % [nation_name, town.name], func(record: BattleRecord) -> void:
+		var result := state.finish_counter(record)
+		_turn_battle = result
+		_autosave()
+		var report := BattleReport.new()
+		$UI.add_child(report)
+		var lines := report.army_loss_lines(result, state.units)
+		lines.append("Quân %s mất %d lính." % [nation_name, result.enemy_lost])
+		lines.append_array(_realm_lines(result))
+		if result.lost_town:
+			lines.append("Trấn %s về lại tay %s." % [town.name, nation_name])
+			if result.retreated_to >= 0 and not state.realm.forces_at(result.retreated_to).is_empty():
+				lines.append("Đạo quân lui về %s." % state.realm.towns[result.retreated_to].name)
+		report.show_battle("Giữ vững %s!" % town.name if result.won else "Mất trấn %s!" % town.name, result.won,
+				"%s kéo quân đánh chiếm lại trấn." % nation_name, record, BattleRecord.DEFENDER, lines)
+		report.add_counsel(_battle_counsel(result, &"invasion_won", &"invasion_lost", {"clan": nation_name}))
+		_battle_report = report
+		report.closed.connect(_on_battle_report_closed))
+
+
+## A captured town rises while an army holds it (end_turn's pending_revolt, M18g).
+func _play_revolt() -> void:
+	var town: Realm.Town = state.realm.towns[state.realm.pending_revolt.town]
+	var simulator := state.start_revolt()
+	_play_battle(simulator, BattleRecord.DEFENDER, "Trấn %s nổi loạn!" % town.name, func(record: BattleRecord) -> void:
+		var result := state.finish_revolt(record)
+		_autosave()
+		var report := BattleReport.new()
+		$UI.add_child(report)
+		var lines := report.army_loss_lines(result, state.units)
+		lines.append("Quân nổi loạn mất %d lính." % result.enemy_lost)
+		lines.append_array(_realm_lines(result))
+		if result.lost_town:
+			lines.append("Trấn %s về tay %s." % [town.name, state.realm.owner_name(town, state.kingdom_name)])
+			if result.retreated_to >= 0 and not state.realm.forces_at(result.retreated_to).is_empty():
+				lines.append("Đạo quân lui về %s." % state.realm.towns[result.retreated_to].name)
+		report.show_battle("Dẹp yên %s!" % town.name if result.won else "Mất trấn %s!" % town.name, result.won,
+				"Dân trấn %s nổi dậy chống lại ta." % town.name, record, BattleRecord.DEFENDER, lines)
+		report.add_counsel(_battle_counsel(result, &"invasion_won", &"invasion_lost", {"clan": Realm.REBEL_NAME}))
+		report.closed.connect(_continue_turn_start))
+
+
+func _counter_nation() -> String:
+	var counter := state.realm.pending_counter
+	if counter.is_empty():
+		return "Quân địch"
+	return state.realm.nations[state.realm.towns[counter.town].nation].name
+
+
+## The army's general and any item won, for the realm's battle reports.
+func _realm_lines(result: Dictionary) -> Array[String]:
+	var general: Dictionary = result.get("general", {})
+	general["title"] = "Tướng"
+	var merged := result.duplicate()
+	merged["general"] = general
+	merged["allies"] = {}
+	merged["helpers"] = {}
+	return _ally_lines(merged)
+

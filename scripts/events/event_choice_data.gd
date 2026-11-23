@@ -18,10 +18,8 @@ extends Resource
 ## chance plus the bonuses below (EventSystem.choice_chance, shown to the player) and the second
 ## one otherwise.
 @export var success_chance: float = -1.0
-## Per star of the advisor in the Ngoại giao post, of the agent in the event clan, per police level.
+## Per star of the advisor in the Ngoại giao post.
 @export var chance_per_envoy_star: float = 0.0
-@export var chance_per_agent_star: float = 0.0
-@export var chance_per_police_level: float = 0.0
 @export_group("Requirements (M16b)")
 ## Needs room for one more general or advisor.
 @export var needs_officer_slot: bool = false

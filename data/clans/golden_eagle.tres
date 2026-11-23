@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"golden_eagle"
 display_name = "Vương Quốc Kim Ưng"
-description = "Một vương quốc hùng mạnh ở xa về phía Đông Bắc. Tham vọng, quân đông, cần gỗ cho chiến thuyền."
+description = "Một vương quốc lâu đời với kinh thành tường vàng và cờ hiệu chim ưng."
 color = Color(0.85, 0.45, 0.75, 1)
 grid = Vector2i(4, 4)
 personality = 1

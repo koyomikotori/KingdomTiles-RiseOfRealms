@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"silk_road"
 display_name = "Ti Lộ Thương Đoàn"
-description = "Các đoàn buôn tơ lụa qua lại khắp các vùng, đâu cũng có hàng."
+description = "Các đoàn buôn tơ lụa qua lại khắp các vùng, xe hàng nối đuôi nhau."
 color = Color(0.41, 0.82, 0.62, 1)
 grid = Vector2i(3, 2)
 personality = 2

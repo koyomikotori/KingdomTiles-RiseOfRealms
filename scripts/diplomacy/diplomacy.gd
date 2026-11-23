@@ -242,11 +242,18 @@ var agreements: Array[Agreement]:
 			if clans[clan_id].agreement != null:
 				result.append(clans[clan_id].agreement)
 		return result
+## The kingdom's square on the campaign map (ClanData.HOME on the fixed map; ClanLayout sets a
+## random edge square for new games, M18e).
+var home := ClanData.HOME
 ## Ngoại giao of the kingdom's working diplomacy advisor, 0 without one (set by KingdomState).
 var envoy := 0
 ## The kingdom's administrative effects (KingdomState.building_effect: effect id -> amount);
 ## unset in tests that build a Diplomacy alone. Markets: trade_capacity, trade_price.
 var admin_effect: Callable
+## The Thiên tử background (RulerOrigin, M18d; set by KingdomState): added to every proposal's
+## chance (agreements, renewals, alliances, pacts, peace, tribute) and to trade prices.
+var origin_chance := 0.0
+var origin_price := 0.0
 ## Extra share of relation from gifts (the diplomacy advisor's items, M12e; set by KingdomState).
 var gift_bonus := 0.0
 ## How threatening the kingdom looks (KingdomState.get_threat()); every clan's wariness grows toward
@@ -276,9 +283,9 @@ static func tier_for(relation: int) -> Tier:
 
 # --- The campaign map (GDD §15) ---------------------------------------------------------
 
-## The squares the kingdom holds: its home corner and every annexed clan.
+## The squares the kingdom holds: its home and every annexed clan.
 func territory() -> Array[Vector2i]:
-	var result: Array[Vector2i] = [ClanData.HOME]
+	var result: Array[Vector2i] = [home]
 	for clan_id in clans:
 		if clans[clan_id].annexed:
 			result.append(clans[clan_id].data.grid)
@@ -307,7 +314,7 @@ func borders(clan_id: StringName) -> bool:
 ## The kingdom board's side facing the clan: from the nearest held square toward it.
 func direction_to(clan_id: StringName) -> ClanData.Direction:
 	var grid := clans[clan_id].data.grid
-	var nearest := ClanData.HOME
+	var nearest := home
 	for square in territory():
 		if ClanData.grid_distance(square, grid) < ClanData.grid_distance(nearest, grid):
 			nearest = square
@@ -531,7 +538,8 @@ func price_factor(clan_id: StringName, give_id: StringName, get_id: StringName) 
 	if distance(clan_id) > 1:
 		factor *= DISTANT_PENALTY
 	factor *= demand_factor(clan_id, give_id)
-	return factor * (1.0 + envoy * ENVOY_PRICE) * (1.0 + minf(MAX_MARKET_PRICE, _admin(&"trade_price")))
+	return factor * (1.0 + envoy * ENVOY_PRICE) * (1.0 + minf(MAX_MARKET_PRICE, _admin(&"trade_price"))) \
+			* (1.0 + origin_price)
 
 
 ## Units of `get_id` the player would receive for `give_amount` of `give_id` (rounded down).
@@ -677,7 +685,7 @@ func agreement_chance(clan_id: StringName, give_id: StringName, give_amount: int
 		return 0.0
 	var clan := clans[clan_id]
 	var chance := 1.5 - float(get_amount) / fair + clan.relation / 200.0 + AGREEMENT_PERSONALITY[clan.data.personality] \
-			+ envoy * ENVOY_CHANCE
+			+ envoy * ENVOY_CHANCE + origin_chance
 	return clampf(chance, 0.0, AGREEMENT_MAX_CHANCE)
 
 

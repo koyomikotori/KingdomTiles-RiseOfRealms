@@ -52,8 +52,8 @@
 		"tu_uyen": [["neutral", "Đã đến lúc nhìn ra thiên hạ. Xin Chúa công bấm \"Ngoại giao\" trên thanh trên cùng."]]
 	},
 	"clan": {
-		"linh_nhi": [["happy", "Đây là bản đồ các gia tộc, ta ở góc trên bên trái. Bấm vào một gia tộc gần ta để xem quan hệ, tặng quà, giao thương hay kết minh!"]],
-		"tu_uyen": [["neutral", "Đây là bản đồ thiên hạ, ta ở góc trên bên trái. Xin bấm vào một gia tộc gần ta: xem quan hệ, tặng lễ, giao thương, kết minh."]]
+		"linh_nhi": [["happy", "Đây là bản đồ các gia tộc, thành ta nằm ở rìa bản đồ, cắm cờ màu của ta. Bấm vào một gia tộc gần ta để xem quan hệ, tặng quà, giao thương hay kết minh!"]],
+		"tu_uyen": [["neutral", "Đây là bản đồ thiên hạ, thành ta nằm nơi rìa, cờ mang màu của ta. Xin bấm vào một gia tộc gần ta: xem quan hệ, tặng lễ, giao thương, kết minh."]]
 	},
 	"war": {
 		"linh_nhi": [["concerned", "Gia tộc giáp ranh thì đánh được. Đánh tới khi họ yếu thì sáp nhập, đất ta rộng thêm! Còn liên minh thì cũng tính là đã thống nhất. Cấp thành cao cần thống nhất đủ số gia tộc đó nha."]],
@@ -68,8 +68,8 @@
 		"tu_uyen": [["concerned", "Từ lượt 8, đạo tặc có thể nổi dậy ở rìa lãnh thổ (ô đỏ), lan dần về thành. Bấm vào vùng ấy để cử quân Thảo phạt; thắng trọn các ải sẽ được Bí kíp đột phá."]]
 	},
 	"agents_market": {
-		"linh_nhi": [["surprised", "Còn nữa! Sở cảnh sát cho tuyển đặc vụ cài vào gia tộc khác. Cứ 8 lượt thì chợ đen ghé một lần. Sự kiện ngẫu nhiên thì Linh Nhi sẽ kể cho người nghe!"]],
-		"tu_uyen": [["neutral", "Ngoài ra: Sở cảnh sát cho tuyển đặc vụ nằm vùng ở gia tộc khác; chợ đen ghé mỗi 8 lượt; sự kiện bất ngờ sẽ do thần bẩm báo."]]
+		"linh_nhi": [["surprised", "Còn nữa! Cứ 8 lượt thì chợ đen ghé một lần. Sự kiện ngẫu nhiên thì Linh Nhi sẽ kể cho người nghe!"]],
+		"tu_uyen": [["neutral", "Ngoài ra: chợ đen ghé mỗi 8 lượt; sự kiện bất ngờ sẽ do thần bẩm báo."]]
 	},
 	"goal": {
 		"linh_nhi": [["happy", "Vậy là đủ rồi! Muốn đọc lại thì xem mục Cách chơi ở menu chính. Linh Nhi tin Chúa công sẽ thống nhất thiên hạ. Cố lên!"]],

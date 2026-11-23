@@ -18,11 +18,15 @@ var stars: int
 var wounded_turns := 0
 ## On an expedition (M14i): no command, post or battle at home, cannot be dismissed.
 var away := false
+## What keeps an away officer busy in the realm phase (Realm, M18f), for the UI; "" = an expedition. Not saved.
+var duty := ""
 var level := 1
 ## XP gathered toward the next level (reset on each level up).
 var xp := 0
 ## Unspent level points.
 var points := 0
+## Multiplies every XP gain (the Thiên tử background, M18d; set by KingdomState, not saved).
+var xp_rate := 1.0
 ## Limit breaks done (M16c, LimitBreak): each raises the stat caps and the max level.
 var breaks := 0
 ## Portrait and battle sprite (OfficerLook).
@@ -37,6 +41,17 @@ static func random_name(rng: RandomNumberGenerator, female: bool, given_names: A
 	var given := FEMALE_GIVEN_NAMES if female else given_names
 	return "%s %s %s" % [FAMILY_NAMES[rng.randi_range(0, FAMILY_NAMES.size() - 1)],
 			middle[rng.randi_range(0, middle.size() - 1)], given[rng.randi_range(0, given.size() - 1)]]
+
+
+## Why the officer is away, lowercase: their realm duty (M18f) or the expedition.
+func away_text() -> String:
+	return duty if duty != "" else "đang thảo phạt"
+
+
+## away_text with a capital first letter.
+func away_title() -> String:
+	var text := away_text()
+	return text.left(1).to_upper() + text.substr(1)
 
 
 ## Not wounded and not away on an expedition (M14i): commands, holds a post, fights at home.
@@ -83,7 +98,7 @@ func level_text() -> String:
 ## Returns how many levels were gained.
 func gain_xp(amount: int) -> int:
 	var gained := 0
-	xp += maxi(0, amount)
+	xp += roundi(maxi(0, amount) * xp_rate)
 	while level < max_level() and xp >= xp_to_next():
 		xp -= xp_to_next()
 		level += 1

@@ -14,6 +14,8 @@ func open() -> void:
 	body.add_child(_volume_row("Nhạc nền", GameSettings.music_volume(), GameSettings.set_music_volume, false))
 	body.add_child(_volume_row("Âm thanh hiệu ứng", GameSettings.sound_volume(), GameSettings.set_sound_volume, true))
 	body.add_child(_toggle("Hiệu ứng bản đồ", GameSettings.map_effects, GameSettings.set_map_effects))
+	body.add_child(_toggle("Nhắc việc trước khi hết lượt", GameSettings.end_turn_reminder,
+			GameSettings.set_end_turn_reminder))
 	if not OS.has_feature("mobile"):
 		body.add_child(_toggle("Toàn màn hình", GameSettings.fullscreen, GameSettings.set_fullscreen))
 	body.add_child(_scale_row())

@@ -81,7 +81,7 @@ func _defender_morale(simulator: BattleSimulator) -> float:
 func test_events_load() -> void:
 	var events := EventData.load_all()
 	for id: StringName in [&"enemy_duel", &"general_ambushed", &"enemy_leak", &"official_kidnapped",
-			&"stolen_letter", &"agent_warning"]:
+			&"stolen_letter"]:
 		check(events.has(id), "%s loaded" % id)
 
 
@@ -319,7 +319,7 @@ func test_rescue_needs_squads_at_home() -> void:
 	check(not state.events.can_choose(state, choice), "No squads: cannot rescue")
 
 
-# --- Stolen letter and the agent's warning ----------------------------------------------------
+# --- Stolen letter ----------------------------------------------------
 
 func test_stolen_letter_ignored() -> void:
 	var state := _state()
@@ -334,28 +334,6 @@ func test_stolen_letter_ignored() -> void:
 		_resolve(other, &"stolen_letter", 1, CLAN, _rng(seed_value))
 		raised += 1 if other.morale_effects.total(MoraleEffects.ENEMY, CLAN) == 2 else 0
 	check(raised > 20, "Mostly the enemy knows (%d/40)" % raised)
-
-
-func test_agent_warning_brings_the_invasion() -> void:
-	var state := _state()
-	_war(state)
-	var agent := state.agents.generate(2)
-	state.agents.agents.append(agent)
-	check_eq(state.start_agent_mission(agent, Agent.RELATIONS, CLAN), Agents.Result.OK, "Agent sent")
-	check(_can(state, &"agent_warning"), "May happen")
-	for seed_value in 100:
-		state.events.invasion_forced = &""
-		state.morale_effects.entries.clear()
-		_resolve(state, &"agent_warning", 0, CLAN, _rng(seed_value))
-		if state.events.invasion_forced == CLAN:
-			break
-	check_eq(state.events.invasion_forced, CLAN, "The clan will come")
-	check_eq(state.morale_effects.total(MoraleEffects.KINGDOM, CLAN), 3, "Army ready: +3")
-	state.events.pending.clear()
-	var report := state.end_turn()
-	check(report.has("pending_invasion"), "Invasion at the next turn")
-	check_eq(report.pending_invasion.clan_id, CLAN, "From the warned clan")
-	check_eq(state.events.invasion_forced, &"", "Warning used")
 
 
 func test_one_battle_event_a_turn() -> void:

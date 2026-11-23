@@ -2,7 +2,8 @@ class_name RulerWindow
 extends ModalWindow
 ## Choosing the ruler (Chúa công, GDD §24, M16h) from the new game screen: one of Ruler.PRESETS
 ## (← / →) with its portrait in the kingdom's color, a name, and (M18b) a title (danh hiệu) and a
-## portrait frame among those the achievements unlocked.
+## portrait frame among those the achievements unlocked. The preset's background (Xuất thân,
+## RulerOrigin, M18d) and its advantages show under the arrows.
 
 ## The ruler is chosen: Ruler.PRESETS index, name, honor ("" none) and frame id ("" the gold one).
 signal chosen(preset: int, ruler_name: String, honor: String, frame: String)
@@ -11,6 +12,7 @@ var _preset := 0
 var _color := KingdomState.PLAYER_COLOR
 var _portrait: PortraitView
 var _title: Label
+var _origin: Label
 var _name_edit: LineEdit
 ## "" first (none), then the unlocked ones.
 var _honors: Array = [""]
@@ -40,6 +42,9 @@ func open(preset: int, ruler_name: String, color: Color, honor: String = "", fra
 	for button in [previous, next]:
 		button.custom_minimum_size = Vector2(56, 44)
 	body.add_child(_row([previous, _title, next]))
+	_origin = _label("", 14)
+	_origin.add_theme_color_override("font_color", MUTED_COLOR)
+	body.add_child(_origin)
 	body.add_child(_label("Tên gọi (cố vấn vẫn gọi là \"Chúa công\"):", 15, false))
 	_name_edit = LineEdit.new()
 	_name_edit.placeholder_text = Ruler.DEFAULT_NAME
@@ -95,6 +100,7 @@ func _refresh() -> void:
 	_frame_label.text = "%s  (%d/%d)" % [Achievements.frame_name(_frames[_frame]) if _frame > 0 else "Vàng (mặc định)",
 			_frame + 1, _frames.size()]
 	_title.text = "%s  (%d/%d)" % [ruler.describe(), _preset + 1, Ruler.PRESETS.size()]
+	_origin.text = RulerOrigin.summary(ruler.origin())
 
 
 func _done() -> void:

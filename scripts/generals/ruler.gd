@@ -59,6 +59,11 @@ func outfit() -> StringName:
 	return PRESETS[preset].outfit
 
 
+## Xuất thân (RulerOrigin, M18d): follows the outfit.
+func origin() -> StringName:
+	return RulerOrigin.of_preset(preset)
+
+
 func title() -> String:
 	return PRESETS[preset].title
 

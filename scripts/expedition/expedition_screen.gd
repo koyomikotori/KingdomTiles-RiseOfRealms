@@ -59,12 +59,15 @@ func open(report: Dictionary, stages: int) -> void:
 	_skip_button = _button("Bỏ qua tới kết quả", func() -> void: _view.skip())
 	row.add_child(_skip_button)
 	layout.add_child(_margin(row, 8))
-	_select_speed(0)
+	_select_speed(mini(GameSettings.battle_speed(), SPEEDS.size() - 1), false)
 	Sfx.music(&"expedition")
 
 
-func _select_speed(index: int) -> void:
+## `remember`: keep it for the next battle (GameSettings, M18g).
+func _select_speed(index: int, remember := true) -> void:
 	_view.set_speed(SPEEDS[index])
+	if remember:
+		GameSettings.set_battle_speed(index)
 	for i in _speed_buttons.size():
 		_speed_buttons[i].set_pressed_no_signal(i == index)
 

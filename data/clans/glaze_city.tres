@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ClanData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/diplomacy/clan_data.gd" id="1_clan"]
+
+[resource]
+script = ExtResource("1_clan")
+clan_id = &"glaze_city"
+display_name = "Lưu Ly Thành"
+description = "Thành trì lợp ngói lưu ly, lò gốm đỏ lửa suốt ngày đêm."
+color = Color(0.15, 0.55, 0.75, 1)
+grid = Vector2i(5, 3)
+personality = 2
+military_strength = 380
+surplus = Array[StringName]([&"stone"])
+deficit = Array[StringName]([&"hardwood"])
+start_relation = 10
+base_relation = 15
+friends = Array[StringName]([&"misty_valley"])
+army_units = Dictionary[StringName, float]({&"royal_swordguard": 2.0, &"royal_pikeguard": 2.0, &"marksman_archer": 2.0, &"crossbow_elite": 1.0, &"heavy_cavalry": 2.0, &"elite_musketeer": 2.0, &"heavy_artillery": 1.0, &"shield_guard": 1.0})

@@ -125,29 +125,34 @@ def reeds() -> Canvas:
 
 
 def fort() -> tuple:
-    """A clan's walled fort (24×22): stone walls and gate, a roofed keep, a banner. The banner and
-    the roof trim are in the team layer."""
-    c = Canvas(24, 22)
-    team = Canvas(24, 22)
-    c.rect(2, 12, 20, 9, P["stone"])
+    """A clan's walled fort (24×26): stone walls and gate, a roofed keep, a banner on a pole with
+    room above it for its outline (M18g: the banner used to touch the top edge and looked cut).
+    The banner and the roof trim are in the team layer."""
+    top = 4  # rows of headroom for the pole and banner
+    h = 22 + top
+    c = Canvas(24, h)
+    team = Canvas(24, h)
+    c.rect(2, 12 + top, 20, 9, P["stone"])
     for x in range(2, 22, 3):
-        c.rect(x, 10, 2, 2, P["stone"])
-    c.hline(2, 21, 20, P["stone_dark"])
-    c.rect(10, 15, 4, 6, P["door"])
-    c.rect(6, 6, 12, 6, P["wall"])
+        c.rect(x, 10 + top, 2, 2, P["stone"])
+    c.hline(2, 21, 20 + top, P["stone_dark"])
+    c.rect(10, 15 + top, 4, 6, P["door"])
+    c.rect(6, 6 + top, 12, 6, P["wall"])
     for row in range(3):
-        c.hline(5 - row + 2, 18 + row - 2, 3 + row, P["roof"] if row < 2 else P["roof_dark"])
-    team.hline(4, 19, 6, GRAY_BASE)  # roof trim
-    c.vline(12, 0, 3, P["wood_dark"])
-    team.rect(13, 0, 5, 3, GRAY_BASE)  # banner
-    team.px(17, 2, GRAY_SHADE)
-    for x, y in ((9, 8), (14, 8)):
+        c.hline(5 - row + 2, 18 + row - 2, 3 + row + top, P["roof"] if row < 2 else P["roof_dark"])
+    team.hline(4, 19, 6 + top, GRAY_BASE)  # roof trim
+    c.vline(12, 1, 3 + top, P["wood_dark"])  # pole
+    team.rect(13, 2, 6, 4, GRAY_BASE)  # banner
+    team.hline(13, 18, 5, GRAY_SHADE)
+    team.px(18, 2, (0, 0, 0, 0))  # a swallowtail notch
+    team.px(18, 4, (0, 0, 0, 0))
+    for x, y in ((9, 8 + top), (14, 8 + top)):
         c.px(x, y, P["door"])
-    full = Canvas(24, 22)
+    full = Canvas(24, h)
     full.paste(c, 0, 0)
     full.paste(team, 0, 0)
     full.outline(INK)
-    for y in range(22):  # keep the outline in the base layer only
+    for y in range(h):  # keep the outline in the base layer only
         for x in range(24):
             if full.get(x, y) == INK and not team.get(x, y)[3]:
                 c.px(x, y, INK)

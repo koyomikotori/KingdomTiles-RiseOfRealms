@@ -35,6 +35,16 @@ func test_resource_types_loaded_in_order() -> void:
 	check_eq(ids, [&"food", &"wood", &"stone", &"ore", &"hardwood", &"horses"], "Resource bar order")
 
 
+## Testing cheat (Ctrl+Shift+M): every resource tops up to CHEAT_RESOURCES, never past it.
+func test_cheat_fills_every_resource() -> void:
+	var state := _state()
+	state.stockpile.add({&"food": 50})
+	state.cheat_fill_resources()
+	state.cheat_fill_resources()
+	for type in ResourceTypeData.load_all():
+		check_eq(state.stockpile.get_amount(type.resource_id), KingdomState.CHEAT_RESOURCES, "%s filled" % type.resource_id)
+
+
 func test_starting_board_yields_nothing() -> void:
 	check(Economy.board_yield(BoardData.create_starting_board(12), terrains).is_empty(), "All-grass start yields nothing")
 

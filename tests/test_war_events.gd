@@ -55,16 +55,9 @@ func _farm(state: KingdomState, origin: Vector2i) -> void:
 	check_eq(state.build(&"farm", origin), BuildRules.Result.OK, "Farm built")
 
 
-func _agent_on(state: KingdomState, clan_id: StringName, stars: int) -> Agent:
-	var agent := state.agents.generate(stars)
-	state.agents.agents.append(agent)
-	check_eq(state.start_agent_mission(agent, Agent.RELATIONS, clan_id), Agents.Result.OK, "Agent sent")
-	return agent
-
-
 func test_war_events_load() -> void:
 	var events := EventData.load_all()
-	for id: StringName in [&"granary_raid", &"agent_assassin", &"general_discontent", &"war_refugees",
+	for id: StringName in [&"granary_raid", &"general_discontent", &"war_refugees",
 			&"important_prisoner", &"suspicious_group", &"bandit_surrender", &"enemy_offer"]:
 		check(events.has(id), "%s loaded" % id)
 
@@ -155,10 +148,10 @@ func test_suspicious_group_can_call_in_the_bandits() -> void:
 		check(not state.events.raid_forced, "Used up")
 
 
-func test_investigation_chance_grows_with_police() -> void:
+func test_investigation_chance() -> void:
 	var state := _state()
 	var choice := _choice(state, &"suspicious_group", 0)
-	check(is_equal_approx(state.events.choice_chance(state, choice), 0.4), "No police: 40%")
+	check(is_equal_approx(state.events.choice_chance(state, choice), 0.5), "50%")
 
 
 func test_bandits_who_give_up_join_as_peasants() -> void:
@@ -170,23 +163,6 @@ func test_bandits_who_give_up_join_as_peasants() -> void:
 	_resolve(state, &"bandit_surrender", 0)
 	check(state.army.count_squads() > squads, "Peasant squads joined")
 	check(EventSystem.PEASANT_UNITS.has(state.army.squads.back().unit_id), "Peasants")
-
-
-func test_assassination() -> void:
-	var state := _state()
-	state.wars.fronts[&"north_wolves"].strength = 1000
-	state.wars.fronts[&"north_wolves"].max_strength = 1000
-	check(not _can(state, &"agent_assassin"), "No agent: no chance")
-	var agent := _agent_on(state, &"north_wolves", 2)
-	check(_can(state, &"agent_assassin"), "Agent in a clan with officers")
-	var staff := state.clan_officers.staff(&"north_wolves")
-	var choice := _choice(state, &"agent_assassin", 0)
-	check(is_equal_approx(state.events.choice_chance(state, choice, &"north_wolves"), 0.6), "50% + 5% x 2 stars")
-	var general := staff.general
-	_resolve(state, &"agent_assassin", 0, &"north_wolves", _low_rng())
-	check(staff.general == null or general.wounded_turns > 0, "The general is dead or wounded")
-	_resolve(state, &"agent_assassin", 1, &"north_wolves", _high_rng())
-	check(not agent.is_busy(), "Failed: the agent is exposed and leaves")
 
 
 func test_raid_forced_is_saved() -> void:

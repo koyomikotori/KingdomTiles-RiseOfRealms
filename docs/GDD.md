@@ -343,7 +343,7 @@ Tất cả xây trên **ô cỏ**, mục **Hành chính** trong bảng Xây dự
 
 Giới hạn số lượng tính từ cấp thành mở khóa công trình: +1 mỗi cấp thành **trên** cấp đó.
 
-**Đặc vụ (Sở cảnh sát):**
+**Đặc vụ (Sở cảnh sát):** *(đã bỏ ở M18f-a, xem §33c)*
 - Bấm vào Sở cảnh sát: tab **Thông tin**, **Nâng cấp**, **Chiêu mộ đặc vụ**, **Đặc vụ**. Tab Tướng sĩ có nút **Đặc vụ** dưới danh sách tướng / mưu sĩ, mở thẳng tab Đặc vụ của Sở cảnh sát (chưa xây thì nút bị khóa và ghi lý do).
 - Sở cảnh sát cấp N giữ được **N đặc vụ**. Ứng viên: 3 người, sao tới **cấp thành** (tỉ lệ như Chiêu hiền), đổi mới sau 5 lượt hoặc trả 20 lương thực để đổi ngay. Tuyển **trả một lần** 30 + 20 × sao lương thực và 10 × sao gỗ, **không có phí nuôi**. Đặc vụ không có trang bị, chỉ có tên, sao, cấp và kinh nghiệm. Có thể sa thải.
 - **Cấp đặc vụ 1–10:** mỗi lượt làm nhiệm vụ +10 kinh nghiệm, lên cấp N cần 100 × N; cấp tối đa = 4 + số sao (1★ tới cấp 5, 6★ tới cấp 10).
@@ -401,7 +401,7 @@ Giới hạn số lượng tính từ cấp thành mở khóa công trình: +1 m
 
 **Nhận XP:**
 - **Trận đánh:** mỗi đơn vị còn sống sau trận (không vỡ) nhận **+20**, thêm **+2 mỗi lính địch nó hạ**, thêm **+20 nếu phe mình thắng**.
-- **Huấn luyện:** có ít nhất 1 doanh trại thì mỗi lượt mọi đơn vị nhận **+10**, nhưng huấn luyện chỉ đưa tới **Cựu binh** (khoảng 10 lượt). **Tinh nhuệ** chỉ đạt được qua trận đánh. Miễn phí.
+- **Huấn luyện:** có ít nhất 1 doanh trại thì mỗi lượt mọi đơn vị nhận **+10**, nhưng huấn luyện chỉ đưa tới **Cựu binh** (khoảng 10 lượt). **Tinh nhuệ** chỉ đạt được qua trận đánh. Miễn phí. *(Đổi ở M18f-a, xem §33c: thêm theo cấp doanh trại, doanh trại cấp 6 huấn luyện tới Tinh nhuệ.)*
 
 **Lính bổ sung pha loãng kinh nghiệm:** XP là trung bình mỗi lính, lính mới có 0 XP, nên khi thêm lính (bổ sung cuối lượt, sự kiện): XP mới = XP cũ × lính cũ / tổng lính. Đơn vị mất một nửa quân rồi bổ sung đầy còn khoảng nửa XP và có thể tụt cấp.
 
@@ -1239,7 +1239,7 @@ Hai sự kiện ngẫu nhiên (nhóm "Trong vương quốc"), mỗi sự kiện 
 
 ## 30. Thành tựu (M18b, đã chốt)
 
-- **46 thành tựu** trong `data/achievements/achievements.json`, chia 6 nhóm: Kinh tế, Quân sự, Ngoại giao, Tướng sĩ, Phiêu lưu (thảo phạt, tỉ thí, đấu trí, chợ đen, sự kiện), Chinh phục (hướng dẫn, chiến thắng theo độ khó, thắng trước lượt 150). 5 thành tựu **ẩn** (mất thành, tổng tướng tử trận, đặc vụ bị bắt, lính đào ngũ, thắng đấu tay đôi): hiện "Thành tựu ẩn" và huy chương dấu hỏi cho tới khi đạt.
+- **46 thành tựu** (44 sau khi bỏ đặc vụ ở M18f-a) trong `data/achievements/achievements.json`, chia 6 nhóm: Kinh tế, Quân sự, Ngoại giao, Tướng sĩ, Phiêu lưu (thảo phạt, tỉ thí, đấu trí, chợ đen, sự kiện), Chinh phục (hướng dẫn, chiến thắng theo độ khó, thắng trước lượt 150). 5 thành tựu **ẩn** (mất thành, tổng tướng tử trận, đặc vụ bị bắt, lính đào ngũ, thắng đấu tay đôi): hiện "Thành tựu ẩn" và huy chương dấu hỏi cho tới khi đạt.
 - **Giữ qua mọi ván**, lưu ở file riêng `user://achievements.cfg` (không theo save, không theo cài đặt): ngày đạt và tiến độ cao nhất từng đạt của thành tựu chưa mở (thanh tiến độ).
 - **Điều kiện** đọc từ ván đang chơi (lượt, cấp thành, số ô, công trình, đơn vị, đồng minh, gia tộc sáp nhập, tướng sĩ...) và từ các bộ đếm mới trong ván (`stats`: đồ đã rèn, lần thảo phạt trọn, tỉ thí / đấu trí thắng, mua ở chợ đen, sự kiện đã giải quyết, hướng dẫn hoàn tất, tổng tướng tử trận, đặc vụ bị bắt, lần đào ngũ, đấu tay đôi thắng). Bản lưu cũ bắt đầu các bộ đếm này từ 0. Kiểm tra mỗi khi trạng thái ván đổi; xem thử (preview) không ghi thành tựu.
 - **Thông báo** "Đạt thành tựu!" trượt vào góc trên phải màn hình vương quốc (huy chương, tên, phần thưởng), 4 giây, nhiều cái thì lần lượt.
@@ -1250,3 +1250,113 @@ Hai sự kiện ngẫu nhiên (nhóm "Trong vương quốc"), mỗi sự kiện 
   - 3 **khung chân dung** chúa công (Ngọc bích, Son đỏ, Bạch ngân), thay khung vàng mặc định.
   - Danh hiệu và khung chọn trong cửa sổ Chúa công (← / →); lưu theo ván cùng chúa công.
 - Thống kê cuối ván để sau.
+
+## 31. Chơi lại đa dạng: xuất thân chúa công, xáo gia tộc (M18d, đã chốt)
+
+### Xuất thân chúa công
+- Xuất thân đi theo trang phục của kiểu chân dung (không chọn riêng):
+  - long bào (Thiên tử, Nữ hoàng) → **Thiên tử**;
+  - giáp trụ (Bá vương, Nữ tướng quân) → **Võ tướng**;
+  - Nho phục (Mưu chủ, Nữ mưu chủ) → **Mưu sĩ**.
+- Lợi thế nhỏ (số liệu trong `RulerOrigin`, chỉnh dễ):
+
+| Xuất thân | Lợi thế |
+|---|---|
+| Thiên tử | Tướng sĩ (tướng, mưu sĩ) nhận kinh nghiệm +10%; cơ hội ngoại giao +10% (thỏa thuận, gia hạn, liên minh, bất tương xâm, nghị hòa, đòi cống nạp); giá trao đổi với gia tộc tốt hơn 10%; tài nguyên khởi đầu +50% |
+| Võ tướng | Có sẵn 1 tướng 3★; đơn vị lính nhận kinh nghiệm +10% từ mọi nguồn (huấn luyện, trận đánh, thảo phạt); tuyển lính rẻ hơn 10% |
+| Mưu sĩ | Có sẵn 1 mưu sĩ 3★; sản lượng công trình sản xuất +10%; lương thực nuôi quân (lính + tướng) −10% |
+
+- Hiện ở cửa sổ Chúa công (đổi kiểu thì thấy ngay), dòng chúa công ở màn Ván mới và ở cửa sổ Thành chính.
+- Áp dụng cho cả ván cũ (theo kiểu chân dung đã lưu); tướng / mưu sĩ và tài nguyên khởi đầu chỉ có ở ván mới.
+- Nguồn thu có thêm dòng "Xuất thân Mưu sĩ (thêm sản lượng)" và "Xuất thân Mưu sĩ (giảm lương thực nuôi quân)".
+
+### Xáo trộn gia tộc mỗi ván
+- Ván mới nào cũng xáo (không có ô tắt); vào ván mới thấy bản đồ, không xem trước.
+- **Vị trí:** 24 gia tộc đổi ô trên lưới 5×5. Mỗi ô giữ sức mạnh và loại lính của nó (ô gần nhà yếu, ô xa mạnh), gia tộc đứng ở ô nào nhận sức mạnh của ô đó, dao động ±20% (làm tròn 5).
+- **Tính cách:** xáo lại, giữ đúng số lượng mỗi loại (5 Ôn hòa, 9 Hiếu chiến, 5 Thương nhân, 5 Cô lập); ít nhất một trong hai gia tộc giáp nhà là Ôn hòa. Quan hệ ban đầu / gốc theo tính cách: Ôn hòa 20 / 25, Hiếu chiến −10 / −15, Thương nhân 10 / 15, Cô lập −5 / 0.
+- **Hàng dư / thiếu:** mỗi gia tộc 1 thứ dư, 1 thứ thiếu khác nhau, chọn ngẫu nhiên trong 6 loại hàng.
+- **Bạn bè:** ghép lại các cặp trong số gia tộc giáp nhau (cùng số cặp như dữ liệu gốc, mỗi gia tộc tối đa 2 bạn), không ghép gia tộc Cô lập.
+- Bố cục được lưu trong ván (`clan_layout`); ván cũ không có bố cục thì giữ bản đồ cố định.
+- Đổi tên ba gia tộc có hướng: Lang Tộc Phương Bắc → **Lang Tộc Bạch Nha**, Điền Trang Nam Lâm → **Điền Trang Thanh Lâm**, Thương Hội Đông Hải → **Thương Hội Kim Hải**. Mã gia tộc giữ nguyên.
+- 24 mô tả chỉ còn tả vùng đất và con người: không nói hướng, tính cách hay hàng dư / thiếu (bảng gia tộc đã có dòng riêng cho chúng).
+
+## 32. Bản đồ gia tộc 6×6 (M18e, đã chốt)
+
+- Bản đồ chiến dịch luôn là lưới **6×6**: 35 gia tộc (24 cũ + 11 mới), thay cho 5×5.
+- 11 gia tộc mới: Bạch Hạc Sơn Trang, Kim Sa Bộ Lạc, Tử Trúc Am, Thiết Kỵ Doanh, Vân Vụ Cốc, Xích Viêm Trại, Lưu Ly Thành, Bích Hồ Đảo, Phong Hỏa Đài, Thanh Y Môn, Mặc Thủy Trấn. Tính cách cả bản đồ: 7 Ôn hòa, 13 Hiếu chiến, 8 Thương nhân, 7 Cô lập.
+- **Thành của ta** đặt ngẫu nhiên trên một ô ở rìa bản đồ mỗi ván (20 ô rìa), không còn luôn ở góc. Gia tộc giáp nhà: 2 (ở góc) hoặc 3.
+- Sức mạnh mỗi ô theo khoảng cách tới nhà (±20%, làm tròn 5): 1 bước 45, 2: 65, 3: 95, 4: 140, 5: 180, 6: 240, 7: 300, 8: 380, 9: 430, 10: 480 lính. Loại lính: 1–2 bước lính nông dân, 3–4 tinh binh, 5–6 cấm quân, 7+ cấm quân hạng nặng (kỵ binh nặng, pháo nặng).
+- Ít nhất một gia tộc giáp nhà là Ôn hòa (như M18d).
+- **Đất vương quốc** nở 2 hàng mỗi 2 lần thôn tính, xoay vòng trên → phải → dưới → trái, tối đa 12 lần: 12×12 → **24×24** sau 24 lần thôn tính; 11 gia tộc cuối không nở thêm.
+- **Cấp thành** 2–6 cần thống nhất 1 / 4 / 8 / 14 / 21 gia tộc.
+- Thắng ván vẫn là thôn tính hoặc liên minh hết mọi gia tộc (35).
+- Bản lưu lên phiên bản 5; bản lưu cũ (bản đồ 5×5) không tải được nữa, phải bắt đầu ván mới.
+
+## 33. Phân Chia Thiên Hạ: chiến tranh giữa các quốc gia (M18f, khung đã chốt)
+
+Chi tiết từng phần bàn khi bắt đầu phần đó; dưới đây là khung đã chốt.
+
+- **Mở màn:** sau khi thống nhất 35 gia tộc, màn chiến thắng có thêm lựa chọn "Chinh phạt thiên hạ". Dừng ở đó vẫn là chiến thắng như cũ. Khi chọn, mọi gia tộc đồng minh xin quy phục (thành thôn tính), rồi hiện **bảng thông báo lớn "Phân Chia Thiên Hạ"** mở giai đoạn mới.
+- **Bản đồ thiên hạ:** ta và **5 quốc gia**, mỗi bên **5 trấn** (1 kinh đô), tổng **30 trấn**, nối với nhau bằng đường. 5 trấn của ta hình thành từ đất 35 gia tộc; kinh đô của ta là bàn cờ vương quốc (24×24, vẫn chơi như cũ). Trấn của ta không nổi loạn.
+- **Trấn chiếm được** không có bàn cờ riêng: mỗi trấn tăng kinh tế, tốc độ bổ sung quân và số đội quân tối đa.
+- ~~**Thái thú**~~ (bỏ ở M18g, xem §34a): trấn chiếm được nộp đủ sản lượng không cần người trấn giữ.
+- **Nổi loạn:** trấn chiếm được hay nổi loạn cho tới khi quốc gia cũ của nó bị diệt. Dẹp loạn giống thảo phạt đạo tặc nhưng do một đạo quân (tối đa 20 đơn vị) đi; quân phản loạn mạnh hơn đạo tặc nhiều.
+- **Chư hầu:** chiếm kinh đô một nước thì nước đó bị diệt, các trấn của nó về tay ta và nó thành chư hầu: buff mạnh hơn, có quân riêng giúp ta như đồng minh, trấn của nó thôi nổi loạn.
+- **Thắng:** chiếm kinh đô của cả 5 nước; chúa công lên ngôi Hoàng đế.
+- **Đạo quân:** mỗi đạo cần đúng 1 tướng, tối đa 20 đơn vị; đơn vị không thuộc đạo nào ở lại giữ kinh đô. Sau khi thống nhất gia tộc, số tướng tối đa tăng từ 3 lên 9.
+- **Di chuyển:** đạo quân đứng ở một trấn, mỗi lượt đi sang một trấn kề theo đường; tiến vào trấn địch là một trận công thành (dùng hệ thống trận đánh hiện tại). Đạo quân địch cũng di chuyển và ta nhìn thấy được.
+- **Chia phần:** M18f-a bản đồ thiên hạ, trấn, đạo quân, công thành; M18f-b các nước AI tấn công, ngoại giao giữa các nước; M18f-c chiến thắng Hoàng đế, cân bằng, hướng dẫn chơi.
+
+### 33a. M18f-a (đã chốt)
+
+- **Bản đồ:** một bản đồ vẽ sẵn 30 trấn và đường đi cân đối; ta luôn ở một góc, mỗi ván xáo nước nào nằm ở đâu.
+- **Quân giữ trấn:** mỗi nước có độ mạnh riêng (nước gần ta yếu, xa mạnh), kinh đô mạnh gấp đôi trấn thường. Quân thủ bị đánh hao sẽ hồi dần mỗi lượt nếu ta chưa chiếm được.
+- **Công thành:** vẫn hệ thống trận hiện tại, quân thủ trấn được cộng phòng thủ và sĩ khí (tường thành), kinh đô cộng nhiều hơn.
+- **Bổ sung quân:** đội hao quân tự hồi mỗi lượt khi đạo quân đứng trên trấn của ta (kinh đô nhanh hơn, càng nhiều trấn càng nhanh); đứng ở trấn địch hoặc đang hành quân thì không hồi.
+- **Thái thú và buff trấn** làm ngay trong M18f-a; nổi loạn và chư hầu để M18f-b.
+- **Nước địch phản công đơn giản:** chưa có đạo quân đi lại tự do, nhưng nước bị mất trấn thỉnh thoảng điều quân từ các trấn lân cận của nó đánh chiếm lại trấn đó.
+- **Bàn cờ vương quốc:** sự kiện như cũ, cướp phá đầu lượt đôi khi vẫn có; thảo phạt đạo tặc tắt, về sau thay bằng trấn nổi loạn.
+- **5 nước:** tên nước, tên trấn, màu cờ và loại lính đặc trưng do Claude đề xuất, người chơi duyệt.
+  - Xích Viêm Quốc (đỏ, bộ binh nặng), Bắc Mạc (xám, kỵ binh), Thương Lan Quốc (lam, cung nỏ), Hoàng Thổ Quốc (vàng, hỏa khí), Tử Vân Quốc (tím, võ tăng + trường thương). Màu nước nào trùng màu cờ của ta thì đổi sang màu phụ.
+
+### 33b. M18f-a: số liệu đã làm
+
+- **Bố cục:** 6 vùng xếp 3×2, vùng của ta ở góc trên trái; mỗi vùng 5 trấn. Từ M18g trấn đặt tay, vùng có hình dạng riêng, đường chỉ nối các trấn gần nhau (mỗi chặng dài gần bằng nhau, trấn xa phải đi nhiều lượt); kinh đô chỉ nối các trấn trong vùng của nó. Khoảng cách tới ta 1 / 2 / 3 vùng = láng giềng / xa hơn / tận cùng.
+- **Quân giữ trấn:** 220 / 320 / 440 lính theo khoảng cách, kinh đô ×2, nhân hệ số độ khó; hồi 10% tối đa mỗi lượt. Lính là 50% loại lính gia tộc cùng tầng, 50% lính đặc trưng của nước.
+- **Tường thành:** quân thủ +15% phòng thủ, +2 sĩ khí (kinh đô +30%, +4).
+- **Đạo quân:** lập và điều chỉnh ở kinh đô của ta; 1 tướng, tối đa 20 đơn vị; mỗi lượt đi 1 chặng; giải tán ở kinh đô hoặc tự tan khi hết quân / mất tướng.
+- **Bổ sung:** (M18g) đứng ở trấn của ta: +1 lính mỗi đơn vị mỗi lượt, ở kinh đô ta hoặc kinh đô địch đã chiếm +3; mỗi trấn chiếm được +1% bổ sung quân của vương quốc.
+- **Trấn chiếm được:** +1 chỗ đơn vị (kinh đô địch +2), nộp 15 lương / 10 gỗ / 10 đá / 3 khoáng / 3 gỗ cứng / 3 ngựa mỗi lượt (kinh đô ×2). Lúc chiếm cướp được 120 lương / gỗ / đá và 40 mỗi loại hiếm (kinh đô ×3).
+- **Dân binh:** trấn chiếm được có 40 dân binh giữ khi bị phản công hoặc nổi loạn.
+- **Phản công:** mỗi lượt, mỗi trấn ta chiếm (đã giữ ≥ 2 lượt) kề trấn của nước cũ có 25% bị đánh; quân đánh là 50% quân giữ của các trấn kề (ít nhất 40). Thua thì mất trấn, đạo quân đứng đó rút về trấn gần nhất của ta.
+- **Chiếm kinh đô:** nước đó bị diệt, các trấn còn lại về tay ta (chư hầu để M18f-b).
+- **Bàn cờ vương quốc:** khi đã vào giai đoạn thiên hạ thì không còn nổi loạn đạo tặc; tướng tối đa 9.
+
+### 33c. Cân bằng cuối game (M18f-a, đã chốt)
+
+- **Doanh trại huấn luyện theo cấp:** mỗi doanh trại đã xây xong cộng thêm **+1 kinh nghiệm/lượt cho mỗi cấp trên 1** (cộng dồn mọi doanh trại; 6 doanh trại cấp 6: 10 + 30 = 40/lượt). Có một doanh trại **cấp 6** thì huấn luyện được tới **Tinh nhuệ**, phần sau Cựu binh nhận một nửa.
+- **Chỗ quân ở giai đoạn Thiên hạ:** **mọi trấn của ta +5 đơn vị tối đa**, kể cả 5 trấn nhà (vừa vào giai đoạn là +25), trấn chiếm thêm cũng +5.
+- **Chỉ huy quân giữ nhà:** tổng tướng đi vắng (đạo quân, thảo phạt) hoặc bị thương thì tướng sẵn sàng có nhiều sao nhất ở nhà tạm chỉ huy trận cướp phá / xâm lược / tấn công; tổng tướng về thì trả lại. Sự kiện nhắc "tổng tướng" (đấu tướng, tổng tướng tử trận…) vẫn chỉ nói về tổng tướng thật.
+- **Bỏ đặc vụ và Sở cảnh sát:** phức tạp mà ít tác dụng. Save cũ: Sở cảnh sát bị dỡ và hoàn đủ tài nguyên đã xây / nâng cấp, đặc vụ biến mất. Bỏ sự kiện "Cơ hội ám sát" và "Đặc vụ báo tin khẩn", 2 thành tựu đặc vụ, nút "Cử đặc vụ"; "Nhóm người khả nghi" giữ lại với 50% điều tra thành công.
+- **Phím thử nghiệm:** Ctrl + Shift + M nạp mọi tài nguyên lên 999999 (để thử cuối game).
+
+## 34. Tiện ích chơi (QoL, M18g, đã chốt)
+
+- **Bảng xác nhận:** việc tốn tài nguyên hoặc khó đảo ngược mở một cửa sổ nhỏ trên nền tối (`ConfirmWindow`): câu hỏi, chi phí / thứ nhận được / số lượt bằng icon (`RequirementView`), "Hủy (Esc)" và nút làm (Enter). Áp dụng cho: nâng cấp thành và công trình (kèm icon lính mở tuyển ở cấp mới, như Shogun 2), hủy nâng cấp, phá dỡ, xây công trình bằng chuột (chế độ chạm đã có thanh Đặt / Hủy), chiêu mộ tướng / mưu sĩ, làm mới ứng viên, rèn đồ, phá đồ, đột phá, sa thải, giải tán đơn vị và đạo quân. Di chuyển công trình miễn phí nên không hỏi.
+- **Lệnh hành quân:** bấm trấn kề trên bản đồ Thiên hạ chỉ ra lệnh, đạo quân chưa đi. Cờ đạo quân đổi viền theo màu lệnh, một đường gạch đứt chạy và nhấp nháy tới đích (xanh: hành quân, đỏ: công thành, vàng: về kinh đô). Hủy lệnh được tới lúc bấm Kết thúc lượt. Hành quân và "về kinh đô" (mỗi lượt một chặng, chỉ qua trấn của ta) diễn ra khi hết lượt; công thành diễn ra ở **đầu lượt sau**, sau trận cướp / thảo phạt / phản công của lượt đó. Nhiều đạo cùng được lệnh tới một trấn thì cùng tới lượt sau (M18g).
+- **Danh sách đạo quân:** khung bên phải liệt kê mọi đạo quân (tướng, số lính, lệnh hoặc "chờ lệnh"); "Đạo kế tiếp (Tab)" chọn đạo quân chưa có lệnh tiếp theo.
+- **So sánh lực lượng:** trước khi công thành và khi tấn công gia tộc, một thanh so số lính hai bên (tường thành cộng thêm cho địch) và nhận định Dễ thắng / Cân sức / Khó (`ForceCompare`: ta ÷ địch hiệu dụng ≥ 1.4 dễ, ≥ 0.85 cân sức). Chỉ đếm lính, không tính binh chủng, tướng, mưu kế.
+- **Tuyển nhiều đơn vị:** cửa sổ Tuyển lính có thêm "Tuyển ×2" / "Tuyển ×5", chỉ bật khi đủ tiền và chỗ cho tất cả.
+- **Nhắc việc trước khi hết lượt:** "Kết thúc lượt" liệt kê việc còn dở (mảnh đất chưa đặt, đội thợ rảnh, tướng sĩ còn điểm, còn chỗ và đủ tiền tuyển lính, đạo quân chờ lệnh), mỗi dòng có "Xem" để tới nơi xử lý; "Vẫn kết thúc (Enter)" / "Quay lại (Esc)"; một dòng gợi ý tắt nhắc việc trong Cài đặt. Không nhắc khi đang hướng dẫn.
+- **Bấm thông báo để nhảy tới:** bấm tiêu đề một mục ở cột thông báo mở nơi liên quan (công trình đang xây / vừa xong, xưởng rèn, bản đồ ngoại giao, thảo phạt, Chiêu hiền, tab quân đội / tướng sĩ).
+- **Nhớ tốc độ trận đánh:** tốc độ x1 / x2 / x4 chọn lần cuối được giữ cho trận đánh và màn thảo phạt sau (cả khi mở lại game).
+
+### 34a. Thiên hạ gọn hơn (M18g phần 2, đã chốt)
+
+- **Bảng bên phải bản đồ Thiên hạ:** rộng cố định (bản đồ không co giãn khi chọn / bỏ chọn). Trên: danh sách đạo quân (chân dung tướng, số lính, lệnh), "Đạo kế tiếp (Tab)", "Bỏ chọn". Dưới là **một** thẻ: đạo quân đang chọn (chân dung, sao, Võ / Thống, icon từng loại lính ×số đội, lệnh, "Xem chi tiết đạo quân", Hủy lệnh, Về kinh đô; ở kinh đô thêm Điều chỉnh / Giải tán), hoặc trấn đích vừa bấm (so sánh lực lượng, ra lệnh), hoặc trấn đang chọn (chủ, quân thủ, sản lượng, nguy cơ nổi loạn).
+- **Chi tiết đạo quân:** cửa sổ liệt kê từng đơn vị: icon, cấp, thanh lính / quân số chuẩn, +N mỗi lượt và còn mấy lượt thì đầy.
+- **Đánh chung một trấn:** mọi đạo được lệnh công thành cùng một trấn đánh **một trận chung** ở đầu lượt sau, tướng nhiều sao nhất (rồi đạo đông lính nhất) chỉ huy, mọi đơn vị cùng ra trận. Thắng thì tất cả vào trấn. Thanh so sánh cộng mọi đạo đã nhận lệnh đánh trấn đó; nút "Cả N đạo ở đây cùng đánh / cùng đi" ra lệnh cho mọi đạo rảnh đứng cùng chỗ.
+- **Bổ sung quân:** mọi đạo đứng ở trấn của ta (có lệnh hay không) hồi +1 lính mỗi đơn vị mỗi lượt; ở kinh đô ta và kinh đô địch đã chiếm +3.
+- **Bỏ thái thú.** Trấn chiếm được nộp đủ sản lượng, dân binh 40. Save cũ: người đang làm thái thú được về.
+- **Nổi loạn:** trấn chiếm được (sau 2 lượt) mỗi lượt có thể nổi loạn: **20%** nếu nước cũ còn và không có quân, **12%** nếu có đạo quân trấn giữ, **2%** nếu nước cũ đã bị diệt. Không có quân: mất trấn ngay, về tay nước cũ (hoặc "Quân nổi loạn" nếu nước đó đã diệt) với ít quân giữ (40% quân giữ thường, ít nhất 40). Có quân: đầu lượt sau đánh một trận với quân nổi loạn (nông dân + lính gia tộc yếu), thua thì mất trấn và lui quân như khi bị phản công. Trấn mất đều chiếm lại được. Bản đồ ghi "Loạn N%" dưới trấn chiếm được.
+- **Bản đồ vẽ lại:** trấn đặt tay, đường theo khoảng cách (xem §33b); lãnh thổ mỗi bên tô theo trấn gần nhất, có viền đậm ở biên giới, nhạt dần ra ngoài (thay các vòng tròn hình dấu +).

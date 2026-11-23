@@ -16,7 +16,10 @@ const DEFAULT_KINGDOM_NAME := "Vương quốc của bạn"
 const MAX_NAME_LENGTH := 24
 ## The color of the game being played, for views that have no state at hand (portraits, figures).
 static var shown_color := PLAYER_COLOR
+## The Sở cảnh sát, removed with the agents (M18f-a balance): older saves get it demolished and
+## everything it cost back (_remove_police, from its old cost POLICE_COST).
 const POLICE_ID: StringName = &"police"
+const POLICE_COST: Dictionary[StringName, int] = {&"wood": 12, &"stone": 12, &"ore": 4}
 ## Squads the castle holds at level 1 without any barracks (each castle level adds its
 ## CastleLevelData.squad_capacity: 3 → 8 at level 6, GDD §8 M14d).
 const BASE_SQUAD_CAPACITY := 3
@@ -24,6 +27,7 @@ const BASE_SQUAD_CAPACITY := 3
 const STARTING_SQUADS: Array[StringName] = [&"swordsman", &"spearman", &"archer"]
 ## What a new game starts with (GDD §8, economy v2): land no longer yields, so the first
 ## buildings are paid from this.
+const CHEAT_RESOURCES := 999999
 const STARTING_RESOURCES: Dictionary[StringName, int] = {&"food": 80, &"wood": 80, &"stone": 80, &"ore": 10,
 		&"hardwood": 10, &"horses": 10}
 ## Each turn, squads below full strength regain this fraction of their full size (rounded up),
@@ -52,8 +56,6 @@ var events := EventSystem.new()
 var generals := Generals.new()
 var advisors := Advisors.new()
 var equipment := Equipment.new()
-## Spies hired at the Sở cảnh sát (GDD §8 M14e).
-var agents := Agents.new()
 ## The clans' generals and advisors (GDD §15 M14h).
 var clan_officers := ClanOfficers.new()
 ## The bandit and rebel zone and the expedition against it (GDD §15 M14i); `rebels` makes and
@@ -61,6 +63,9 @@ var clan_officers := ClanOfficers.new()
 var uprising := Uprising.new()
 var expedition: Expedition
 var rebels := Generals.new()
+## The realm phase after the clans are united (Phân Chia Thiên Hạ, GDD §33, M18f); inactive until
+## start_realm.
+var realm := Realm.new()
 ## Bí kíp đột phá held (M16c, LimitBreak), won by clearing expeditions or bought (M16d).
 var scrolls := 0
 ## The merchant who stops by every BlackMarket.INTERVAL turns (GDD §20, M16d).
@@ -85,7 +90,7 @@ var tutorial := Tutorial.new()
 ## older saves start at 0.
 var stats := {"battles_won": 0, "battles_lost": 0, "items_forged": 0, "expeditions_cleared": 0,
 		"spars_won": 0, "memories_won": 0, "market_buys": 0, "events_answered": 0, "tutorial_finished": 0,
-		"commanders_lost": 0, "agents_caught": 0, "deserted": 0, "duels_won": 0}
+		"commanders_lost": 0, "deserted": 0, "duels_won": 0}
 ## False when building upkeep could not be paid last turn; building effects pause.
 var buildings_supplied := true
 ## Castle level, 1..castle_levels.size() (GDD §8, M11c).
@@ -97,6 +102,13 @@ static var instant_construction := false
 ## Castle levels need united clans (CastleLevelData.required_clans, GDD §15). Tests and previews
 ## that are about something else turn this off.
 static var castle_needs_clans := true
+## The ruler's background gives its advantages (RulerOrigin, GDD §31). Tests that are about
+## something else turn this off (run_tests.gd).
+static var origins_on := true
+## New games shuffle the clans (ClanLayout, GDD §31); tests turn this off and keep the fixed map.
+static var shuffle_clans := true
+## This game's clan layout (ClanLayout); {} = the fixed map of data/clans/.
+var clan_layout := {}
 var castle_levels: Array[CastleLevelData] = CastleLevelData.load_all()
 var rng := RandomNumberGenerator.new()
 
@@ -117,18 +129,39 @@ func _init(p_board: BoardData, p_hand: PieceHand, p_terrains: Dictionary[StringN
 	generals.rng.seed = seed_value + 1
 	advisors.rng.seed = seed_value + 2
 	equipment.rng.seed = seed_value + 3
-	agents.rng.seed = seed_value + 4
 	clan_officers.rng.seed = seed_value + 5
 	uprising.rng.seed = seed_value + 6
 	rebels.rng.seed = seed_value + 7
 	black_market.rng.seed = seed_value + 8
 	diplomacy.rng.seed = seed_value + 9
+	realm.rng.seed = seed_value + 11
 	diplomacy.admin_effect = building_effect
 	diplomacy.clan_tier = wars.tier
-	wars.sabotage = agents.sabotage_on
 	generals.advisors = advisors
 	advisors.changed.connect(_sync_advisors)
 	equipment.changed.connect(_sync_advisors)
+	generals.changed.connect(_apply_origin)
+	advisors.changed.connect(_apply_origin)
+	_apply_origin()
+
+
+## The ruler's background (RulerOrigin), &"" while origins_on is off.
+func origin() -> StringName:
+	return ruler.origin() if origins_on else &""
+
+
+## Hands the background's advantages to the parts that use them; called again whenever the
+## officers change (new ones gain XP faster too).
+func _apply_origin() -> void:
+	var emperor := origin() == RulerOrigin.EMPEROR
+	diplomacy.origin_chance = RulerOrigin.DIPLOMACY_CHANCE if emperor else 0.0
+	diplomacy.origin_price = RulerOrigin.TRADE_PRICE if emperor else 0.0
+	army.xp_rate = 1.0 + (RulerOrigin.SQUAD_XP if origin() == RulerOrigin.WARLORD else 0.0)
+	var officer_rate := 1.0 + (RulerOrigin.OFFICER_XP if emperor else 0.0)
+	for general in generals.generals:
+		general.xp_rate = officer_rate
+	for advisor in advisors.advisors:
+		advisor.xp_rate = officer_rate
 
 
 ## The diplomacy advisor's skill lives in Diplomacy (its rules use it); keep it current.
@@ -140,19 +173,36 @@ func _sync_advisors() -> void:
 ## A new game's stockpile (KingdomState.STARTING_RESOURCES). The kingdom scene calls it for new
 ## games only; tests start from an empty stockpile.
 func give_starting_resources() -> void:
-	stockpile.add(STARTING_RESOURCES)
+	var amounts := STARTING_RESOURCES.duplicate()
+	if origin() == RulerOrigin.EMPEROR:
+		for resource_id in amounts:
+			amounts[resource_id] = roundi(amounts[resource_id] * (1.0 + RulerOrigin.START_RESOURCES))
+	stockpile.add(amounts)
+
+
+## Testing cheat (kingdom scene, Ctrl+Shift+M): fills every resource type up to `amount`.
+func cheat_fill_resources(amount: int = CHEAT_RESOURCES) -> void:
+	var top_up: Dictionary[StringName, int] = {}
+	for type in ResourceTypeData.load_all():
+		top_up[type.resource_id] = maxi(0, amount - stockpile.get_amount(type.resource_id))
+	stockpile.add(top_up)
 
 
 ## A new game's army (STARTING_SQUADS, full strength). The kingdom scene calls it for new games only.
 func give_starting_army() -> void:
 	for unit_id in STARTING_SQUADS:
 		army.add_squad(unit_id, units[unit_id].squad_size)
+	# The background's officer (GDD §31).
+	match origin():
+		RulerOrigin.WARLORD:
+			generals.add(generals.generate(RulerOrigin.START_STARS))
+		RulerOrigin.STRATEGIST:
+			advisors.add(advisors.generate(RulerOrigin.START_STARS))
 
 
 ## Deals the first hand. Call once after connecting signals.
 func start() -> void:
 	generals.refresh_candidates(castle_level, turn)
-	agents.refresh_candidates(castle_level, turn)
 	hand.deal_new_hand()
 	turn_started.emit(turn)
 
@@ -198,7 +248,14 @@ func setup_new_game(settings: Dictionary) -> void:
 	# Every new game opens with the tutorial (M18a); "Bỏ qua hướng dẫn" ends it at once.
 	if bool(settings.get("tutorial", true)):
 		tutorial.start(self)
+	# A new map every game (GDD §31), from its own rolls so the game's other rolls stay the same.
+	if shuffle_clans:
+		var layout_rng := RandomNumberGenerator.new()
+		layout_rng.seed = rng.seed + 10
+		clan_layout = ClanLayout.roll(ClanData.load_all(), layout_rng)
+		ClanLayout.apply(diplomacy, clan_layout)
 	wars.set_enemy_scale(Difficulty.enemy_scale(difficulty), turn)
+	_apply_origin()
 
 
 ## The whole game as JSON-safe data. The board is restored separately (BoardData.from_save),
@@ -209,9 +266,9 @@ func to_save() -> Dictionary:
 			"hand": hand.to_save(), "stockpile": stockpile.to_save(), "army": army.to_save(),
 			"diplomacy": diplomacy.to_save(), "wars": wars.to_save(), "victory": victory.to_save(), "stats": stats.duplicate(),
 			"events": events.to_save(), "generals": generals.to_save(), "advisors": advisors.to_save(),
-			"equipment": equipment.to_save(), "agents": agents.to_save(), "clan_officers": clan_officers.to_save(),
+			"equipment": equipment.to_save(), "clan_officers": clan_officers.to_save(),
 			"difficulty": difficulty, "kingdom_name": kingdom_name, "player_color": player_color.to_html(false), "ruler": ruler.to_save(), "counselor": counselor,
-			"tutorial": tutorial.to_save(), "scrolls": scrolls, "black_market": black_market.to_save(), "morale_effects": morale_effects.to_save(), "raid_pressure": raid_pressure.to_save(), "uprising": uprising.to_save(), "expedition": expedition.to_save(self) if expedition != null else {}}
+			"tutorial": tutorial.to_save(), "clan_layout": clan_layout, "scrolls": scrolls, "black_market": black_market.to_save(), "morale_effects": morale_effects.to_save(), "raid_pressure": raid_pressure.to_save(), "uprising": uprising.to_save(), "realm": realm.to_save(self), "expedition": expedition.to_save(self) if expedition != null else {}}
 
 
 ## Restores everything but the board from to_save() data. Random rolls are not saved: they come
@@ -235,6 +292,9 @@ func load_save(data: Dictionary) -> void:
 	hand.load_save(data.hand)
 	stockpile.load_save(data.stockpile)
 	army.load_save(data.army, units)
+	# Saves from before M18d: the fixed map.
+	clan_layout = data.get("clan_layout", {})
+	ClanLayout.apply(diplomacy, clan_layout)
 	diplomacy.load_save(data.diplomacy)
 	wars.load_save(data.wars, turn)
 	# Saves from before M11a have no victory state or stats.
@@ -253,11 +313,8 @@ func load_save(data: Dictionary) -> void:
 	advisors.load_save(data.get("advisors", []))
 	# Saves from before M12e have no items.
 	equipment.load_save(data.get("equipment", {}))
-	# Saves from before M14e have no agents: a first candidate list.
-	if data.has("agents"):
-		agents.load_save(data.agents)
-	else:
-		agents.refresh_candidates(castle_level, turn)
+	# Agents are gone (M18f-a balance): a saved "agents" entry is ignored, the Sở cảnh sát demolished.
+	_remove_police()
 	clan_officers.load_save(data.get("clan_officers", {}))
 	# Saves from before M16c have no scrolls.
 	scrolls = int(data.get("scrolls", 0))
@@ -270,6 +327,29 @@ func load_save(data: Dictionary) -> void:
 	uprising.load_save(data.get("uprising", {}), board)
 	var saved_expedition: Dictionary = data.get("expedition", {})
 	expedition = Expedition.from_save(saved_expedition, self) if not saved_expedition.is_empty() else null
+	# Saves from before M18f have no realm phase.
+	realm.load_save(data.get("realm", {}), self)
+	generals.max_generals = Realm.MAX_GENERALS if realm.active else Generals.MAX_GENERALS
+	_apply_origin()
+
+
+## Older saves: the Sở cảnh sát (removed with the agents) is demolished and everything paid for it
+## (POLICE_COST per level, as BuildingData.upgrade_cost charged it) comes back. Returns the refund.
+func _remove_police() -> Dictionary[StringName, int]:
+	var refund: Dictionary[StringName, int] = {}
+	for cell in board.get_all_cells():
+		if cell.building_id != POLICE_ID or cell.coord != cell.building_origin:
+			continue
+		for level in range(1, maxi(1, cell.building_level) + 1):
+			for resource_id in POLICE_COST:
+				refund[resource_id] = refund.get(resource_id, 0) + POLICE_COST[resource_id] * level
+			if level >= 3:
+				for resource_id in BuildingData.UPGRADE_EXTRA:
+					refund[resource_id] = refund.get(resource_id, 0) + BuildingData.UPGRADE_EXTRA[resource_id] * (level - 2)
+		board.remove_building(cell.coord)
+	if not refund.is_empty():
+		stockpile.add(refund)
+	return refund
 
 
 ## What a save slot shows: {"turn", "cells", "soldiers"}.
@@ -287,6 +367,12 @@ func place_piece(index: int, origin: Vector2i) -> PlacementRules.Result:
 
 
 ## Lays the foundation; the building is finished after its build_turns (GDD §8, M12d).
+## Whether `building_id` can be built at `origin` now (BuildRules.check with this kingdom's cost).
+func check_build(building_id: StringName, origin: Vector2i) -> BuildRules.Result:
+	var building := buildings[building_id]
+	return BuildRules.check(board, stockpile, building, origin, castle_level, building_cost(building), has_free_builder())
+
+
 func build(building_id: StringName, origin: Vector2i) -> BuildRules.Result:
 	var building := buildings[building_id]
 	var result := BuildRules.apply(board, stockpile, building, origin, castle_level, building_cost(building),
@@ -375,7 +461,7 @@ func _advance_construction() -> Array[Dictionary]:
 			board.set_building_level(origin, cell.building_level + 1)
 		var data: BuildingData = buildings.get(cell.building_id)
 		finished.append({"name": data.display_name if data != null else String(cell.building_id),
-				"level": cell.building_level, "upgrade": upgrading})
+				"level": cell.building_level, "upgrade": upgrading, "origin": origin})
 	if castle_turns > 0:
 		castle_turns -= 1
 		if castle_turns == 0:
@@ -523,7 +609,45 @@ func half_refund(amounts: Dictionary[StringName, int]) -> Dictionary[StringName,
 
 
 func recruit(unit_id: StringName) -> RecruitmentRules.Result:
-	return RecruitmentRules.apply(board, stockpile, army, get_squad_capacity(), units[unit_id])
+	return RecruitmentRules.apply(board, stockpile, army, get_squad_capacity(), units[unit_id], recruit_cost(unit_id))
+
+
+## How many squads of `unit_id` the stockpile and the free squad slots allow now (M18g batches;
+## other requirements are RecruitmentRules.check's).
+func affordable_recruits(unit_id: StringName) -> int:
+	var count := get_squad_capacity() - army.count_squads()
+	var cost := recruit_cost(unit_id)
+	for resource_id in cost:
+		if cost[resource_id] > 0:
+			count = mini(count, stockpile.get_amount(resource_id) / cost[resource_id])
+	return maxi(0, count)
+
+
+## Recruits `count` squads at once, all or nothing: returns how many were recruited (0 or count).
+func recruit_many(unit_id: StringName, count: int) -> int:
+	if count <= 0 or affordable_recruits(unit_id) < count:
+		return 0
+	if RecruitmentRules.check(board, stockpile, army, get_squad_capacity(), units[unit_id],
+			recruit_cost(unit_id)) != RecruitmentRules.Result.OK:
+		return 0
+	var done := 0
+	for i in count:
+		if recruit(unit_id) != RecruitmentRules.Result.OK:
+			break
+		done += 1
+	return done
+
+
+## What a squad costs: its recruit_cost, less the Võ tướng's discount (GDD §31).
+func recruit_cost(unit_id: StringName) -> Dictionary[StringName, int]:
+	var cost := units[unit_id].recruit_cost
+	if origin() != RulerOrigin.WARLORD:
+		return cost
+	var saved := Advisors.share_of(cost, RulerOrigin.RECRUIT_DISCOUNT)
+	var result: Dictionary[StringName, int] = {}
+	for resource_id in cost:
+		result[resource_id] = cost[resource_id] - saved.get(resource_id, 0)
+	return result
 
 
 ## Removes a squad for good. Nothing is refunded.
@@ -541,7 +665,7 @@ func get_squad_capacity() -> int:
 			capacity += level.squad_capacity
 	for building_id in buildings:
 		capacity += buildings[building_id].squad_capacity * board.count_buildings(building_id)
-	return capacity
+	return capacity + realm.squad_bonus()
 
 
 # --- Castle (GDD §8, M11c) ----------------------------------------------------------------
@@ -644,27 +768,6 @@ func bless_army(side: BattleSide) -> void:
 			unit.morale += morale
 
 
-## The finished Sở cảnh sát's level, 0 without one (GDD §8 M14e).
-func police_level() -> int:
-	for cell in board.get_all_cells():
-		if cell.building_id == POLICE_ID and cell.coord == cell.building_origin and not cell.is_idle():
-			return cell.building_level
-	return 0
-
-
-## Agents the kingdom may keep: 1 per Sở cảnh sát level (0 while its upkeep is unpaid).
-func agent_slots() -> int:
-	return roundi(building_effect(&"agent_slots"))
-
-
-func recruit_agent(index: int) -> Agents.Result:
-	return agents.recruit(stockpile, index, agent_slots())
-
-
-func start_agent_mission(agent: Agent, mission: StringName, clan_id: StringName) -> Agents.Result:
-	return agents.start_mission(agent, mission, clan_id, wars)
-
-
 ## The share of the stockpile granaries keep from bandits and invaders.
 func plunder_protection() -> float:
 	return minf(MAX_PLUNDER_PROTECTION, building_effect(&"plunder_protection"))
@@ -687,10 +790,30 @@ func magistrate_bonus() -> Dictionary[StringName, int]:
 
 ## The share of a squad's full size it regains each turn: REPLENISH_FRACTION plus every finished
 ## building's level × replenish_per_level (6 barracks at level 5: +30%). 0 without a barracks.
+## Barracks training a turn: Experience.TRAINING_XP plus TRAINING_XP_PER_LEVEL for every level
+## above 1 of every finished barracks (0 without one).
+func training_xp() -> float:
+	if not can_replenish():
+		return 0.0
+	var amount := Experience.TRAINING_XP
+	for cell in board.get_all_cells():
+		if cell.has_building() and cell.coord == cell.building_origin and not cell.is_idle() 				and buildings.has(cell.building_id) and buildings[cell.building_id].enables_replenishment:
+			amount += Experience.TRAINING_XP_PER_LEVEL * (cell.building_level - 1)
+	return amount
+
+
+## A barracks at Experience.ELITE_TRAINING_LEVEL trains squads on to the top level.
+func elite_training() -> bool:
+	for building_id in buildings:
+		if buildings[building_id].enables_replenishment 				and board.highest_building_level(building_id) >= Experience.ELITE_TRAINING_LEVEL:
+			return true
+	return false
+
+
 func replenish_fraction() -> float:
 	if not can_replenish():
 		return 0.0
-	var fraction := REPLENISH_FRACTION
+	var fraction := REPLENISH_FRACTION + realm.replenish_bonus()
 	for cell in board.get_all_cells():
 		if cell.has_building() and cell.coord == cell.building_origin and not cell.is_idle() \
 				and buildings.has(cell.building_id):
@@ -706,7 +829,26 @@ func get_turn_yield() -> Dictionary[StringName, int]:
 		Economy.add_into(total, Economy.buildings_yield(board, buildings))
 	Economy.add_into(total, advisor_yield_bonus())
 	Economy.add_into(total, magistrate_bonus())
+	Economy.add_into(total, origin_yield_bonus())
+	Economy.add_into(total, realm.total_yield())
 	return total
+
+
+## The Mưu sĩ background's share of what production buildings make (GDD §31).
+func origin_yield_bonus() -> Dictionary[StringName, int]:
+	if not buildings_supplied or origin() != RulerOrigin.STRATEGIST:
+		return {}
+	return Advisors.share_of(Economy.buildings_yield(board, buildings), RulerOrigin.PRODUCTION)
+
+
+## The Mưu sĩ background's cut of the food squads and generals eat (GDD §31).
+func origin_upkeep_discount() -> Dictionary[StringName, int]:
+	if origin() != RulerOrigin.STRATEGIST:
+		return {}
+	var base := army.get_upkeep(units)
+	Economy.add_into(base, generals.get_upkeep())
+	var food: Dictionary[StringName, int] = {&"food": base.get(&"food", 0)}
+	return Advisors.share_of(food, RulerOrigin.FOOD_UPKEEP_CUT)
 
 
 ## Nội chính: a share of what production buildings make (economy v2: the land yields nothing).
@@ -725,6 +867,7 @@ func get_army_upkeep() -> Dictionary[StringName, int]:
 	Economy.add_into(total, generals.get_upkeep())
 	var saved := upkeep_discount()
 	Economy.add_into(saved, granary_discount())
+	Economy.add_into(saved, origin_upkeep_discount())
 	for resource_id in saved:
 		total[resource_id] -= saved[resource_id]
 	Economy.add_into(total, advisors.get_upkeep())
@@ -820,6 +963,17 @@ func get_income_breakdown() -> Dictionary[StringName, Array]:
 	var magistrate := magistrate_bonus()
 	for resource_id in magistrate:
 		add.call(resource_id, {"source": &"magistrate", "id": &"", "amount": magistrate[resource_id], "count": 1})
+	var origin_yield := origin_yield_bonus()
+	for resource_id in origin_yield:
+		add.call(resource_id, {"source": &"origin_yield", "id": &"", "amount": origin_yield[resource_id], "count": 1})
+	var origin_upkeep := origin_upkeep_discount()
+	for resource_id in origin_upkeep:
+		add.call(resource_id, {"source": &"origin_upkeep", "id": &"", "amount": origin_upkeep[resource_id], "count": 1})
+	# Captured towns (M18f).
+	var town_yield := realm.total_yield()
+	for resource_id in town_yield:
+		add.call(resource_id, {"source": &"towns", "id": &"", "amount": town_yield[resource_id],
+				"count": realm.captured_towns().size()})
 	# Production buildings, per building type (paused while their upkeep is unpaid).
 	if buildings_supplied:
 		var produced := {}  # building_id -> amounts
@@ -899,14 +1053,15 @@ func end_turn() -> Dictionary:
 	var forged := equipment.advance_forge()
 	var replenished := _replenish()
 	if can_replenish():
-		army.train()
+		army.train(training_xp(), elite_training())
 	diplomacy.threat = get_threat()
 	diplomacy.end_turn()
 	var treaties := alliances.end_turn()
 	var declared := wars.end_turn(rng, turn)
-	var agent_events := agents.end_turn(diplomacy, police_level(), castle_level, turn + 1)
 	var expedition_report := _advance_expedition()
-	var uprising_news := uprising.end_turn(board, turn + 1, expedition != null)
+	# No more bandit zones in the realm phase (GDD §33a); revolting towns replace them later.
+	var uprising_news := uprising.end_turn(board, turn + 1, expedition != null) if not realm.active else &""
+	var realm_report := realm.end_turn(self)
 	clan_officers.end_turn(wars)
 	morale_effects.end_turn()
 	raid_pressure.end_turn()
@@ -920,9 +1075,6 @@ func end_turn() -> Dictionary:
 		count_stat("deserted")
 	if forged != null:
 		count_stat("items_forged")
-	for agent_event: Dictionary in agent_events:
-		if agent_event.get("event") in [&"caught", &"killed"]:
-			count_stat("agents_caught")
 	var report := {"collected": collected, "upkeep": upkeep, "deserted": deserted,
 			"buildings_supplied": buildings_supplied, "replenished": replenished, "agreements": agreements}
 	report["completed"] = completed
@@ -931,17 +1083,20 @@ func end_turn() -> Dictionary:
 	report["treaties"] = treaties
 	report["war_declared"] = declared
 	report["generals_healed"] = healed
-	report["agents"] = agent_events
 	report["expedition"] = expedition_report
 	report["uprising"] = uprising_news
 	report["advisors_healed"] = advisors_healed
+	report["realm"] = realm_report
 	report["victory"] = victory.end_turn(self)
 	report["castle_in_danger"] = victory.castle_in_danger(self)
 	# An event may have warned of this invasion (M16e); otherwise the clans roll as usual.
 	var invader := events.take_forced_invasion(wars)
 	if invader == &"":
 		invader = wars.pick_invader(rng)
-	if invader != &"":
+	# A nation striking back at a town it lost (M18f) is the turn's battle.
+	if not realm.pending_counter.is_empty():
+		report["pending_counter"] = {"town": realm.pending_counter.town, "simulator": realm.create_counter(self)}
+	elif invader != &"":
 		var invaders := wars.create_clan_side(invader, wars.invasion_size(invader), units)
 		clan_officers.lead(invaders, invader, wars, difficulty)
 		var defenders := create_kingdom_side(invader)
@@ -1314,7 +1469,6 @@ func finish_attack(clan_id: StringName, record: BattleRecord) -> Dictionary:
 				uprising.shift(board, Vector2i(Wars.ANNEX_EXPANSION if side == Vector2i.LEFT else 0,
 						Wars.ANNEX_EXPANSION if side == Vector2i.UP else 0))
 			result["expanded"] = side
-			result["agents_recalled"] = agents.recall_from(clan_id)
 			annexed = true
 			events.annexed_turn = turn
 	else:
@@ -1328,3 +1482,58 @@ func finish_attack(clan_id: StringName, record: BattleRecord) -> Dictionary:
 			"item": equipment.roll_loot(true, stockpile) if won else {},
 			"enemy_officers": clan_officers.after_battle(record, BattleRecord.DEFENDER, clan_id)})
 	return result
+
+
+# --- Realm phase (Phân Chia Thiên Hạ, GDD §33, M18f) ----------------------------------------
+
+## Whether the realm phase can start: the land is united and it has not started yet.
+func can_start_realm() -> bool:
+	return not realm.active and victory.won_path != Victory.NO_PATH and not victory.lost
+
+
+## Starts the realm phase: every allied clan asks to join and is annexed, the bandit zone (unless
+## an expedition is fighting it) is gone, up to Realm.MAX_GENERALS generals may serve, and the
+## nations take their places. Returns the ids of the clans that joined.
+func start_realm() -> Array[StringName]:
+	var joined: Array[StringName] = []
+	if realm.active:
+		return joined
+	for clan_id in diplomacy.clans:
+		if not diplomacy.clans[clan_id].annexed and diplomacy.clans[clan_id].is_allied():
+			var side := wars.annex(clan_id)
+			if side != Vector2i.ZERO:
+				board.expand(side, Wars.ANNEX_EXPANSION)
+				uprising.shift(board, Vector2i(Wars.ANNEX_EXPANSION if side == Vector2i.LEFT else 0,
+						Wars.ANNEX_EXPANSION if side == Vector2i.UP else 0))
+			joined.append(clan_id)
+	if uprising.is_active() and expedition == null:
+		uprising.clear(board, turn)
+	generals.max_generals = Realm.MAX_GENERALS
+	realm.start(self)
+	generals.changed.emit()
+	return joined
+
+
+## The siege of `town` by the armies of `group` together (Realm.create_siege); null when it cannot
+## happen now.
+func start_siege(group: Array, town: int) -> BattleSimulator:
+	return realm.create_siege(self, group, town)
+
+
+func finish_siege(group: Array, town: int, record: BattleRecord) -> Dictionary:
+	return realm.finish_siege(self, group, town, record)
+
+
+## The revolt waiting at the start of the turn (Realm.create_revolt); null without one.
+func start_revolt() -> BattleSimulator:
+	return realm.create_revolt(self)
+
+
+func finish_revolt(record: BattleRecord) -> Dictionary:
+	return realm.finish_revolt(self, record)
+
+
+## Applies the turn's counterattack (end_turn's "pending_counter").
+func finish_counter(record: BattleRecord) -> Dictionary:
+	return realm.finish_counter(self, record)
+

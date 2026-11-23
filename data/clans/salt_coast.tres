@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"salt_coast"
 display_name = "Diêm Hải Bang"
-description = "Bang hội buôn muối ven biển, giàu và nhiều mối giao thương."
+description = "Bang hội làm muối ven biển, ruộng muối trắng trải dài theo bờ cát."
 color = Color(0.61, 0.82, 0.41, 1)
 grid = Vector2i(4, 1)
 personality = 2

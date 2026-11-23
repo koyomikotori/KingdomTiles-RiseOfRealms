@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_clan")
 clan_id = &"east_merchants"
-display_name = "Thương Hội Đông Hải"
-description = "Liên minh các thương cảng ven biển. Giàu có, thích buôn bán, luôn cần gỗ đóng thuyền."
+display_name = "Thương Hội Kim Hải"
+description = "Liên minh các thương cảng ven biển, bến thuyền tấp nập và kho hàng san sát."
 color = Color(0.3, 0.7, 0.85, 1)
 grid = Vector2i(2, 0)
 personality = 2

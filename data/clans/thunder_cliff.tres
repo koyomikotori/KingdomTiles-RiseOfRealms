@@ -6,7 +6,7 @@
 script = ExtResource("1_clan")
 clan_id = &"thunder_cliff"
 display_name = "Lôi Nhai Trại"
-description = "Sơn trại dựng trên vách đá sấm sét, dễ thủ khó công."
+description = "Sơn trại dựng trên vách đá thường có sấm sét, dễ thủ khó công."
 color = Color(0.41, 0.82, 0.76, 1)
 grid = Vector2i(4, 2)
 personality = 3

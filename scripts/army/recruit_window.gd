@@ -3,8 +3,13 @@ extends CatalogWindow
 ## The "Tuyển lính" shop (GDD §8, M12d / M13 / M13b): unit types by kind (Tất cả / Kiếm / Thương /
 ## Đao thuẫn / Kỵ binh / Cung / Nỏ / Hỏa khí) with their sprite, stats, special rules, cost, upkeep
 ## and the buildings they need. Names are colored by tier; types whose buildings are missing are
-## faded. Recruiting is instant; the window stays open to recruit more.
+## faded. Recruiting is instant; the window stays open to recruit more. "Tuyển ×2" / "×5" recruit
+## several squads at once (M18g), locked unless every one of them can be paid and housed.
 const FIGURE_SCALE := 5
+## The batch buttons beside "Tuyển".
+const BATCHES: Array[int] = [2, 5]
+
+var _batch_buttons: Dictionary[int, Button] = {}
 
 var _state: KingdomState
 var _resource_types: Array[ResourceTypeData] = ResourceTypeData.load_all()
@@ -14,7 +19,12 @@ func open(state: KingdomState) -> void:
 	_state = state
 	var categories: Array[String] = ["Tất cả"]
 	categories.append_array(UnitData.TYPE_NAMES)
-	build_catalog("Tuyển lính", categories, "Tuyển")
+	build_catalog("Tuyển lính", categories, "Tuyển ×1")
+	for count in BATCHES:
+		var button := add_action("Tuyển ×%d" % count, func() -> void: recruit_many(_selected, count))
+		button.custom_minimum_size.x = 120
+		_batch_buttons[count] = button
+	refresh()
 	state.stockpile.changed.connect(refresh)
 	state.army.changed.connect(refresh)
 
@@ -98,7 +108,7 @@ func _fill_requirements(id: StringName, view: RequirementView) -> void:
 	view.requirement("Còn chỗ cho đơn vị (%d/%d)" % [_state.army.count_squads(), _state.get_squad_capacity()],
 			_state.army.count_squads() < _state.get_squad_capacity())
 	view.header("Chi phí")
-	view.costs(unit.recruit_cost, _state.stockpile)
+	view.costs(_state.recruit_cost(unit.unit_id), _state.stockpile)
 	view.amounts("Nuôi mỗi lượt:", unit.upkeep)
 
 
@@ -122,8 +132,32 @@ func _special_rules(unit: UnitData) -> String:
 
 func _block_reason(id: StringName) -> String:
 	var unit := _state.units[id]
-	var result := RecruitmentRules.check(_state.board, _state.stockpile, _state.army, _state.get_squad_capacity(), unit)
+	var result := RecruitmentRules.check(_state.board, _state.stockpile, _state.army, _state.get_squad_capacity(), unit,
+			_state.recruit_cost(unit.unit_id))
 	return "" if result == RecruitmentRules.Result.OK else RecruitmentRules.describe(result, unit, _state.buildings, _state.terrains)
+
+
+func refresh() -> void:
+	super.refresh()
+	for count in _batch_buttons:
+		var button := _batch_buttons[count]
+		var fits := _selected != &"" and _block_reason(_selected) == "" and _state.affordable_recruits(_selected) >= count
+		button.disabled = not fits
+		button.tooltip_text = "" if fits else "Không đủ tài nguyên hoặc chỗ cho %d đơn vị." % count
+
+
+## Recruits `count` squads of `id` (all or nothing, KingdomState.recruit_many).
+func recruit_many(id: StringName, count: int) -> void:
+	if id == &"":
+		return
+	var unit := _state.units[id]
+	var done := _state.recruit_many(id, count)
+	if done == 0:
+		set_status("Không đủ tài nguyên hoặc chỗ cho %d đơn vị." % count, false)
+		return
+	set_status("Đã tuyển %d đơn vị %s (+%d lính)." % [done, unit.display_name, unit.squad_size * done])
+	Sfx.play(&"recruit")
+	refresh()
 
 
 func _on_action(id: StringName) -> void:

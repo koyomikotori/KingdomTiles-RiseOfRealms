@@ -1,0 +1,448 @@
+class_name RealmScreen
+extends Control
+## Full-screen realm map (Phân Chia Thiên Hạ, GDD §33, M18f-a), like the world map: the map on the
+## left, a fixed-width panel on the right (M18g): the armies (portrait, soldiers, order), then one
+## card — the selected army (units, order, "Xem chi tiết"), the town picked as its target (march
+## or siege, alone or with the armies standing with it), or the selected town. Clicking a town
+## selects it; with an army selected, clicking a neighboring town picks it as the target (GDD §34).
+## Orders are carried out when the turn ends (sieges at the start of the next turn; every army
+## ordered against a town fights it together) and can be cancelled until then. Tab picks the next
+## army without an order.
+
+signal closed
+
+## The side panel's fixed width: what it shows never changes the map's size.
+const PANEL_WIDTH := 400.0
+const ROSTER_PORTRAIT := 0.4
+const CARD_PORTRAIT := 0.75
+const CHIP_ICON := 30
+
+var _state: KingdomState
+var _map: RealmMapView
+var _panel: VBoxContainer
+var _title: Label
+var _town := Realm.HOME_CAPITAL
+var _force: Realm.Force
+## A neighboring town the selected army may be ordered to, waiting for the order button.
+var _siege_target := -1
+var _status_text := ""
+var _status_good := true
+
+
+func open(state: KingdomState) -> void:
+	_state = state
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	var background := ColorRect.new()
+	background.color = UiPalette.BACKDROP
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(background)
+	var layout := VBoxContainer.new()
+	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(layout)
+	var top := HBoxContainer.new()
+	_title = Label.new()
+	_title.add_theme_font_size_override("font_size", 20)
+	_title.theme_type_variation = &"WoodLabel"
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top.add_child(_title)
+	var back := Button.new()
+	back.text = Touch.keys("Quay lại (Esc)")
+	back.focus_mode = Control.FOCUS_NONE
+	back.custom_minimum_size = Vector2(0, 40)
+	back.pressed.connect(close)
+	top.add_child(back)
+	layout.add_child(_margin(top))
+	var row := HBoxContainer.new()
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	layout.add_child(row)
+	_map = RealmMapView.new()
+	_map.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_map.realm = state.realm
+	_map.player_color = state.player_color
+	_map.kingdom_name = state.kingdom_name
+	_map.town_clicked.connect(_on_town_clicked)
+	row.add_child(_map)
+	var paper := PanelContainer.new()
+	paper.custom_minimum_size.x = PANEL_WIDTH
+	row.add_child(paper)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	paper.add_child(scroll)
+	_panel = VBoxContainer.new()
+	_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel.add_theme_constant_override("separation", 6)
+	var panel_margin := _margin(_panel)
+	panel_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(panel_margin)
+	_refresh()
+
+
+func close() -> void:
+	closed.emit()
+	queue_free()
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			close()
+		elif event.keycode == KEY_TAB:
+			select_next_force()
+	get_viewport().set_input_as_handled()
+
+
+## Selects the next army without an order (after the selected one), else the next army at all.
+func select_next_force() -> void:
+	var forces := _state.realm.forces
+	if forces.is_empty():
+		return
+	var start := forces.find(_force)
+	for pass_index in 2:
+		for i in forces.size():
+			var force: Realm.Force = forces[(start + 1 + i) % forces.size()]
+			if pass_index == 1 or not force.has_order():
+				_select_force(force)
+				return
+
+
+## Opens with this town (and its first army) selected; for tests and previews.
+func select_town(town: int) -> void:
+	_town = town
+	var here := _state.realm.forces_at(town)
+	_force = here[0] if not here.is_empty() else null
+	_siege_target = -1
+	_refresh()
+
+
+func _on_town_clicked(town: int) -> void:
+	_status_text = ""
+	# A neighbor of the selected army: show it with a march / siege button (never moves on a click).
+	if _force != null and _state.realm.forces.has(_force) and RealmMap.are_neighbors(_force.town, town):
+		_town = town
+		_siege_target = town
+		_refresh()
+		return
+	_town = town
+	_siege_target = -1
+	var here := _state.realm.forces_at(town)
+	_force = here[0] if not here.is_empty() else null
+	_refresh()
+
+
+func _set_status(text: String, good: bool) -> void:
+	_status_text = text
+	_status_good = good
+	if not good:
+		Sfx.play(&"error")
+
+
+func _refresh() -> void:
+	var realm := _state.realm
+	if _force != null and not realm.forces.has(_force):
+		_force = null
+	if _force == null:
+		_siege_target = -1
+	_title.text = "Thiên hạ — Phân Chia Thiên Hạ (lượt %d)" % _state.turn
+	_map.selected_town = _town
+	_map.selected_force = _force
+	_map.turn = _state.turn
+	_map.queue_redraw()
+	# Removed at once: children freed later would still take room for a frame and jolt the layout.
+	for child in _panel.get_children():
+		_panel.remove_child(child)
+		child.queue_free()
+	_fill_roster()
+	_panel.add_child(HSeparator.new())
+	if _force != null and _siege_target >= 0:
+		_fill_target(realm.towns[_siege_target])
+	elif _force != null:
+		_fill_force(_force)
+	else:
+		_fill_town(realm.towns[_town])
+	if _status_text != "":
+		_panel.add_child(_line(_status_text, 14, UiPalette.GOOD if _status_good else UiPalette.WARNING))
+
+
+## The kingdom's towns, then every army as a row: the general's portrait and a button with its
+## soldiers and order (▶ the selected one); "Đạo kế tiếp (Tab)".
+func _fill_roster() -> void:
+	var realm := _state.realm
+	var waiting := realm.forces.filter(func(force: Realm.Force) -> bool: return not force.has_order()).size()
+	_panel.add_child(_line("Trấn của ta %d/%d · %d đạo quân%s" % [realm.count_owned(Realm.PLAYER), RealmMap.TOWN_COUNT,
+			realm.forces.size(), " (%d chờ lệnh)" % waiting if waiting > 0 else ""], 14, UiPalette.MUTED))
+	for force in realm.forces:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		var portrait := PortraitView.new()
+		portrait.setup(force.general, ROSTER_PORTRAIT, _state.player_color)
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(portrait)
+		var button := _button("%s%s · %d lính · %s" % ["▶ " if force == _force else "", force.general.name,
+				force.soldiers(), _order_text(force, true)], _select_force.bind(force))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_font_size_override("font_size", 13)
+		if force.has_order():
+			button.add_theme_color_override("font_color", RealmMapView.order_color(force.order).lightened(0.55))
+		row.add_child(button)
+		_panel.add_child(row)
+	var buttons: Array[Button] = []
+	if not realm.forces.is_empty():
+		buttons.append(_button(Touch.keys("Đạo kế tiếp (Tab)"), select_next_force))
+	if _force != null:
+		buttons.append(_button("Bỏ chọn", func() -> void:
+			_force = null
+			_siege_target = -1
+			_refresh()))
+	if not buttons.is_empty():
+		_panel.add_child(_buttons_row(buttons))
+
+
+## "chờ lệnh", "→ X", "⚔ X", "⌂ về kinh đô"; the long form for the army card.
+func _order_text(force: Realm.Force, short: bool) -> String:
+	var realm := _state.realm
+	match force.order:
+		Realm.MOVE:
+			return ("→ %s" if short else "Lệnh: hành quân tới %s khi hết lượt.") % realm.towns[force.target].name
+		Realm.SIEGE:
+			return ("⚔ %s" if short else "Lệnh: công thành %s ở đầu lượt sau.") % realm.towns[force.target].name
+		Realm.HOME:
+			var steps := realm.route(force.town, Realm.HOME_CAPITAL).size()
+			return "⌂ về kinh đô" if short else "Lệnh: về kinh đô, còn %d chặng (mỗi lượt một chặng)." % steps
+	return "chờ lệnh" if short else "Chưa có lệnh."
+
+
+## The selected town when no army is selected: who holds it and what it gives.
+func _fill_town(town: Realm.Town) -> void:
+	var realm := _state.realm
+	var owner_color := realm.owner_color(town, _state.player_color)
+	_panel.add_child(_line(("♛ " if town.is_capital() else "") + town.name, 20, UiPalette.ink(owner_color)))
+	_panel.add_child(_line("%s của %s" % ["Kinh đô" if town.is_capital() else "Trấn",
+			realm.owner_name(town, _state.kingdom_name)], 15))
+	if town.owner != Realm.PLAYER:
+		_panel.add_child(_line("Quân thủ %d/%d lính · tường thành +%d%% phòng thủ" % [town.garrison, town.max_garrison,
+				roundi((Realm.CAPITAL_WALL_DEFENSE if town.is_capital() else Realm.WALL_DEFENSE) * 100)], 14))
+		if town.is_capital() and town.owner != Realm.REBELS:
+			_panel.add_child(_line("Chiếm kinh đô thì %s bị diệt, mọi trấn còn lại về tay ta." % realm.nations[town.owner].name,
+					13, UiPalette.MUTED))
+	elif town.is_captured():
+		var view := RequirementView.new()
+		_panel.add_child(view)
+		view.amounts("Mỗi lượt", realm.town_yield(town), false)
+		_panel.add_child(_line("+%d đơn vị tối đa · dân binh %d lính" % [Realm.TOWN_SQUADS, realm.militia_soldiers(town)], 14))
+		var chance := realm.revolt_chance(town, _state.turn)
+		var why := "mới chiếm" if chance <= 0.0 else ("nước cũ đã bị diệt" if realm.nations[town.nation].destroyed
+				else ("có quân trấn giữ" if not realm.forces_at(town.id).is_empty() else "không quân trấn giữ"))
+		_panel.add_child(_line("Nguy cơ nổi loạn: %d%% mỗi lượt (%s)" % [roundi(chance * 100.0), why], 14,
+				UiPalette.WARNING if chance >= Realm.REVOLT_CHANCE else UiPalette.TEXT))
+	else:
+		_panel.add_child(_line("Đất các gia tộc đã thống nhất · +%d đơn vị tối đa" % Realm.TOWN_SQUADS, 14))
+	var per_turn := realm.replenish_at(town.id)
+	if per_turn > 0:
+		_panel.add_child(_line("Đạo quân ở đây hồi +%d lính mỗi đơn vị mỗi lượt." % per_turn, 13, UiPalette.MUTED))
+	if town.id == Realm.HOME_CAPITAL:
+		_panel.add_child(_button("Lập đạo quân mới", _open_army.bind(null)))
+
+
+## The selected army: its general, its soldiers by unit, its order and what can be done with it.
+func _fill_force(force: Realm.Force) -> void:
+	var general := force.general
+	var realm := _state.realm
+	var head := HBoxContainer.new()
+	head.add_theme_constant_override("separation", 8)
+	var portrait := PortraitView.new()
+	portrait.setup(general, CARD_PORTRAIT, _state.player_color)
+	head.add_child(portrait)
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.add_child(_line("Đạo quân %s" % general.name, 17, UiPalette.ink(_state.player_color)))
+	info.add_child(_line("%s · Võ %d · Thống %d" % [general.star_text(), general.total_might(), general.total_command()], 13))
+	info.add_child(_line("Ở %s · %d/%d đơn vị · %d lính" % [realm.towns[force.town].name, force.squads.size(),
+			Realm.MAX_ARMY_SQUADS, force.soldiers()], 13))
+	if general.wounded_turns > 0:
+		info.add_child(_line("Tướng bị thương, còn %d lượt" % general.wounded_turns, 13, UiPalette.WARNING))
+	head.add_child(info)
+	_panel.add_child(head)
+	_panel.add_child(_unit_chips(force))
+	_panel.add_child(_line(_order_text(force, false), 15,
+			RealmMapView.order_color(force.order) if force.has_order() else UiPalette.TEXT))
+	var buttons: Array[Button] = [_button("Xem chi tiết đạo quân", _open_detail.bind(force))]
+	if force.has_order():
+		buttons.append(_button("Hủy lệnh", func() -> void:
+			realm.cancel_order(force)
+			Sfx.play(&"click")
+			_refresh()))
+	_panel.add_child(_buttons_row(buttons))
+	if not force.has_order():
+		_panel.add_child(_line("Bấm trấn kề trên bản đồ: vòng xanh để hành quân, vòng đỏ để công thành.", 13, UiPalette.MUTED))
+	if force.town != Realm.HOME_CAPITAL and force.order != Realm.HOME:
+		var home := _button("Về kinh đô", func() -> void:
+			var result := realm.order_home(force, _state.turn)
+			if result == Realm.Result.OK:
+				Sfx.play(&"place_land")
+			else:
+				_set_status(Realm.describe(result), false)
+			_refresh())
+		home.disabled = realm.check_home(force) != Realm.Result.OK
+		_panel.add_child(home)
+	if force.town == Realm.HOME_CAPITAL:
+		_panel.add_child(_buttons_row([_button("Điều chỉnh quân", _open_army.bind(force)),
+				_button("Giải tán", func() -> void:
+					ConfirmWindow.ask(self, "Giải tán đạo quân", "Giải tán đạo quân %s?" % force.general.name,
+							func(view: RequirementView) -> void:
+								view.note("Tướng và %d đơn vị về lại kinh đô, giữ nguyên lính." % force.squads.size()),
+							"Giải tán", func() -> void:
+								realm.disband(_state, force)
+								_force = null
+								_refresh(), true))]))
+
+
+## One chip per unit type in the army: its icon and how many squads.
+func _unit_chips(force: Realm.Force) -> HFlowContainer:
+	var flow := HFlowContainer.new()
+	flow.add_theme_constant_override("h_separation", 8)
+	var counts := {}
+	for squad in force.squads:
+		counts[squad.unit_id] = counts.get(squad.unit_id, 0) + 1
+	for unit_id in counts:
+		var unit: UnitData = _state.units[unit_id]
+		var chip := HBoxContainer.new()
+		chip.add_theme_constant_override("separation", 2)
+		chip.tooltip_text = unit.display_name
+		chip.add_child(ArmyDetailWindow.unit_icon(unit, CHIP_ICON))
+		var count := _line("×%d" % counts[unit_id], 14, unit.tier_color(false))
+		count.autowrap_mode = TextServer.AUTOWRAP_OFF
+		chip.add_child(count)
+		flow.add_child(chip)
+	return flow
+
+
+## A neighboring town picked for the selected army: march there (a town of ours) or besiege it,
+## alone or with the other armies standing with it; the odds count every army ordered there.
+func _fill_target(town: Realm.Town) -> void:
+	var realm := _state.realm
+	var force := _force
+	var ours := town.owner == Realm.PLAYER
+	_panel.add_child(_line(("→ Hành quân tới %s" if ours else "⚔ Công thành %s") % town.name, 18,
+			UiPalette.TEXT if ours else UiPalette.WARNING))
+	_panel.add_child(_line("Đạo quân %s · %d lính" % [force.general.name, force.soldiers()], 14))
+	# Armies standing with this one, free to go too.
+	var mates: Array[Realm.Force] = []
+	for other in realm.forces_at(force.town):
+		if other != force and not other.has_order() and (realm.check_move(other, town.id) if ours
+				else realm.check_siege(other, town.id)) == Realm.Result.OK:
+			mates.append(other)
+	var check := realm.check_move(force, town.id) if ours else realm.check_siege(force, town.id)
+	if ours:
+		if check == Realm.Result.OK:
+			_panel.add_child(_button("Ra lệnh hành quân", _give_order.bind([force], town.id)))
+			if not mates.is_empty():
+				_panel.add_child(_button("Cả %d đạo ở đây cùng đi" % (mates.size() + 1),
+						_give_order.bind([force] + mates, town.id)))
+			_panel.add_child(_line("Đi khi bấm Kết thúc lượt; nhiều đạo có thể cùng tới một trấn.", 13, UiPalette.MUTED))
+	else:
+		var joined := realm.besiegers(town.id).filter(func(other: Realm.Force) -> bool: return other != force)
+		var total := force.soldiers()
+		for other: Realm.Force in joined:
+			total += other.soldiers()
+		if not joined.is_empty():
+			_panel.add_child(_line("Cùng đánh: %s" % ", ".join(joined.map(func(other: Realm.Force) -> String:
+					return "%s (%d)" % [other.general.name, other.soldiers()])), 13, UiPalette.GOOD))
+		var compare := ForceCompare.new()
+		_panel.add_child(compare)
+		compare.setup(total, _state.player_color, town.garrison, realm.owner_color(town, _state.player_color),
+				Realm.CAPITAL_WALL_DEFENSE if town.is_capital() else Realm.WALL_DEFENSE, "tường thành")
+		if check == Realm.Result.OK:
+			_panel.add_child(_button("Ra lệnh công thành", _give_order.bind([force], town.id)))
+			if not mates.is_empty():
+				var all := total
+				for other in mates:
+					all += other.soldiers()
+				_panel.add_child(_button("Cả %d đạo ở đây cùng đánh (%d lính)" % [mates.size() + 1, all],
+						_give_order.bind([force] + mates, town.id)))
+			_panel.add_child(_line("Đánh ở đầu lượt sau. Mọi đạo được lệnh đánh trấn này sẽ hợp quân, tướng giỏi nhất chỉ huy.",
+					13, UiPalette.MUTED))
+	if check != Realm.Result.OK:
+		_panel.add_child(_line(Realm.describe(check), 14, UiPalette.WARNING))
+	_panel.add_child(_button("Quay lại đạo quân", func() -> void:
+		_siege_target = -1
+		_town = force.town
+		_refresh()))
+
+
+func _give_order(group: Array, town: int) -> void:
+	_status_text = ""
+	for force: Realm.Force in group:
+		var result := _state.realm.order(force, town, _state.turn)
+		if result != Realm.Result.OK:
+			_set_status(Realm.describe(result), false)
+			break
+	if _status_text == "" or _status_good:
+		Sfx.play(&"place_land")
+		_siege_target = -1
+		_town = group[0].town
+	_refresh()
+
+
+func _select_force(force: Realm.Force) -> void:
+	_force = force
+	_town = force.town
+	_siege_target = -1
+	_refresh()
+
+
+func _open_army(force: Realm.Force) -> void:
+	var dialog := ArmyDialog.new()
+	add_child(dialog)
+	dialog.open(_state, force)
+	dialog.done.connect(func() -> void:
+		if force == null and not _state.realm.forces.is_empty():
+			_force = _state.realm.forces.back()
+		_refresh())
+
+
+func _open_detail(force: Realm.Force) -> void:
+	var window := ArmyDetailWindow.new()
+	add_child(window)
+	window.open(_state, force)
+
+
+func _line(text: String, font_size: int, color: Color = UiPalette.TEXT) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	return label
+
+
+## Long texts are cut, never widening the panel.
+func _button(text: String, on_pressed: Callable) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.tooltip_text = text
+	button.focus_mode = Control.FOCUS_NONE
+	button.clip_text = true
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.custom_minimum_size = Vector2(0, 38)
+	button.pressed.connect(on_pressed)
+	return button
+
+
+func _buttons_row(buttons: Array) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	for button: Button in buttons:
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(button)
+	return row
+
+
+func _margin(child: Control) -> MarginContainer:
+	var margin := MarginContainer.new()
+	for edge in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + edge, 10)
+	margin.add_child(child)
+	return margin

@@ -14,14 +14,14 @@ func _state() -> KingdomState:
 	return state
 
 
-func test_every_second_annexation_adds_land_clockwise_eight_times() -> void:
+func test_every_second_annexation_adds_land_clockwise_twelve_times() -> void:
 	var sides: Array[Vector2i] = []
 	for i in 5:
 		sides.append(Wars.expansion_side(i))
 	check_eq(sides, [Vector2i.UP, Vector2i.RIGHT, Vector2i.DOWN, Vector2i.LEFT, Vector2i.UP] as Array[Vector2i],
 			"Top, right, bottom, left, then round again")
-	check_eq(Wars.expansion_side(7), Vector2i.LEFT, "The 8th still adds land")
-	check_eq(Wars.expansion_side(8), Vector2i.ZERO, "Then the board stops growing")
+	check_eq(Wars.expansion_side(11), Vector2i.LEFT, "The 12th still adds land (M18e)")
+	check_eq(Wars.expansion_side(12), Vector2i.ZERO, "Then the board stops growing")
 	var state := _state()
 	var got: Array[Vector2i] = []
 	var needed: Array[int] = []
@@ -36,10 +36,10 @@ func test_every_second_annexation_adds_land_clockwise_eight_times() -> void:
 	var ids := state.wars.fronts.keys()
 	var count := 4
 	for clan_id: StringName in ids:
-		if not state.wars.fronts[clan_id].annexed and count < 16:
+		if not state.wars.fronts[clan_id].annexed and count < 24:
 			state.board.expand(state.wars.annex(clan_id), Wars.ANNEX_EXPANSION)
 			count += 1
-	check_eq([state.board.width, state.board.height], [20, 20], "Sixteen annexations: 20×20")
+	check_eq([state.board.width, state.board.height], [24, 24], "24 annexations: 24×24 (M18e)")
 	check_eq(state.wars.annexations_to_expand(), 0, "Full size")
 	for clan_id: StringName in ids:
 		if not state.wars.fronts[clan_id].annexed:
@@ -121,8 +121,8 @@ func test_notices_list_what_is_going_on() -> void:
 			lines[Notices.key(section.id, item.id)] = item.lines
 	check_eq(lines.get("buildings/constructing"), ["Doanh trại: còn 2 lượt"] as Array[String], "Construction with turns left")
 	check_eq(lines.get("buildings/completed"), ["Nông trại lên cấp 2"] as Array[String], "Finished this turn")
-	check(lines.get("diplomacy/wars", [""])[0].begins_with("Lang Tộc Phương Bắc: quân"), "At war, with their army")
-	check_eq(lines.get("diplomacy/allies"), ["Điền Trang Nam Lâm: còn 7 lượt"] as Array[String], "Allies with turns left")
+	check(lines.get("diplomacy/wars", [""])[0].begins_with("Lang Tộc Bạch Nha: quân"), "At war, with their army")
+	check_eq(lines.get("diplomacy/allies"), ["Điền Trang Thanh Lâm: còn 7 lượt"] as Array[String], "Allies with turns left")
 	check_eq(lines.get("army/replenished"), ["+3 Kiếm binh nông dân"] as Array[String], "Replenished soldiers")
 	check(not lines.has("army/deserted"), "Empty items are left out")
 	for key: String in lines:
@@ -133,22 +133,21 @@ func test_notices_list_what_is_going_on() -> void:
 func test_important_news_only_for_what_cannot_wait() -> void:
 	var state := _state()
 	var calm := {"completed": [{"name": "Nông trại", "level": 2, "upgrade": true}], "replenished": {&"swordsman": 3},
-			"deserted": {}, "castle_in_danger": false, "agents": [{"name": "A", "clan_id": &"north_wolves",
-			"mission": Agent.RELATIONS, "event": &"done", "levels": 0}]}
-	check(ImportantNews.build(state, calm).is_empty(), "Building, replenishing, missions done: nothing important")
+			"deserted": {}, "castle_in_danger": false}
+	check(ImportantNews.build(state, calm).is_empty(), "Building, replenishing: nothing important")
 	check(ImportantNews.build(state, {}, {"general": {"fate": &"none"}}).is_empty(), "A battle nobody was hurt in")
 	var report := {"war_declared": [&"north_wolves"] as Array[StringName], "deserted": {&"swordsman": 4},
 			"castle_in_danger": true, "treaties": [{"clan_id": &"south_farmers", "event": &"alliance_broken"},
-			{"clan_id": &"south_farmers", "event": &"alliance_ended"}],
-			"agents": [{"name": "Bảo", "clan_id": &"north_wolves", "mission": Agent.SABOTAGE, "event": &"killed", "levels": 0}]}
+			{"clan_id": &"south_farmers", "event": &"alliance_ended"}]}
 	var battle := {"general": {"name": "Khải", "fate": &"dead"}, "advisor": {"name": "Phong", "fate": &"wounded"}}
 	var news := ImportantNews.build(state, report, battle)
 	var titles := news.map(func(n: Dictionary) -> String: return n.title)
-	check_eq(titles, ["Bị tuyên chiến", "Đặc vụ bị lộ", "Tướng sĩ", "Lính đào ngũ", "Đồng minh rời bỏ",
+	check_eq(titles, ["Bị tuyên chiến", "Tướng sĩ", "Lính đào ngũ", "Đồng minh rời bỏ",
 			"Thành chính nguy hiểm"], "Every kind, in order")
-	check_eq(news[2].lines.size(), 2, "The commander and the advisor")
-	check(news[2].lines[0].contains("tử trận"), "The commander died")
-	check_eq(news[4].lines.size(), 1, "An alliance running out is not important")
+	check_eq(news[1].lines.size(), 2, "The commander and the advisor")
+	check(news[1].lines[0].contains("tử trận"), "The commander died")
+	check_eq(news[3].lines.size(), 1, "An alliance running out is not important")
+
 
 func test_old_saves_are_refused() -> void:
 	var folder := "user://test_campaign_saves"

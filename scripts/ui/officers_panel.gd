@@ -6,8 +6,6 @@ extends VBoxContainer
 ## `officer_selected`; the kingdom scene opens the officer's window. Read-only.
 
 signal officer_selected(officer: Officer)
-## "Đặc vụ" under the lists: the kingdom scene opens the Sở cảnh sát's agents tab (GDD §8 M14e).
-signal agents_requested
 
 const ROW_HEIGHT := 76
 const WARNING_COLOR := UiPalette.WARNING
@@ -18,7 +16,7 @@ func refresh(state: KingdomState) -> void:
 		remove_child(child)
 		child.queue_free()
 	var generals := state.generals
-	add_child(_header("Tướng (%d/%d)" % [generals.generals.size(), Generals.MAX_GENERALS]))
+	add_child(_header("Tướng (%d/%d)" % [generals.generals.size(), generals.max_generals]))
 	if generals.generals.is_empty():
 		add_child(_small("Chưa có tướng nào. Tuyển ở thành chính, tab Chiêu hiền."))
 	for general in generals.generals:
@@ -32,17 +30,6 @@ func refresh(state: KingdomState) -> void:
 		var role := Advisors.POST_NAMES[advisor.post] if advisor.post != Advisor.NO_POST else "Chưa giữ chức"
 		add_child(_row(state, advisor, role))
 	add_child(_small("Bí kíp đột phá: %d (có được khi dẹp yên một vùng nổi loạn)." % state.scrolls))
-	var agents := state.agents.agents
-	var busy := agents.filter(func(a: Agent) -> bool: return a.is_busy()).size()
-	add_child(_header("Đặc vụ (%d/%d)" % [agents.size(), state.agent_slots()]))
-	var button := Button.new()
-	button.text = "Đặc vụ" + (" · %d đang làm nhiệm vụ" % busy if busy > 0 else "")
-	button.custom_minimum_size = Vector2(0, 40)
-	button.disabled = state.police_level() == 0
-	button.pressed.connect(func() -> void: agents_requested.emit())
-	add_child(button)
-	if button.disabled:
-		add_child(_small("Cần Sở cảnh sát (thành cấp 3) để tuyển và cử đặc vụ."))
 
 
 ## A tappable row: battle sprite, "Name ★★", "role · level", wounds, unspent points and whether a
@@ -74,7 +61,7 @@ func _row(state: KingdomState, officer: Officer, role: String) -> Control:
 	var breaks := " · Đột phá %d" % officer.breaks if officer.breaks > 0 else ""
 	column.add_child(_line("%s · Cấp %d%s" % [role, officer.level, breaks], 12, UiPalette.MUTED))
 	if officer.away:
-		column.add_child(_line("Đang đi thảo phạt", 12, UiPalette.ACCENT))
+		column.add_child(_line(officer.away_title(), 12, UiPalette.ACCENT))
 	elif not officer.is_ready():
 		column.add_child(_line("Bị thương, còn %d lượt" % officer.wounded_turns, 12, WARNING_COLOR))
 	if officer.points > 0:

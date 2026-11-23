@@ -7,7 +7,7 @@ const TOPICS := {
 	&"invasion_lost": {"clan": "X"}, &"attack_won": {"clan": "X"}, &"attack_lost": {"clan": "X"},
 	&"annexed": {"clan": "X"}, &"battle_won": {}, &"battle_lost": {}, &"duel_won": {"general": "Y"},
 	&"duel_lost": {"general": "Y"}, &"commander_fallen": {"general": "Y"}, &"expedition_stage_won": {},
-	&"expedition_cleared": {}, &"expedition_failed": {}, &"news_war": {"clan": "X"}, &"news_agent": {},
+	&"expedition_cleared": {}, &"expedition_failed": {}, &"news_war": {"clan": "X"},
 	&"news_officer": {}, &"news_deserted": {}, &"news_ally_left": {}, &"news_uprising": {},
 	&"news_castle_danger": {}, &"black_market": {}, &"victory": {}, &"defeat": {},
 	&"event_good": {}, &"event_bad": {}, &"event_mixed": {}, &"event_neutral": {},
