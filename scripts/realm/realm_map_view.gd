@@ -39,6 +39,7 @@ const BACKGROUND_COLOR := Color(0.91, 0.84, 0.66)
 const HOME_COLOR := Color(0.78, 0.55, 0.1)
 const INTERCEPT_COLOR := Color(0.55, 0.2, 0.65)
 const ENEMY_ATTACK_COLOR := Color(0.75, 0.05, 0.05)
+const VASSAL_ATTACK_COLOR := Color(0.85, 0.62, 0.1)
 ## Order lines: dash length and gap (map units), crawl speed, blink period (seconds).
 const ORDER_DASH := 10.0
 const ORDER_GAP := 7.0
@@ -231,7 +232,7 @@ func _draw_order(force: Realm.Force) -> void:
 func _draw_threat(army: NationArmy) -> void:
 	if not army.has_target():
 		return
-	var color := ENEMY_ATTACK_COLOR
+	var color := VASSAL_ATTACK_COLOR if realm.is_ally(army) else ENEMY_ATTACK_COLOR
 	color.a = 0.6 + 0.4 * absf(sin(_time * PI / ORDER_BLINK))
 	var from := RealmMap.position(army.town)
 	var to := RealmMap.position(army.target)

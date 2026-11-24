@@ -85,9 +85,11 @@ static func raise_army(realm: Realm, state: KingdomState, nation: Realm.Nation) 
 static func defense_of(realm: Realm, town: Realm.Town) -> float:
 	var soldiers := 0.0
 	if town.owner == Realm.PLAYER:
-		soldiers += realm.militia_soldiers(town)
+		soldiers += realm.militia_soldiers(town) + realm.vassal_guard(town)
 		for force in realm.forces_at(town.id):
 			soldiers += force.soldiers()
+		for army in realm.armies_at(town.id):
+			soldiers += army.soldiers
 	else:
 		soldiers += town.garrison
 		for army in realm.armies_at(town.id):
@@ -115,7 +117,7 @@ static func run_turn(realm: Realm, state: KingdomState) -> Dictionary:
 	# Attacks announced on an earlier turn, grouped by nation and town.
 	var groups := {}
 	for army in realm.armies:
-		if not army.has_target() or army.order_turn >= turn:
+		if not army.has_target() or army.order_turn >= turn or realm.is_ally(army):
 			continue
 		var target := realm.towns[army.target]
 		if not RealmMap.are_neighbors(army.town, target.id) or target.owner == army.nation \
@@ -140,7 +142,7 @@ static func run_turn(realm: Realm, state: KingdomState) -> Dictionary:
 		for id in entry.armies:
 			busy[int(id)] = true
 	for army in realm.armies.duplicate():
-		if busy.has(army.id) or army.has_target() or not realm.armies.has(army):
+		if busy.has(army.id) or army.has_target() or not realm.armies.has(army) or realm.is_ally(army):
 			continue
 		var target := pick_target(realm, state, army)
 		if target >= 0:

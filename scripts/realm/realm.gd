@@ -26,7 +26,8 @@ extends RefCounted
 ##   to the rebels (REBELS) when the nation is gone.
 
 enum Result { OK, NOT_ACTIVE, NO_GENERAL, GENERAL_BUSY, NO_SQUADS, TOO_MANY_SQUADS, SQUAD_BUSY, NOT_AT_CAPITAL,
-		ALREADY_MOVED, NOT_NEIGHBOR, ENEMY_TOWN, OWN_TOWN, GENERAL_WOUNDED, ALREADY_HOME, NO_ROUTE, NO_ORDER, NO_ENEMY_ARMY, NOT_MARCHING }
+		ALREADY_MOVED, NOT_NEIGHBOR, ENEMY_TOWN, OWN_TOWN, GENERAL_WOUNDED, ALREADY_HOME, NO_ROUTE, NO_ORDER, NO_ENEMY_ARMY, NOT_MARCHING,
+		NOT_CONQUERED, ALREADY_VASSAL, IS_COMMANDER }
 
 ## Army orders (GDD §34, M18g): given during the turn, carried out when it ends (a march, a step of
 ## the way home) or at the start of the next one (a siege, after the turn's raid or expedition).
@@ -90,6 +91,24 @@ const REVOLT_GUARDED := 0.12
 const REVOLT_PACIFIED := 0.02
 const REVOLT_GRACE := 2
 const REBEL_SHARE := 0.4
+## Pacifying a destroyed nation's land (GDD §36, M18f-b2a): REVOLT_PACIFIED until a vassal king is
+## crowned there, then PACIFY_STEP less a turn for PACIFY_TURNS turns (2% → 1%), minus
+## VASSAL_COMMAND_CUT per point of the king's own Thống suất (never below 0).
+const PACIFY_STEP := 0.002
+const PACIFY_TURNS := 5
+const VASSAL_COMMAND_CUT := 0.0005
+## A vassal's soldiers guarding every town of its land: VASSAL_GUARD_BASE + VASSAL_GUARD_PER_MIGHT
+## per point of the king's own Võ lực (items go back to us when crowned).
+const VASSAL_GUARD_BASE := 40
+const VASSAL_GUARD_PER_MIGHT := 5
+## Tribute a turn: TRIBUTE_BASIC_PER_STAR × the king's stars of food, wood and stone; from
+## TRIBUTE_RARE_FROM stars also TRIBUTE_RARE_PER_STAR × (stars − TRIBUTE_RARE_FROM + 1) of ore,
+## hardwood and horses (4★ 2, 5★ 4, 6★ 6).
+const TRIBUTE_BASIC_PER_STAR := 5
+const TRIBUTE_BASIC: Array[StringName] = [&"food", &"wood", &"stone"]
+const TRIBUTE_RARE_FROM := 4
+const TRIBUTE_RARE_PER_STAR := 2
+const TRIBUTE_RARE: Array[StringName] = [&"ore", &"hardwood", &"horses"]
 
 
 class Town:
@@ -118,6 +137,10 @@ class Nation:
 	var region: int
 	var color: Color
 	var destroyed := false
+	## The vassal king ruling its land for us once it is destroyed (GDD §36), else null; crowned on
+	## `vassal_turn`.
+	var vassal: General = null
+	var vassal_turn := 0
 
 	func capital() -> int:
 		return RealmMap.town_id(region, RealmMap.CAPITAL)
@@ -323,9 +346,10 @@ func spread_town_losses(town: Town, lost: int) -> void:
 			remove_army(army)
 
 
-## Soldiers defending an enemy town: its garrison and its owner's armies in it.
+## Soldiers defending an enemy town: its garrison and its owner's armies in it; on a town of ours
+## the vassal's guard and armies there.
 func town_soldiers(town: Town) -> int:
-	var total := town.garrison
+	var total := town.garrison + vassal_guard(town)
 	for army in armies_at(town.id):
 		total += army.soldiers
 	return total
@@ -662,6 +686,7 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 	var loot: Dictionary[StringName, int] = {}
 	var destroyed: StringName = &""
 	var gained: Array[int] = []
+	var holdouts: Array[int] = []
 	if not won:
 		spread_town_losses(town, enemy_lost)
 	else:
@@ -672,7 +697,7 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 		if town.is_capital() and old_owner != PLAYER and old_owner != REBELS \
 				and nations[old_owner].capital() == town_id:
 			destroyed = old_owner
-			gained = destroy_nation(state, old_owner)
+			gained = destroy_nation(state, old_owner, holdouts)
 	var disbanded := 0
 	for force: Force in group:
 		_drop_lost_squads(state, force)
@@ -683,7 +708,7 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 			disband(state, force, true)
 			disbanded += 1
 	result.merge({"record": record, "won": won, "town": town_id, "enemy_lost": enemy_lost, "general": general,
-			"loot": loot, "destroyed": destroyed, "gained": gained, "disbanded": disbanded, "armies": group.size(),
+			"loot": loot, "destroyed": destroyed, "gained": gained, "holdouts": holdouts, "disbanded": disbanded, "armies": group.size(),
 			"item": state.equipment.roll_loot(true, state.stockpile) if won else {}})
 	return result
 
@@ -720,15 +745,26 @@ func capture(state: KingdomState, town: Town) -> Dictionary[StringName, int]:
 	return loot
 
 
-## The nation falls with its capital: its other towns are handed over. Returns their ids.
-func destroy_nation(state: KingdomState, nation_id: StringName) -> Array[int]:
+## The nation falls with its capital: its other towns are handed over, except the towns its
+## armies stand in, which their soldiers hold as rebels (garrison = those soldiers); the armies
+## break up. Returns the ids handed over; the rebel towns are appended to `holdouts`.
+func destroy_nation(state: KingdomState, nation_id: StringName, holdouts: Array[int] = []) -> Array[int]:
 	nations[nation_id].destroyed = true
 	treasury.erase(nation_id)
+	var left := {}
 	for army in armies_of(nation_id):
+		if towns[army.town].owner == nation_id:
+			left[army.town] = left.get(army.town, 0) + army.soldiers
 		remove_army(army)
 	var gained: Array[int] = []
 	for town in towns:
-		if town.owner == nation_id:
+		if town.owner == nation_id and left.has(town.id):
+			_rebels()
+			town.owner = REBELS
+			town.max_garrison = left[town.id]
+			town.garrison = left[town.id]
+			holdouts.append(town.id)
+		elif town.owner == nation_id:
 			town.owner = PLAYER
 			town.garrison = 0
 			town.max_garrison = 0
@@ -791,12 +827,153 @@ func revolt_chance(town: Town, turn: int) -> float:
 	if not town.is_captured() or turn - town.captured_turn < REVOLT_GRACE:
 		return 0.0
 	if nations[town.nation].destroyed:
-		return REVOLT_PACIFIED
+		return pacified_chance(nations[town.nation], turn)
 	return REVOLT_GUARDED if not forces_at(town.id).is_empty() else REVOLT_CHANCE
 
 
 func rebels_for(town: Town, scale: float) -> int:
 	return maxi(REBEL_MIN, roundi(garrison_for(town.id, scale) * REBEL_SHARE))
+
+
+# --- Vassals (GDD §36, M18f-b2a) ------------------------------------------------------------
+
+## The chance a turn that a town of the destroyed `nation` revolts: REVOLT_PACIFIED without a
+## vassal, falling PACIFY_STEP a turn after the crowning, minus the king's command.
+func pacified_chance(nation: Nation, turn: int) -> float:
+	if nation.vassal == null:
+		return REVOLT_PACIFIED
+	var steps := clampi(turn - nation.vassal_turn - 1, 0, PACIFY_TURNS)
+	return maxf(0.0, REVOLT_PACIFIED - PACIFY_STEP * steps - VASSAL_COMMAND_CUT * nation.vassal.command)
+
+
+## The vassal ruling the land `town` belongs to, while the town is ours; else null.
+func vassal_of(town: Town) -> Nation:
+	if town.owner != PLAYER or town.nation == PLAYER or not nations.has(town.nation):
+		return null
+	var nation := nations[town.nation]
+	return nation if nation.vassal != null else null
+
+
+func vassals() -> Array[Nation]:
+	var result: Array[Nation] = []
+	for nation: Nation in nations.values():
+		if nation.vassal != null:
+			result.append(nation)
+	return result
+
+
+## The vassal's soldiers guarding `town` (0 outside a vassal's land).
+func vassal_guard(town: Town) -> int:
+	var vassal := vassal_of(town)
+	return 0 if vassal == null else guard_for(vassal.vassal)
+
+
+static func guard_for(king: General) -> int:
+	return VASSAL_GUARD_BASE + VASSAL_GUARD_PER_MIGHT * king.might
+
+
+## An army of a vassal of ours (not an enemy).
+func is_ally(army: NationArmy) -> bool:
+	return nations.has(army.nation) and nations[army.nation].vassal != null
+
+
+## The towns of `region` we hold.
+func region_towns(region: int) -> Array[Town]:
+	var result: Array[Town] = []
+	for slot in RealmMap.TOWNS_PER_REGION:
+		var town := towns[region * RealmMap.TOWNS_PER_REGION + slot]
+		if town.owner == PLAYER:
+			result.append(town)
+	return result
+
+
+## Tribute a vassal king pays a turn (by stars).
+static func tribute_of(king: General) -> Dictionary[StringName, int]:
+	var result: Dictionary[StringName, int] = {}
+	for resource_id in TRIBUTE_BASIC:
+		result[resource_id] = TRIBUTE_BASIC_PER_STAR * king.stars
+	if king.stars >= TRIBUTE_RARE_FROM:
+		for resource_id in TRIBUTE_RARE:
+			result[resource_id] = TRIBUTE_RARE_PER_STAR * (king.stars - TRIBUTE_RARE_FROM + 1)
+	return result
+
+
+## Every vassal's tribute together (part of the kingdom's income).
+func tribute() -> Dictionary[StringName, int]:
+	var total: Dictionary[StringName, int] = {}
+	for nation in vassals():
+		Economy.add_into(total, tribute_of(nation.vassal))
+	return total
+
+
+## Whether `general` may be crowned king of the destroyed `nation_id`'s land.
+func check_crown(state: KingdomState, nation_id: StringName, general: General) -> Result:
+	if not active:
+		return Result.NOT_ACTIVE
+	if not nations.has(nation_id) or nation_id == REBELS:
+		return Result.NOT_CONQUERED
+	var nation := nations[nation_id]
+	if nation.vassal != null:
+		return Result.ALREADY_VASSAL
+	if not nation.destroyed or towns[nation.capital()].owner != PLAYER:
+		return Result.NOT_CONQUERED
+	if general == null or not state.generals.generals.has(general):
+		return Result.NO_GENERAL
+	if general == state.generals.commander:
+		return Result.IS_COMMANDER
+	if not general.is_ready():
+		return Result.GENERAL_BUSY
+	return Result.OK
+
+
+## Crowns `general` king of the land: they leave our generals for good (their items come back to
+## the storage), the pacifying starts and the vassal raises its first army.
+func crown(state: KingdomState, nation_id: StringName, general: General) -> Result:
+	var result := check_crown(state, nation_id, general)
+	if result != Result.OK:
+		return result
+	var nation := nations[nation_id]
+	state.equipment.take_back(general)
+	state.generals.dismiss(general)
+	nation.vassal = general
+	nation.vassal_turn = state.turn
+	treasury[nation_id] = 0.0
+	RealmVassals.raise_army(self, state, nation)
+	return Result.OK
+
+
+## Vassals whose whole land is lost fall: the king is gone, their armies break up. Returns the
+## fallen nations' names.
+func check_vassals() -> Array[String]:
+	var fallen: Array[String] = []
+	for nation in vassals():
+		if region_towns(nation.region).is_empty():
+			nation.vassal = null
+			treasury.erase(nation.id)
+			for army in armies_of(nation.id):
+				remove_army(army)
+			fallen.append(nation.name)
+	return fallen
+
+
+## The vassal's share of a battle for `town`: its armies there lose their share of the defenders'
+## losses (all of them when the town falls); the guard comes back every turn.
+func _vassal_losses(town: Town, record: BattleRecord, won: bool) -> void:
+	var here := armies_at(town.id).filter(func(army: NationArmy) -> bool: return is_ally(army))
+	if here.is_empty():
+		return
+	if not won:
+		for army: NationArmy in here:
+			remove_army(army)
+		return
+	var lost := BattleOutcome.soldiers_lost(record, BattleRecord.DEFENDER)
+	var ours := 0
+	for army: NationArmy in here:
+		ours += army.soldiers
+	var total := ours + vassal_guard(town) + militia_soldiers(town)
+	for force in forces_at(town.id):
+		total += force.soldiers()
+	RealmWar.spread_losses(self, here, roundi(float(lost) * ours / maxf(1.0, total)))
 
 
 # --- Turns --------------------------------------------------------------------------------
@@ -851,9 +1028,12 @@ func end_turn(state: KingdomState) -> Dictionary:
 		if force.town != from:
 			marched.append({"general": force.general.name if force.general != null else "", "from": from,
 					"to": force.town})
+	var news: Array[String] = []
+	news.append_array(RealmVassals.run_turn(self, state))
 	var war := {"news": [], "threats": []}
 	if ai_enabled:
 		war = RealmWar.run_turn(self, state)
+	news.append_array(war.news)
 	var attacked := {}
 	for entry in pending_attacks:
 		attacked[entry.town] = true
@@ -870,7 +1050,9 @@ func end_turn(state: KingdomState) -> Dictionary:
 			revolted.append({"town": town.id, "to": town.owner})
 		elif pending_revolt.is_empty():
 			pending_revolt = {"town": town.id, "rebels": rebels}
-	return {"replenished": regained, "marched": marched, "news": war.news, "threats": war.threats,
+	for name in check_vassals():
+		news.append("Chư hầu %s sụp đổ: vùng đất đã mất hết." % name)
+	return {"replenished": regained, "marched": marched, "news": news, "threats": war.threats,
 			"attacks": pending_attacks.duplicate(true), "revolted": revolted, "revolt": pending_revolt}
 
 
@@ -927,6 +1109,8 @@ func finish_enemy_attack(state: KingdomState, record: BattleRecord) -> Dictionar
 
 ## Intercepting `army` (an enemy army that announced an attack) from a neighboring town.
 func check_intercept(force: Force, army: NationArmy) -> Result:
+	if army != null and is_ally(army):
+		return Result.NO_ENEMY_ARMY
 	if army == null or not armies.has(army):
 		return Result.NO_ENEMY_ARMY
 	var basic := _check_step(force, army.town)
@@ -1018,6 +1202,12 @@ func town_defenders(state: KingdomState, town: Town) -> BattleSide:
 	for unit_id in MILITIA_UNITS:
 		militia[unit_id] = MILITIA_UNITS[unit_id] / MILITIA_UNITS.size()
 	_add_weighted(defenders, militia, militia_soldiers(town), state)
+	var vassal := vassal_of(town)
+	if vassal != null:
+		var soldiers := vassal_guard(town)
+		for army in armies_at(town.id):
+			soldiers += army.soldiers
+		add_nation_units(defenders, vassal, soldiers, state)
 	man_walls(defenders, town)
 	return defenders
 
@@ -1055,6 +1245,7 @@ func _finish_town_battle(state: KingdomState, town: Town, record: BattleRecord, 
 			BattleRecord.DEFENDER)
 	var enemy_lost := BattleOutcome.soldiers_lost(record, BattleRecord.ATTACKER)
 	var retreated_to := -1
+	_vassal_losses(town, record, won)
 	if not won:
 		retreated_to = _lose_town(state, town, maxi(1, attackers - enemy_lost), revolt, to)
 	for force in here:
@@ -1062,7 +1253,8 @@ func _finish_town_battle(state: KingdomState, town: Town, record: BattleRecord, 
 		if force.squads.is_empty() or force.general == null:
 			disband(state, force, true)
 	result.merge({"record": record, "won": won, "town": town.id, "nation": town.nation, "enemy_lost": enemy_lost,
-			"general": general, "lost_town": not won, "retreated_to": retreated_to, "owner": town.owner})
+			"general": general, "lost_town": not won, "retreated_to": retreated_to, "owner": town.owner,
+			"vassals_fallen": check_vassals()})
 	return result
 
 
@@ -1132,6 +1324,12 @@ static func describe(result: Result) -> String:
 			return "Đạo quân địch này không còn."
 		Result.NOT_MARCHING:
 			return "Chỉ đánh chặn được đạo quân địch đang chuẩn bị tấn công."
+		Result.NOT_CONQUERED:
+			return "Chỉ phong vương ở nước đã bị diệt khi kinh đô cũ đang trong tay ta."
+		Result.ALREADY_VASSAL:
+			return "Vùng này đã có chư hầu."
+		Result.IS_COMMANDER:
+			return "Không phong vương Tổng tướng được: đổi Tổng tướng trước."
 	return ""
 
 
@@ -1146,7 +1344,11 @@ func to_save(state: KingdomState) -> Dictionary:
 				"garrison": town.garrison, "max": town.max_garrison, "captured_turn": town.captured_turn})
 	var nation_saves := {}
 	for nation in nations.values():
-		nation_saves[String(nation.id)] = {"region": nation.region, "destroyed": nation.destroyed}
+		var entry := {"region": nation.region, "destroyed": nation.destroyed}
+		if nation.vassal != null:
+			entry["vassal"] = nation.vassal.to_save()
+			entry["vassal_turn"] = nation.vassal_turn
+		nation_saves[String(nation.id)] = entry
 	var force_saves: Array = []
 	for force in forces:
 		force_saves.append({"general": state.generals.generals.find(force.general), "town": force.town,
@@ -1190,6 +1392,10 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 		nation.name = RealmMap.nation_data(nation.id).get("name", REBEL_NAME)
 		nation.region = int(entry.region)
 		nation.destroyed = bool(entry.destroyed)
+		var vassal_data: Dictionary = entry.get("vassal", {})
+		if not vassal_data.is_empty():
+			nation.vassal = General.from_save(vassal_data)
+			nation.vassal_turn = int(entry.get("vassal_turn", 0))
 		nation.color = REBEL_COLOR if nation.id == REBELS else RealmMap.nation_color(nation.id, state.player_color)
 		nations[nation.id] = nation
 	for i in data.towns.size():
