@@ -47,6 +47,7 @@ const TEST_FILES := [
 	"res://tests/test_m18f_realm.gd",
 	"res://tests/test_m18f_balance.gd",
 	"res://tests/test_m18g_qol.gd",
+	"res://tests/test_m18f_b1_war.gd",
 ]
 
 

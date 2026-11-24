@@ -2,7 +2,7 @@ class_name ArmyDetailWindow
 extends ModalWindow
 ## "Chi tiết đạo quân" (GDD §34, M18g): the general and every squad of a realm army with its
 ## soldiers out of a full squad, how many it regains a turn where the army stands
-## (Realm.replenish_at) and how many turns until it is full. Read-only.
+## (Realm.replenish_share) and how many turns until it is full. Read-only.
 
 const WIDTH := 0.46
 const ICON_SIZE := 34
@@ -17,25 +17,28 @@ func open(state: KingdomState, force: Realm.Force) -> void:
 	info.add_child(_label("Tướng %s %s" % [general.name, general.star_text()], 17))
 	info.add_child(_label("Võ lực %d · Thống suất %d" % [general.total_might(), general.total_command()], 14))
 	var town := state.realm.towns[force.town]
-	var per_turn := state.realm.replenish_at(force.town)
+	var home_share := state.replenish_fraction()
+	var share := state.realm.replenish_share(force.town, home_share)
 	info.add_child(_label("Đang ở %s · %d/%d đơn vị · %d lính" % [town.name, force.squads.size(),
 			Realm.MAX_ARMY_SQUADS, force.soldiers()], 14))
-	var gain := _label(("Hồi quân: +%d lính mỗi đơn vị mỗi lượt%s." % [per_turn,
-			" (kinh đô)" if town.is_capital() else ""]) if per_turn > 0 else "Không hồi quân trên đất địch.", 14)
-	gain.add_theme_color_override("font_color", UiPalette.GOOD if per_turn > 0 else UiPalette.WARNING)
+	var why := "Không hồi quân trên đất địch." if town.owner != Realm.PLAYER else "Cần doanh trại để hồi quân."
+	var gain := _label(("Hồi quân: %d%% quân số mỗi đơn vị mỗi lượt%s." % [roundi(share * 100.0),
+			" (kinh đô)" if town.is_capital() else ""]) if share > 0.0 else why, 14)
+	gain.add_theme_color_override("font_color", UiPalette.GOOD if share > 0.0 else UiPalette.WARNING)
 	info.add_child(gain)
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(_row([portrait, info]))
 	body.add_child(HSeparator.new())
 	for squad in force.squads:
-		body.add_child(_squad_row(state, squad, per_turn))
-	if per_turn < Realm.CAPITAL_REPLENISH:
-		var hint := _label("Đứng ở kinh đô (của ta hoặc kinh đô địch đã chiếm) hồi +%d mỗi lượt." % Realm.CAPITAL_REPLENISH, 13)
+		body.add_child(_squad_row(state, squad, share))
+	var capital_share := minf(home_share, Realm.CAPITAL_REPLENISH_CAP)
+	if share < capital_share:
+		var hint := _label("Đứng ở kinh đô (của ta hoặc kinh đô địch đã chiếm) hồi %d%% mỗi lượt. Tỉ lệ theo hồi quân ở nhà (doanh trại)." % roundi(capital_share * 100.0), 13)
 		hint.add_theme_color_override("font_color", UiPalette.MUTED)
 		body.add_child(hint)
 
 
-func _squad_row(state: KingdomState, squad: Army.Squad, per_turn: int) -> HBoxContainer:
+func _squad_row(state: KingdomState, squad: Army.Squad, share: float) -> HBoxContainer:
 	var unit: UnitData = state.units[squad.unit_id]
 	var full := unit.squad_size
 	var name_label := _label("%s · cấp %d" % [unit.display_name, squad.level()], 14, false)
@@ -50,6 +53,7 @@ func _squad_row(state: KingdomState, squad: Army.Squad, per_turn: int) -> HBoxCo
 	var count := _label("%d/%d" % [squad.soldiers, full], 14, false)
 	count.custom_minimum_size.x = 56
 	var missing := full - squad.soldiers
+	var per_turn := Realm.replenish_gain(full, share)
 	var text := "Đủ quân"
 	var color := UiPalette.GOOD
 	if missing > 0 and per_turn > 0:
@@ -73,10 +77,16 @@ static func unit_icon(unit: UnitData, size: int) -> TextureRect:
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var sheet := GameArt.unit_sheet(unit.get_sprite_id())
-	if sheet != null:
-		var atlas := AtlasTexture.new()
-		atlas.atlas = sheet
-		atlas.region = GameArt.unit_frame(sheet, &"stand", 0)
-		icon.texture = atlas
+	icon.texture = unit_texture(unit)
 	return icon
+
+
+## The unit's first standing frame (null without a sprite sheet).
+static func unit_texture(unit: UnitData) -> Texture2D:
+	var sheet := GameArt.unit_sheet(unit.get_sprite_id())
+	if sheet == null:
+		return null
+	var atlas := AtlasTexture.new()
+	atlas.atlas = sheet
+	atlas.region = GameArt.unit_frame(sheet, &"stand", 0)
+	return atlas

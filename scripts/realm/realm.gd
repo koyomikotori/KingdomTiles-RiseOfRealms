@@ -11,25 +11,33 @@ extends RefCounted
 ##   one road a turn; entering an enemy town is a siege (create_siege / finish_siege) where the
 ##   defenders get the walls' bonus. A won siege takes the town (and its loot); taking a nation's
 ##   capital destroys the nation and hands over its other towns.
-## - Armies standing on a kingdom town regain soldiers every turn (end_turn): ARMY_REPLENISH per
-##   squad, CAPITAL_REPLENISH on a capital (ours or one we took).
+## - Armies standing on a kingdom town regain a share of every squad's full size each turn
+##   (end_turn, replenish_share): half the kingdom's own share (KingdomState.replenish_fraction)
+##   up to TOWN_REPLENISH_CAP, the whole share up to CAPITAL_REPLENISH_CAP on a capital.
 ## - Several armies ordered against the same town fight its siege together (M18g).
 ## - Captured towns pay TOWN_YIELD, add squads to the kingdom's capacity and replenishment.
-## - Counterattacks (end_turn): a nation not yet destroyed may send part of a neighboring town's
-##   garrison against a town it lost; the town's armies (if any) and its militia defend it.
+## - The nations' armies (NationArmy, RealmWar, M18f-b1): each nation raises armies from a
+##   treasury, announces an attack a turn ahead and carries it out when the next turn ends; against
+##   a town of ours it is fought at the start of the turn after (pending_attacks), between nations
+##   it is simulated at once. Our armies can intercept an army that announced an attack.
 ## - Revolts (end_turn, M18g): a captured town may rise (revolt_chance: less with an army there,
 ##   much less once its nation is gone). Without an army it is lost at once; with one the rebels
 ##   attack at the start of the next turn (pending_revolt). A lost town goes back to its nation, or
 ##   to the rebels (REBELS) when the nation is gone.
 
 enum Result { OK, NOT_ACTIVE, NO_GENERAL, GENERAL_BUSY, NO_SQUADS, TOO_MANY_SQUADS, SQUAD_BUSY, NOT_AT_CAPITAL,
-		ALREADY_MOVED, NOT_NEIGHBOR, ENEMY_TOWN, OWN_TOWN, GENERAL_WOUNDED, ALREADY_HOME, NO_ROUTE, NO_ORDER }
+		ALREADY_MOVED, NOT_NEIGHBOR, ENEMY_TOWN, OWN_TOWN, GENERAL_WOUNDED, ALREADY_HOME, NO_ROUTE, NO_ORDER, NO_ENEMY_ARMY, NOT_MARCHING }
 
 ## Army orders (GDD §34, M18g): given during the turn, carried out when it ends (a march, a step of
 ## the way home) or at the start of the next one (a siege, after the turn's raid or expedition).
 const MOVE: StringName = &"move"
 const SIEGE: StringName = &"siege"
 const HOME: StringName = &"home"
+## Attacking an enemy army that announced an attack, in the open (M18f-b1): `target` is its town,
+## `army` its id; fought at the start of the next turn like a siege.
+const INTERCEPT: StringName = &"intercept"
+## Save format of the realm: 2 = halved garrisons and nation armies (M18f-b1).
+const SAVE_VERSION := 2
 
 const PLAYER: StringName = &"player"
 ## The owner of a town that rose against us after its nation was destroyed.
@@ -41,7 +49,7 @@ const HOME_CAPITAL := RealmMap.HOME_REGION * RealmMap.TOWNS_PER_REGION + RealmMa
 const MAX_GENERALS := 9
 const MAX_ARMY_SQUADS := 20
 ## Garrison soldiers of a town by its region's distance from the kingdom (1 … 3).
-const GARRISON_BY_DISTANCE: Array[int] = [0, 220, 320, 440]
+const GARRISON_BY_DISTANCE: Array[int] = [0, 110, 160, 220]
 const CAPITAL_GARRISON := 2.0
 const GARRISON_REGEN := 0.1
 ## The walls: defenders' defense multiplier and morale (capitals more).
@@ -49,10 +57,13 @@ const WALL_DEFENSE := 0.15
 const CAPITAL_WALL_DEFENSE := 0.3
 const WALL_MORALE := 2.0
 const CAPITAL_WALL_MORALE := 4.0
-## Soldiers every squad of an army regains a turn on a town of ours (on a capital, ours or taken,
-## more); TOWN_REPLENISH per captured town is added to the kingdom's own replenishment.
-const ARMY_REPLENISH := 1
-const CAPITAL_REPLENISH := 3
+## The share of a squad's full size an army regains a turn on a town of ours: the kingdom's own
+## replenishment × TOWN_REPLENISH_SHARE up to TOWN_REPLENISH_CAP, on a capital (ours or taken) the
+## whole of it up to CAPITAL_REPLENISH_CAP. TOWN_REPLENISH per captured town is added to the
+## kingdom's own replenishment.
+const TOWN_REPLENISH_SHARE := 0.5
+const TOWN_REPLENISH_CAP := 0.15
+const CAPITAL_REPLENISH_CAP := 0.3
 const TOWN_REPLENISH := 0.01
 ## Squads every town of ours (the five home towns too) adds to the kingdom's capacity.
 const TOWN_SQUADS := 5
@@ -64,15 +75,13 @@ const CAPITAL_YIELD := 2
 const CAPTURE_LOOT: Dictionary[StringName, int] = {&"food": 120, &"wood": 120, &"stone": 120, &"ore": 40,
 		&"hardwood": 40, &"horses": 40}
 const CAPITAL_LOOT := 3
-## A captured town's own defenders: MILITIA_BASE peasants.
+## A captured town's own defenders: MILITIA_BASE peasants; a town of the united clans has
+## HOME_MILITIA (M18f-b1: the nations' armies can attack it).
 const MILITIA_BASE := 40
+const HOME_MILITIA := 300
 const MILITIA_UNITS: Dictionary[StringName, float] = {&"spearman": 1.0, &"archer": 1.0}
-## Counterattacks: chance a turn when some lost town can be attacked, the share of the neighboring
-## garrison sent, turns a newly taken town is left alone, and the fewest soldiers worth sending.
-const COUNTER_CHANCE := 0.25
-const COUNTER_SHARE := 0.5
-const COUNTER_GRACE := 2
-const COUNTER_MIN := 40
+## The fewest rebels that rise in a town.
+const REBEL_MIN := 40
 ## Revolts: chance a turn for a captured town left alone, with an army in it, and once its nation
 ## is destroyed; none in the first REVOLT_GRACE turns. The
 ## rebels number REBEL_SHARE of the town's usual garrison.
@@ -127,6 +136,8 @@ class Force:
 	var target := -1
 	## The turn the order was given (a siege is fought on a later turn's start).
 	var order_turn := 0
+	## The enemy army an INTERCEPT order is against (NationArmy.id), else -1.
+	var army := -1
 
 	func has_order() -> bool:
 		return order != &""
@@ -142,8 +153,15 @@ var active := false
 var towns: Array[Town] = []
 var nations: Dictionary[StringName, Nation] = {}
 var forces: Array[Force] = []
-## The counterattack waiting to be played: {"town", "source", "sent"} (end_turn → finish_counter).
-var pending_counter := {}
+## The nations' armies, their treasuries (nation id -> points) and the next army id.
+var armies: Array[NationArmy] = []
+var treasury: Dictionary[StringName, float] = {}
+var next_army_id := 1
+## Attacks on towns of ours waiting for the start of the turn: [{"town", "armies": [army ids]}]
+## (end_turn → create_enemy_attack / finish_enemy_attack, first one first); saved.
+var pending_attacks: Array[Dictionary] = []
+## The nations act at the end of a turn (tests turn it off to keep the map still).
+var ai_enabled := true
 ## The revolt waiting to be fought at the start of the turn: {"town", "rebels"} (end_turn →
 ## create_revolt / finish_revolt); saved.
 var pending_revolt := {}
@@ -156,6 +174,10 @@ func start(state: KingdomState) -> void:
 	towns.clear()
 	nations.clear()
 	forces.clear()
+	armies.clear()
+	treasury.clear()
+	pending_attacks.clear()
+	next_army_id = 1
 	var ids: Array = RealmMap.NATIONS.map(func(data: Dictionary) -> StringName: return data.id)
 	for i in range(ids.size() - 1, 0, -1):
 		var j := rng.randi_range(0, i)
@@ -187,6 +209,8 @@ func start(state: KingdomState) -> void:
 			town.max_garrison = garrison_for(id, state.wars.enemy_scale)
 			town.garrison = town.max_garrison
 		towns.append(town)
+	for nation in RealmWar.live_nations(self):
+		RealmWar.raise_army(self, state, nation)
 
 
 ## The four non-capital slots in order (N, W, E, S) → 0..3.
@@ -254,6 +278,57 @@ func count_owned(owner: StringName) -> int:
 
 func forces_at(town: int) -> Array[Force]:
 	return forces.filter(func(force: Force) -> bool: return force.town == town)
+
+
+func armies_at(town: int) -> Array[NationArmy]:
+	return armies.filter(func(army: NationArmy) -> bool: return army.town == town)
+
+
+func armies_of(nation_id: StringName) -> Array[NationArmy]:
+	return armies.filter(func(army: NationArmy) -> bool: return army.nation == nation_id)
+
+
+func army_by_id(id: int) -> NationArmy:
+	for army in armies:
+		if army.id == id:
+			return army
+	return null
+
+
+## Enemy armies whose announced attack is on `town`.
+func armies_targeting(town: int) -> Array[NationArmy]:
+	return armies.filter(func(army: NationArmy) -> bool: return army.target == town)
+
+
+## The army is gone (beaten): it leaves the map and any attack waiting for it.
+func remove_army(army: NationArmy) -> void:
+	armies.erase(army)
+	for entry in pending_attacks:
+		entry.armies.erase(army.id)
+	pending_attacks.assign(pending_attacks.filter(func(entry: Dictionary) -> bool: return not entry.armies.is_empty()))
+
+
+## Takes `lost` soldiers from an enemy town's garrison and its owner's armies there, in proportion.
+func spread_town_losses(town: Town, lost: int) -> void:
+	var here := armies_at(town.id)
+	var total := town.garrison
+	for army in here:
+		total += army.soldiers
+	if total <= 0:
+		return
+	town.garrison = maxi(0, town.garrison - roundi(float(lost) * town.garrison / total))
+	for army in here:
+		army.soldiers = maxi(0, army.soldiers - roundi(float(lost) * army.soldiers / total))
+		if army.soldiers <= 0:
+			remove_army(army)
+
+
+## Soldiers defending an enemy town: its garrison and its owner's armies in it.
+func town_soldiers(town: Town) -> int:
+	var total := town.garrison
+	for army in armies_at(town.id):
+		total += army.soldiers
+	return total
 
 
 # --- Armies -------------------------------------------------------------------------------
@@ -392,6 +467,7 @@ func _set_order(force: Force, kind: StringName, town: int, turn: int) -> void:
 	force.order = kind
 	force.target = town
 	force.order_turn = turn
+	force.army = -1
 
 
 ## The shortest way from `from` to `to` along roads through towns of ours (both ends excluded
@@ -485,8 +561,11 @@ func create_siege(state: KingdomState, group: Array, town_id: int) -> BattleSimu
 	var attackers := group_side(state, group)
 	var defenders := BattleSide.new("%s (%s)" % [town.name, nations[town.owner].name])
 	defenders.color = nations[town.owner].color
-	add_nation_units(defenders, nations[town.owner], town.garrison, state)
-	_man_walls(defenders, town)
+	add_nation_units(defenders, nations[town.owner], town_soldiers(town), state)
+	var guard := RealmWar.leader_of(armies_at(town.id))
+	if guard != null:
+		state.generals.lead_officer(defenders, guard.general)
+	man_walls(defenders, town)
 	return BattleSimulator.new(attackers, defenders, rng.randi())
 
 
@@ -562,7 +641,7 @@ static func _add_weighted(side: BattleSide, weights: Dictionary, soldiers: int, 
 
 
 ## The walls: every defender (lent or not) fights better and holds longer.
-static func _man_walls(side: BattleSide, town: Town) -> void:
+static func man_walls(side: BattleSide, town: Town) -> void:
 	for unit in side.units:
 		unit.defense_mult += CAPITAL_WALL_DEFENSE if town.is_capital() else WALL_DEFENSE
 		unit.morale += CAPITAL_WALL_MORALE if town.is_capital() else WALL_MORALE
@@ -580,14 +659,18 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 			state.building_effect(&"retreat_keep"))
 	var general := _general_after(state, leader_of(group), record, BattleRecord.ATTACKER)
 	var enemy_lost := BattleOutcome.soldiers_lost(record, BattleRecord.DEFENDER)
-	town.garrison = maxi(0, town.garrison - enemy_lost)
 	var loot: Dictionary[StringName, int] = {}
 	var destroyed: StringName = &""
 	var gained: Array[int] = []
-	if won:
+	if not won:
+		spread_town_losses(town, enemy_lost)
+	else:
+		for army in armies_at(town_id):
+			remove_army(army)
 		var old_owner := town.owner
 		loot = capture(state, town)
-		if town.is_capital() and old_owner != PLAYER and old_owner != REBELS:
+		if town.is_capital() and old_owner != PLAYER and old_owner != REBELS \
+				and nations[old_owner].capital() == town_id:
 			destroyed = old_owner
 			gained = destroy_nation(state, old_owner)
 	var disbanded := 0
@@ -640,6 +723,9 @@ func capture(state: KingdomState, town: Town) -> Dictionary[StringName, int]:
 ## The nation falls with its capital: its other towns are handed over. Returns their ids.
 func destroy_nation(state: KingdomState, nation_id: StringName) -> Array[int]:
 	nations[nation_id].destroyed = true
+	treasury.erase(nation_id)
+	for army in armies_of(nation_id):
+		remove_army(army)
 	var gained: Array[int] = []
 	for town in towns:
 		if town.owner == nation_id:
@@ -680,16 +766,24 @@ func replenish_bonus() -> float:
 	return TOWN_REPLENISH * captured_towns().size()
 
 
-func militia_soldiers(_town: Town) -> int:
-	return MILITIA_BASE
+func militia_soldiers(town: Town) -> int:
+	return MILITIA_BASE if town.is_captured() else HOME_MILITIA
 
 
-## Soldiers each squad of an army standing in `town_id` regains a turn (0 on an enemy town).
-func replenish_at(town_id: int) -> int:
+## The share of a squad's full size an army standing in `town_id` regains a turn, from the
+## kingdom's own share `home_share` (0 on an enemy town).
+func replenish_share(town_id: int, home_share: float) -> float:
 	var town := towns[town_id]
-	if town.owner != PLAYER:
-		return 0
-	return CAPITAL_REPLENISH if town.is_capital() else ARMY_REPLENISH
+	if town.owner != PLAYER or home_share <= 0.0:
+		return 0.0
+	if town.is_capital():
+		return minf(home_share, CAPITAL_REPLENISH_CAP)
+	return minf(home_share * TOWN_REPLENISH_SHARE, TOWN_REPLENISH_CAP)
+
+
+## Soldiers a squad of `full` soldiers regains a turn at `share` (rounded up, 0 at no share).
+static func replenish_gain(full: int, share: float) -> int:
+	return ceili(full * share) if share > 0.0 else 0
 
 
 ## The chance a turn that a captured town revolts (0 for our own towns and new conquests).
@@ -702,21 +796,23 @@ func revolt_chance(town: Town, turn: int) -> float:
 
 
 func rebels_for(town: Town, scale: float) -> int:
-	return maxi(COUNTER_MIN, roundi(garrison_for(town.id, scale) * REBEL_SHARE))
+	return maxi(REBEL_MIN, roundi(garrison_for(town.id, scale) * REBEL_SHARE))
 
 
 # --- Turns --------------------------------------------------------------------------------
 
 ## End of a turn: garrisons regrow, armies on kingdom towns regain soldiers, marches are carried
-## out, a nation may counterattack and captured towns may revolt. Returns {"replenished": soldiers
-## regained, "counter": the pending counterattack ({} without one), "marched": [{general, from,
-## to}], "revolted": [{town, to}] towns lost to a revolt with no army there, "revolt": the
+## out, the nations act (RealmWar.run_turn) and captured towns may revolt. Returns {"replenished":
+## soldiers regained, "marched": [{general, from, to}], "news": [String] fights between nations,
+## "threats": [{army, town}] attacks on our towns announced for next turn, "attacks": the pending
+## attacks, "revolted": [{town, to}] towns lost to a revolt with no army there, "revolt": the
 ## pending revolt ({} without one)}.
 func end_turn(state: KingdomState) -> Dictionary:
-	pending_counter = {}
 	pending_revolt = {}
+	pending_attacks.clear()
 	if not active:
-		return {"replenished": 0, "counter": {}, "marched": [], "revolted": [], "revolt": {}}
+		return {"replenished": 0, "marched": [], "news": [], "threats": [], "attacks": [], "revolted": [],
+				"revolt": {}}
 	# Squads that deserted (unpaid upkeep) or were lost elsewhere leave their army; an empty army
 	# breaks up.
 	for force in forces.duplicate():
@@ -727,10 +823,12 @@ func end_turn(state: KingdomState) -> Dictionary:
 		if town.owner != PLAYER and town.garrison < town.max_garrison:
 			town.garrison = mini(town.max_garrison, town.garrison + ceili(town.max_garrison * GARRISON_REGEN))
 	var regained := 0
+	var home_share := state.replenish_fraction()
 	for force in forces:
-		var per_squad := replenish_at(force.town)
+		var share := replenish_share(force.town, home_share)
 		for squad in force.squads:
-			var gain := mini(per_squad, state.units[squad.unit_id].squad_size - squad.soldiers)
+			var full: int = state.units[squad.unit_id].squad_size
+			var gain := mini(replenish_gain(full, share), full - squad.soldiers)
 			if gain > 0:
 				state.army.add_soldiers(squad, gain)
 				regained += gain
@@ -753,16 +851,15 @@ func end_turn(state: KingdomState) -> Dictionary:
 		if force.town != from:
 			marched.append({"general": force.general.name if force.general != null else "", "from": from,
 					"to": force.town})
-	var targets := counter_targets(state.turn + 1)
-	if not targets.is_empty() and rng.randf() < COUNTER_CHANCE:
-		var town: Town = targets[rng.randi_range(0, targets.size() - 1)]
-		var source := _strongest_neighbor(town)
-		var sent := roundi(source.garrison * COUNTER_SHARE)
-		source.garrison -= sent
-		pending_counter = {"town": town.id, "source": source.id, "sent": sent}
+	var war := {"news": [], "threats": []}
+	if ai_enabled:
+		war = RealmWar.run_turn(self, state)
+	var attacked := {}
+	for entry in pending_attacks:
+		attacked[entry.town] = true
 	var revolted: Array[Dictionary] = []
 	for town in captured_towns():
-		if not pending_counter.is_empty() and pending_counter.town == town.id:
+		if attacked.has(town.id):
 			continue
 		var chance := revolt_chance(town, state.turn + 1)
 		if chance <= 0.0 or rng.randf() >= chance:
@@ -773,48 +870,139 @@ func end_turn(state: KingdomState) -> Dictionary:
 			revolted.append({"town": town.id, "to": town.owner})
 		elif pending_revolt.is_empty():
 			pending_revolt = {"town": town.id, "rebels": rebels}
-	return {"replenished": regained, "counter": pending_counter, "marched": marched, "revolted": revolted,
-			"revolt": pending_revolt}
+	return {"replenished": regained, "marched": marched, "news": war.news, "threats": war.threats,
+			"attacks": pending_attacks.duplicate(true), "revolted": revolted, "revolt": pending_revolt}
 
 
-## Towns their old nation can strike back at on `turn`.
-func counter_targets(turn: int) -> Array[Town]:
-	var result: Array[Town] = []
-	for town in captured_towns():
-		if nations[town.nation].destroyed or turn - town.captured_turn < COUNTER_GRACE:
-			continue
-		var source := _strongest_neighbor(town)
-		if source != null and roundi(source.garrison * COUNTER_SHARE) >= COUNTER_MIN:
-			result.append(town)
+# --- Enemy attacks on our towns and interceptions (M18f-b1) -----------------------------------
+
+## The armies of the first pending attack still on the map.
+func attack_armies(entry: Dictionary) -> Array[NationArmy]:
+	var result: Array[NationArmy] = []
+	for id in entry.armies:
+		var army := army_by_id(int(id))
+		if army != null:
+			result.append(army)
 	return result
 
 
-## The neighboring town of the town's old nation with the biggest garrison, or null.
-func _strongest_neighbor(town: Town) -> Town:
-	var best: Town = null
-	for id in RealmMap.neighbors(town.id):
-		var other := towns[id]
-		if other.owner == town.nation and (best == null or other.garrison > best.garrison):
-			best = other
-	return best
+## The first pending attack's battle: the nation's armies against the town's armies and militia
+## behind its walls. Null (and the attack dropped) when none of its armies is left.
+func create_enemy_attack(state: KingdomState) -> BattleSimulator:
+	while not pending_attacks.is_empty():
+		var entry: Dictionary = pending_attacks[0]
+		var group := attack_armies(entry)
+		var town := towns[entry.town]
+		if group.is_empty() or town.owner != PLAYER:
+			for army in group:
+				army.target = -1
+			pending_attacks.pop_front()
+			continue
+		var attackers := RealmWar.army_side(self, state, group, "Quân %s" % nations[group[0].nation].name)
+		return BattleSimulator.new(attackers, town_defenders(state, town), rng.randi())
+	return null
 
 
-## The army defending `town` (the first one there), or null.
-func defender_of(town_id: int) -> Force:
-	var here := forces_at(town_id)
-	return here[0] if not here.is_empty() else null
+## Applies the first pending attack's battle. Lost: the town goes to the attacking nation, its
+## armies move in and ours fall back. Returns apply_to_army's report plus {"record", "won",
+## "town", "nation" (the attacker's id), "enemy_lost", "general", "lost_town", "retreated_to"}.
+func finish_enemy_attack(state: KingdomState, record: BattleRecord) -> Dictionary:
+	var entry: Dictionary = pending_attacks.pop_front()
+	var group := attack_armies(entry)
+	var town := towns[entry.town]
+	var nation: StringName = group[0].nation if not group.is_empty() else town.nation
+	var enemy_lost := BattleOutcome.soldiers_lost(record, BattleRecord.ATTACKER)
+	var result := _finish_town_battle(state, town, record, enemy_lost, false, nation)
+	for army in group:
+		army.target = -1
+	RealmWar.spread_losses(self, group, enemy_lost)
+	if not result.won:
+		town.garrison = 0
+		for army in group:
+			if armies.has(army):
+				army.town = town.id
+	result["nation"] = nation
+	return result
 
 
-## The pending counterattack's battle: the nation attacks, the town's army and militia defend.
-func create_counter(state: KingdomState) -> BattleSimulator:
-	if pending_counter.is_empty():
+## Intercepting `army` (an enemy army that announced an attack) from a neighboring town.
+func check_intercept(force: Force, army: NationArmy) -> Result:
+	if army == null or not armies.has(army):
+		return Result.NO_ENEMY_ARMY
+	var basic := _check_step(force, army.town)
+	if basic != Result.OK:
+		return basic
+	if not army.has_target():
+		return Result.NOT_MARCHING
+	if force.general == null or force.general.wounded_turns > 0:
+		return Result.GENERAL_WOUNDED
+	return Result.OK
+
+
+func order_intercept(force: Force, army: NationArmy, turn: int) -> Result:
+	var result := check_intercept(force, army)
+	if result == Result.OK:
+		_set_order(force, INTERCEPT, army.town, turn)
+		force.army = army.id
+	return result
+
+
+## Interceptions due at the start of `turn`, grouped by the enemy army: [[Force, …], …].
+func due_intercept_groups(turn: int) -> Array[Array]:
+	var groups: Array[Array] = []
+	var by_army := {}
+	for force in forces:
+		if force.order != INTERCEPT or force.order_turn >= turn:
+			continue
+		if not by_army.has(force.army):
+			by_army[force.army] = groups.size()
+			groups.append([])
+		groups[by_army[force.army]].append(force)
+	return groups
+
+
+## The interception battle in the open: our armies of `group` against that one army (no walls,
+## no garrison). Null when it can no longer happen (the army is gone or has moved).
+func create_intercept(state: KingdomState, group: Array, army_id: int) -> BattleSimulator:
+	var army := army_by_id(army_id)
+	if army == null or group.is_empty():
 		return null
-	var town := towns[pending_counter.town]
-	var nation := nations[town.nation]
-	var attackers := BattleSide.new("Quân %s" % nation.name)
-	attackers.color = nation.color
-	add_nation_units(attackers, nation, pending_counter.sent, state)
-	return BattleSimulator.new(attackers, town_defenders(state, town), rng.randi())
+	for force: Force in group:
+		if check_intercept(force, army) != Result.OK:
+			return null
+	var defenders := RealmWar.army_side(self, state, [army], "Đạo quân %s (%s)" % [army.general.name,
+			nations[army.nation].name])
+	return BattleSimulator.new(group_side(state, group), defenders, rng.randi())
+
+
+## Applies an interception. Won: the enemy army breaks up and its attack is off. Our armies stay
+## where they were. Returns apply_to_army's report plus {"record", "won", "enemy_lost", "general",
+## "disbanded", "armies", "nation"}.
+func finish_intercept(state: KingdomState, group: Array, army_id: int, record: BattleRecord) -> Dictionary:
+	var army := army_by_id(army_id)
+	var won := record.winner == BattleRecord.ATTACKER
+	state.count_stat("battles_won" if won else "battles_lost")
+	var result := BattleOutcome.apply_to_army(state.army, record, BattleRecord.ATTACKER, false,
+			state.building_effect(&"retreat_keep"))
+	var general := _general_after(state, leader_of(group), record, BattleRecord.ATTACKER)
+	var enemy_lost := BattleOutcome.soldiers_lost(record, BattleRecord.DEFENDER)
+	var nation: StringName = army.nation if army != null else &""
+	if army != null:
+		if won:
+			remove_army(army)
+		else:
+			RealmWar.spread_losses(self, [army], enemy_lost)
+	var disbanded := 0
+	for force: Force in group:
+		_drop_lost_squads(state, force)
+		_set_order(force, &"", -1, 0)
+		if force.squads.is_empty() or force.general == null:
+			disband(state, force, true)
+			disbanded += 1
+	result.merge({"record": record, "won": won, "enemy_lost": enemy_lost, "general": general,
+			"disbanded": disbanded, "armies": group.size(), "nation": nation,
+			"item": state.equipment.roll_loot(true, state.stockpile) if won else {}})
+	return result
 
 
 ## A town of ours under attack: every army in it, its militia, behind its walls.
@@ -830,7 +1018,7 @@ func town_defenders(state: KingdomState, town: Town) -> BattleSide:
 	for unit_id in MILITIA_UNITS:
 		militia[unit_id] = MILITIA_UNITS[unit_id] / MILITIA_UNITS.size()
 	_add_weighted(defenders, militia, militia_soldiers(town), state)
-	_man_walls(defenders, town)
+	man_walls(defenders, town)
 	return defenders
 
 
@@ -845,23 +1033,7 @@ func create_revolt(state: KingdomState) -> BattleSimulator:
 	return BattleSimulator.new(attackers, town_defenders(state, town), rng.randi())
 
 
-## Applies the counterattack's battle. Lost: the town goes back to its nation with the attackers'
-## survivors and its armies fall back to a neighboring kingdom town (or the capital). Won: the
-## survivors go back to where they came from.
-## Returns apply_to_army's report plus {"record", "won", "town", "nation", "enemy_lost", "general",
-## "lost_town": bool, "retreated_to": town id or -1}.
-func finish_counter(state: KingdomState, record: BattleRecord) -> Dictionary:
-	var town := towns[pending_counter.town]
-	var source := towns[pending_counter.source]
-	var sent: int = pending_counter.sent
-	pending_counter = {}
-	var result := _finish_town_battle(state, town, record, sent, false)
-	if result.won and source.owner == town.nation:
-		source.garrison = mini(source.max_garrison, source.garrison + maxi(0, sent - result.enemy_lost))
-	return result
-
-
-## Applies the revolt's battle, like finish_counter; a lost town goes to its nation or the rebels.
+## Applies the revolt's battle: a lost town goes to its nation or the rebels (_finish_town_battle).
 func finish_revolt(state: KingdomState, record: BattleRecord) -> Dictionary:
 	var town := towns[pending_revolt.town]
 	var rebels: int = pending_revolt.rebels
@@ -869,8 +1041,11 @@ func finish_revolt(state: KingdomState, record: BattleRecord) -> Dictionary:
 	return _finish_town_battle(state, town, record, rebels, true)
 
 
+## A battle for a town of ours: losses, the general, a lost town (to `to`, else its nation or the
+## rebels) and our armies there. Returns apply_to_army's report plus {"record", "won", "town",
+## "nation", "enemy_lost", "general", "lost_town", "retreated_to", "owner"}.
 func _finish_town_battle(state: KingdomState, town: Town, record: BattleRecord, attackers: int,
-		revolt: bool) -> Dictionary:
+		revolt: bool, to: StringName = &"") -> Dictionary:
 	var won := record.winner == BattleRecord.DEFENDER
 	state.count_stat("battles_won" if won else "battles_lost")
 	var here := forces_at(town.id)
@@ -881,7 +1056,7 @@ func _finish_town_battle(state: KingdomState, town: Town, record: BattleRecord, 
 	var enemy_lost := BattleOutcome.soldiers_lost(record, BattleRecord.ATTACKER)
 	var retreated_to := -1
 	if not won:
-		retreated_to = _lose_town(state, town, maxi(1, attackers - enemy_lost), revolt)
+		retreated_to = _lose_town(state, town, maxi(1, attackers - enemy_lost), revolt, to)
 	for force in here:
 		_drop_lost_squads(state, force)
 		if force.squads.is_empty() or force.general == null:
@@ -894,8 +1069,11 @@ func _finish_town_battle(state: KingdomState, town: Town, record: BattleRecord, 
 ## The town is no longer ours: it goes back to its nation (or, after a revolt in a destroyed
 ## nation's land, to the rebels) holding `holders` soldiers; armies there fall back to a
 ## neighboring town of ours (or the capital) and drop their orders. Returns where they went.
-func _lose_town(state: KingdomState, town: Town, holders: int, revolt: bool) -> int:
-	if revolt and nations[town.nation].destroyed:
+func _lose_town(state: KingdomState, town: Town, holders: int, revolt: bool, to: StringName = &"") -> int:
+	if to != &"":
+		town.owner = to
+		town.max_garrison = garrison_for(town.id, state.wars.enemy_scale)
+	elif revolt and nations[town.nation].destroyed:
 		_rebels()
 		town.owner = REBELS
 		town.max_garrison = rebels_for(town, state.wars.enemy_scale)
@@ -950,6 +1128,10 @@ static func describe(result: Result) -> String:
 			return "Trấn này đã là của ta."
 		Result.GENERAL_WOUNDED:
 			return "Tướng đang bị thương, chưa công thành được."
+		Result.NO_ENEMY_ARMY:
+			return "Đạo quân địch này không còn."
+		Result.NOT_MARCHING:
+			return "Chỉ đánh chặn được đạo quân địch đang chuẩn bị tấn công."
 	return ""
 
 
@@ -968,9 +1150,14 @@ func to_save(state: KingdomState) -> Dictionary:
 	var force_saves: Array = []
 	for force in forces:
 		force_saves.append({"general": state.generals.generals.find(force.general), "town": force.town,
-				"order": String(force.order), "target": force.target, "order_turn": force.order_turn,
+				"order": String(force.order), "target": force.target, "order_turn": force.order_turn, "army": force.army,
 				"squads": force.squads.map(func(squad: Army.Squad) -> int: return state.army.squads.find(squad))})
-	return {"towns": town_saves, "nations": nation_saves, "forces": force_saves, "revolt": pending_revolt}
+	var treasury_saves := {}
+	for nation_id in treasury:
+		treasury_saves[String(nation_id)] = treasury[nation_id]
+	return {"v": SAVE_VERSION, "towns": town_saves, "nations": nation_saves, "forces": force_saves,
+			"revolt": pending_revolt, "armies": armies.map(func(army: NationArmy) -> Dictionary: return army.to_save()),
+			"treasury": treasury_saves, "next_army": next_army_id, "attacks": pending_attacks}
 
 
 static func _officer_from(state: KingdomState, ref: Dictionary) -> Officer:
@@ -986,8 +1173,11 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 	towns.clear()
 	nations.clear()
 	forces.clear()
-	pending_counter = {}
 	pending_revolt = {}
+	armies.clear()
+	treasury.clear()
+	pending_attacks.clear()
+	next_army_id = 1
 	if not active:
 		return
 	var revolt: Dictionary = data.get("revolt", {})
@@ -1027,6 +1217,7 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 		force.order = StringName(entry.get("order", ""))
 		force.target = int(entry.get("target", -1))
 		force.order_turn = int(entry.get("order_turn", 0))
+		force.army = int(entry.get("army", -1))
 		for squad_index in entry.squads:
 			if int(squad_index) >= 0 and int(squad_index) < state.army.squads.size():
 				force.squads.append(state.army.squads[int(squad_index)])
@@ -1034,3 +1225,19 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 		for squad in force.squads:
 			_set_away(squad, true, "theo đạo quân %s" % force.general.name)
 		forces.append(force)
+	for entry: Dictionary in data.get("armies", []):
+		armies.append(NationArmy.from_save(entry))
+	var saved_treasury: Dictionary = data.get("treasury", {})
+	for nation_id: String in saved_treasury:
+		treasury[StringName(nation_id)] = float(saved_treasury[nation_id])
+	next_army_id = int(data.get("next_army", 1))
+	for entry: Dictionary in data.get("attacks", []):
+		pending_attacks.append({"town": int(entry.town), "armies": entry.armies.map(func(id) -> int: return int(id))})
+	if int(data.get("v", 1)) < 2:
+		# Before M18f-b1: garrisons were twice as big and the nations had no armies.
+		for town in towns:
+			if town.owner != PLAYER:
+				town.max_garrison = roundi(town.max_garrison * 0.5)
+				town.garrison = mini(town.garrison, town.max_garrison)
+		for nation in RealmWar.live_nations(self):
+			RealmWar.raise_army(self, state, nation)

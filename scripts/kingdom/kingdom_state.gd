@@ -1093,9 +1093,9 @@ func end_turn() -> Dictionary:
 	var invader := events.take_forced_invasion(wars)
 	if invader == &"":
 		invader = wars.pick_invader(rng)
-	# A nation striking back at a town it lost (M18f) is the turn's battle.
-	if not realm.pending_counter.is_empty():
-		report["pending_counter"] = {"town": realm.pending_counter.town, "simulator": realm.create_counter(self)}
+	# The nations' attacks on our towns (M18f-b1) are the turn's battles, fought in the turn start.
+	if not realm.pending_attacks.is_empty():
+		pass
 	elif invader != &"":
 		var invaders := wars.create_clan_side(invader, wars.invasion_size(invader), units)
 		clan_officers.lead(invaders, invader, wars, difficulty)
@@ -1533,7 +1533,20 @@ func finish_revolt(record: BattleRecord) -> Dictionary:
 	return realm.finish_revolt(self, record)
 
 
-## Applies the turn's counterattack (end_turn's "pending_counter").
-func finish_counter(record: BattleRecord) -> Dictionary:
-	return realm.finish_counter(self, record)
+## The first attack of a nation on a town of ours (Realm.create_enemy_attack); null without one.
+func start_enemy_attack() -> BattleSimulator:
+	return realm.create_enemy_attack(self)
+
+
+func finish_enemy_attack(record: BattleRecord) -> Dictionary:
+	return realm.finish_enemy_attack(self, record)
+
+
+## Our armies of `group` intercepting an enemy army (Realm.create_intercept); null when they cannot.
+func start_intercept(group: Array, army_id: int) -> BattleSimulator:
+	return realm.create_intercept(self, group, army_id)
+
+
+func finish_intercept(group: Array, army_id: int, record: BattleRecord) -> Dictionary:
+	return realm.finish_intercept(self, group, army_id, record)
 

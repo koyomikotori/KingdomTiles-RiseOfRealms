@@ -7,7 +7,8 @@ extends Control
 ## selects it; with an army selected, clicking a neighboring town picks it as the target (GDD §34).
 ## Orders are carried out when the turn ends (sieges at the start of the next turn; every army
 ## ordered against a town fights it together) and can be cancelled until then. Tab picks the next
-## army without an order.
+## army without an order. The nations' armies (M18f-b1) are listed on their town's card and on a
+## target's card, where an army that announced an attack can be intercepted.
 
 signal closed
 
@@ -171,6 +172,13 @@ func _fill_roster() -> void:
 	var waiting := realm.forces.filter(func(force: Realm.Force) -> bool: return not force.has_order()).size()
 	_panel.add_child(_line("Trấn của ta %d/%d · %d đạo quân%s" % [realm.count_owned(Realm.PLAYER), RealmMap.TOWN_COUNT,
 			realm.forces.size(), " (%d chờ lệnh)" % waiting if waiting > 0 else ""], 14, UiPalette.MUTED))
+	var threatened := {}
+	for army in realm.armies:
+		if army.has_target() and realm.towns[army.target].owner == Realm.PLAYER:
+			threatened[army.target] = true
+	if not threatened.is_empty():
+		_panel.add_child(_line("⚠ Địch chuẩn bị đánh: %s" % ", ".join(threatened.keys().map(func(id: int) -> String:
+				return realm.towns[id].name)), 14, UiPalette.WARNING))
 	for force in realm.forces:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
@@ -208,6 +216,10 @@ func _order_text(force: Realm.Force, short: bool) -> String:
 			return ("→ %s" if short else "Lệnh: hành quân tới %s khi hết lượt.") % realm.towns[force.target].name
 		Realm.SIEGE:
 			return ("⚔ %s" if short else "Lệnh: công thành %s ở đầu lượt sau.") % realm.towns[force.target].name
+		Realm.INTERCEPT:
+			var enemy := realm.army_by_id(force.army)
+			var enemy_name := enemy.general.name if enemy != null else "?"
+			return ("✕ chặn %s" if short else "Lệnh: đánh chặn đạo quân %s ở đầu lượt sau.") % enemy_name
 		Realm.HOME:
 			var steps := realm.route(force.town, Realm.HOME_CAPITAL).size()
 			return "⌂ về kinh đô" if short else "Lệnh: về kinh đô, còn %d chặng (mỗi lượt một chặng)." % steps
@@ -224,6 +236,11 @@ func _fill_town(town: Realm.Town) -> void:
 	if town.owner != Realm.PLAYER:
 		_panel.add_child(_line("Quân thủ %d/%d lính · tường thành +%d%% phòng thủ" % [town.garrison, town.max_garrison,
 				roundi((Realm.CAPITAL_WALL_DEFENSE if town.is_capital() else Realm.WALL_DEFENSE) * 100)], 14))
+		_fill_armies(town, null)
+		if town.owner != Realm.REBELS:
+			_panel.add_child(_line("Ngân khố %s: %d/%d (lập đạo quân mới tốn %d)" % [realm.nations[town.owner].name,
+					floori(realm.treasury.get(town.owner, 0.0)), roundi(RealmWar.MAX_TREASURY), roundi(RealmWar.ARMY_COST)],
+					13, UiPalette.MUTED))
 		if town.is_capital() and town.owner != Realm.REBELS:
 			_panel.add_child(_line("Chiếm kinh đô thì %s bị diệt, mọi trấn còn lại về tay ta." % realm.nations[town.owner].name,
 					13, UiPalette.MUTED))
@@ -239,9 +256,14 @@ func _fill_town(town: Realm.Town) -> void:
 				UiPalette.WARNING if chance >= Realm.REVOLT_CHANCE else UiPalette.TEXT))
 	else:
 		_panel.add_child(_line("Đất các gia tộc đã thống nhất · +%d đơn vị tối đa" % Realm.TOWN_SQUADS, 14))
-	var per_turn := realm.replenish_at(town.id)
-	if per_turn > 0:
-		_panel.add_child(_line("Đạo quân ở đây hồi +%d lính mỗi đơn vị mỗi lượt." % per_turn, 13, UiPalette.MUTED))
+	if town.owner == Realm.PLAYER:
+		for army in realm.armies_targeting(town.id):
+			_panel.add_child(_line("⚠ Đạo quân %s (%s, %d lính) ở %s chuẩn bị đánh trấn này." % [army.general.name,
+					realm.nations[army.nation].name, army.soldiers, realm.towns[army.town].name], 14, UiPalette.WARNING))
+	var share := realm.replenish_share(town.id, _state.replenish_fraction())
+	if share > 0.0:
+		_panel.add_child(_line("Đạo quân ở đây hồi %d%% quân số mỗi đơn vị mỗi lượt." % roundi(share * 100.0), 13,
+				UiPalette.MUTED))
 	if town.id == Realm.HOME_CAPITAL:
 		_panel.add_child(_button("Lập đạo quân mới", _open_army.bind(null)))
 
@@ -352,7 +374,7 @@ func _fill_target(town: Realm.Town) -> void:
 					return "%s (%d)" % [other.general.name, other.soldiers()])), 13, UiPalette.GOOD))
 		var compare := ForceCompare.new()
 		_panel.add_child(compare)
-		compare.setup(total, _state.player_color, town.garrison, realm.owner_color(town, _state.player_color),
+		compare.setup(total, _state.player_color, realm.town_soldiers(town), realm.owner_color(town, _state.player_color),
 				Realm.CAPITAL_WALL_DEFENSE if town.is_capital() else Realm.WALL_DEFENSE, "tường thành")
 		if check == Realm.Result.OK:
 			_panel.add_child(_button("Ra lệnh công thành", _give_order.bind([force], town.id)))
@@ -364,12 +386,63 @@ func _fill_target(town: Realm.Town) -> void:
 						_give_order.bind([force] + mates, town.id)))
 			_panel.add_child(_line("Đánh ở đầu lượt sau. Mọi đạo được lệnh đánh trấn này sẽ hợp quân, tướng giỏi nhất chỉ huy.",
 					13, UiPalette.MUTED))
+		if not realm.armies_at(town.id).is_empty():
+			_panel.add_child(_line("Công thành phải đánh cả quân thủ lẫn các đạo quân trong trấn:", 13, UiPalette.MUTED))
+			_fill_armies(town, force)
 	if check != Realm.Result.OK:
 		_panel.add_child(_line(Realm.describe(check), 14, UiPalette.WARNING))
 	_panel.add_child(_button("Quay lại đạo quân", func() -> void:
 		_siege_target = -1
 		_town = force.town
 		_refresh()))
+
+
+## The enemy armies in `town`: portrait, stars, soldiers and any attack they announced; with our
+## army `force` next to them, a button to intercept each army that announced one.
+func _fill_armies(town: Realm.Town, force: Realm.Force) -> void:
+	var realm := _state.realm
+	for army in realm.armies_at(town.id):
+		var nation: Realm.Nation = realm.nations[army.nation]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		var portrait := PortraitView.new()
+		portrait.setup(army.general, ROSTER_PORTRAIT, nation.color)
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(portrait)
+		var info := VBoxContainer.new()
+		info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		info.add_child(_line("Đạo quân %s (%s) %s" % [army.general.name, nation.name, army.general.star_text()], 13,
+				UiPalette.ink(nation.color)))
+		info.add_child(_line("%d/%d lính%s" % [army.soldiers, army.max_soldiers,
+				" · ⚔ chuẩn bị đánh %s" % realm.towns[army.target].name if army.has_target() else ""], 13,
+				UiPalette.WARNING if army.has_target() else UiPalette.TEXT))
+		row.add_child(info)
+		_panel.add_child(row)
+		if force != null and army.has_target():
+			var check := realm.check_intercept(force, army)
+			var button := _button("Đánh chặn %s" % army.general.name,
+					_give_intercept.bind([force], army))
+			button.disabled = check != Realm.Result.OK
+			_panel.add_child(button)
+			if check == Realm.Result.OK:
+				_panel.add_child(_line("Đánh ngoài thành (không tường, không quân thủ) ở đầu lượt sau, trước khi họ tấn công. Thắng thì đạo quân đó tan rã.",
+						13, UiPalette.MUTED))
+			else:
+				_panel.add_child(_line(Realm.describe(check), 13, UiPalette.WARNING))
+
+
+func _give_intercept(group: Array, army: NationArmy) -> void:
+	_status_text = ""
+	for force: Realm.Force in group:
+		var result := _state.realm.order_intercept(force, army, _state.turn)
+		if result != Realm.Result.OK:
+			_set_status(Realm.describe(result), false)
+			break
+	if _status_text == "":
+		Sfx.play(&"place_land")
+		_siege_target = -1
+		_town = group[0].town
+	_refresh()
 
 
 func _give_order(group: Array, town: int) -> void:

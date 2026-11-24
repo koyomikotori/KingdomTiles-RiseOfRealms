@@ -545,9 +545,7 @@ func _end_turn_now() -> void:
 	_refresh_notices()
 	var lines: Array[String] = ["Lượt %d bắt đầu. Xem bảng thông báo bên trái." % state.turn]
 	_pending_victory = report.victory
-	if report.has("pending_counter"):
-		lines.append("%s đánh chiếm lại trấn %s!" % [_counter_nation(), state.realm.towns[report.pending_counter.town].name])
-	elif report.has("pending_invasion"):
+	if report.has("pending_invasion"):
 		lines.append("%s kéo quân xâm lược!" % _clan_name(report.pending_invasion.clan_id))
 	elif report.has("pending_raid"):
 		lines.append("Quân cướp tấn công!")
@@ -560,19 +558,18 @@ func _end_turn_now() -> void:
 		lines.append("Trấn %s nổi loạn, về tay %s!" % [lost.name, state.realm.owner_name(lost, state.kingdom_name)])
 	if not state.realm.pending_revolt.is_empty():
 		lines.append("Trấn %s nổi loạn! Quân trấn giữ phải dẹp loạn." % state.realm.towns[state.realm.pending_revolt.town].name)
+	lines.append_array(_realm_war_lines(report.get("realm", {})))
 	var sieges := state.realm.due_siege_groups(state.turn)
 	if not sieges.is_empty():
 		lines.append("%d trận công thành sắp diễn ra." % sieges.size())
 	placement_status.text = "\n".join(lines)
 	# With a battle at the start of the turn, the autosave, the events and the end screen wait until it is over.
-	if not report.has("pending_invasion") and not report.has("pending_raid") and not report.has("pending_counter"):
+	if not report.has("pending_invasion") and not report.has("pending_raid"):
 		_autosave()
 	# The expedition stage was fought during the night (its squads are already home): its replay
 	# plays first, then the battle that came at dawn, then the rest of the turn's start.
 	var begin := func() -> void:
-		if report.has("pending_counter"):
-			_play_counter(report.pending_counter.town, report.pending_counter.simulator)
-		elif report.has("pending_invasion"):
+		if report.has("pending_invasion"):
 			_play_invasion(report.pending_invasion.clan_id, report.pending_invasion.simulator)
 		elif report.has("pending_raid"):
 			_play_raid(report.pending_raid)
@@ -875,6 +872,13 @@ func _continue_turn_start() -> void:
 	var sieges := state.realm.due_siege_groups(state.turn)
 	if not sieges.is_empty():
 		_play_due_siege(sieges[0])
+		return
+	var intercepts := state.realm.due_intercept_groups(state.turn)
+	if not intercepts.is_empty():
+		_play_intercept(intercepts[0])
+		return
+	if not state.realm.pending_attacks.is_empty():
+		_play_enemy_attack()
 		return
 	if _news_pending:
 		_news_pending = false
@@ -1634,13 +1638,76 @@ func _besiege(group: Array, town_id: int, after: Callable = Callable()) -> void:
 				_open_realm_screen(town_id)))
 
 
-## A nation strikes back at a town it lost (end_turn's pending_counter).
-func _play_counter(town_id: int, simulator: BattleSimulator) -> void:
-	var town := state.realm.towns[town_id]
-	var nation_name := _counter_nation()
+## The nations' news at the end of the turn (M18f-b1): fights between them, attacks announced on
+## our towns and attacks to fight now.
+func _realm_war_lines(realm_report: Dictionary) -> Array[String]:
+	var lines: Array[String] = []
+	var realm := state.realm
+	for line in realm_report.get("news", []):
+		lines.append(line)
+	for entry in realm_report.get("attacks", []):
+		var group := realm.attack_armies(entry)
+		if not group.is_empty():
+			lines.append("Quân %s đánh trấn %s của ta!" % [realm.nations[group[0].nation].name, realm.towns[entry.town].name])
+	for threat in realm_report.get("threats", []):
+		var army := realm.army_by_id(threat.army)
+		if army != null:
+			lines.append("Đạo quân %s (%s) chuẩn bị đánh trấn %s (lượt sau)." % [army.general.name,
+					realm.nations[army.nation].name, realm.towns[threat.town].name])
+	return lines
+
+
+## Our armies intercept an enemy army that announced an attack (GDD §35): the orders are spent
+## either way, then the turn start goes on.
+func _play_intercept(armies: Array) -> void:
+	var army_id: int = armies[0].army
+	var enemy := state.realm.army_by_id(army_id)
+	var simulator := state.start_intercept(armies, army_id)
+	if simulator == null:
+		for force: Realm.Force in armies:
+			state.realm.cancel_order(force)
+		placement_status.text += "\nKhông đánh chặn được: đạo quân địch đã đi nơi khác."
+		_continue_turn_start()
+		return
+	if _realm_screen != null:
+		_realm_screen.close()
+	var nation := state.realm.nations[enemy.nation]
+	var enemy_name := enemy.general.name
+	_play_battle(simulator, BattleRecord.ATTACKER, "Đánh chặn %s!" % enemy_name, func(record: BattleRecord) -> void:
+		var result := state.finish_intercept(armies, army_id, record)
+		_autosave()
+		var report := BattleReport.new()
+		$UI.add_child(report)
+		var lines := report.army_loss_lines(result, state.units)
+		lines.append("Quân %s mất %d lính." % [nation.name, result.enemy_lost])
+		lines.append_array(_realm_lines(result))
+		if result.won:
+			lines.append("Đạo quân %s tan rã, trận đánh của họ bị hủy." % enemy_name)
+		if result.disbanded > 0:
+			lines.append("%d đạo quân tan rã, những ai còn sống trở về kinh đô." % result.disbanded)
+		var who := "Liên quân %d đạo" % result.armies if result.armies > 1 else "Đạo quân %s" % result.general.name
+		report.show_battle("Đánh chặn thành công!" if result.won else "Đánh chặn thất bại!", result.won,
+				"%s đánh chặn đạo quân %s (%s)." % [who, enemy_name, nation.name], record, BattleRecord.ATTACKER, lines)
+		report.add_counsel(_battle_counsel(result, &"attack_won", &"attack_lost", {"clan": nation.name}))
+		report.closed.connect(_continue_turn_start))
+
+
+## A nation's armies attack a town of ours (Realm.pending_attacks, GDD §35): a defend-town battle.
+func _play_enemy_attack() -> void:
+	var entry: Dictionary = state.realm.pending_attacks[0]
+	var group := state.realm.attack_armies(entry)
+	var simulator := state.start_enemy_attack()
+	if simulator == null:
+		_continue_turn_start()
+		return
+	entry = state.realm.pending_attacks[0]
+	group = state.realm.attack_armies(entry)
+	if _realm_screen != null:
+		_realm_screen.close()
+	var town := state.realm.towns[entry.town]
+	var nation_name: String = state.realm.nations[group[0].nation].name
 	_play_battle(simulator, BattleRecord.DEFENDER, "%s đánh trấn %s!" % [nation_name, town.name], func(record: BattleRecord) -> void:
-		var result := state.finish_counter(record)
-		_turn_battle = result
+		var result := state.finish_enemy_attack(record)
 		_autosave()
 		var report := BattleReport.new()
 		$UI.add_child(report)
@@ -1648,14 +1715,13 @@ func _play_counter(town_id: int, simulator: BattleSimulator) -> void:
 		lines.append("Quân %s mất %d lính." % [nation_name, result.enemy_lost])
 		lines.append_array(_realm_lines(result))
 		if result.lost_town:
-			lines.append("Trấn %s về lại tay %s." % [town.name, nation_name])
+			lines.append("Trấn %s về tay %s." % [town.name, nation_name])
 			if result.retreated_to >= 0 and not state.realm.forces_at(result.retreated_to).is_empty():
 				lines.append("Đạo quân lui về %s." % state.realm.towns[result.retreated_to].name)
 		report.show_battle("Giữ vững %s!" % town.name if result.won else "Mất trấn %s!" % town.name, result.won,
-				"%s kéo quân đánh chiếm lại trấn." % nation_name, record, BattleRecord.DEFENDER, lines)
+				"%s kéo quân đánh trấn %s." % [nation_name, town.name], record, BattleRecord.DEFENDER, lines)
 		report.add_counsel(_battle_counsel(result, &"invasion_won", &"invasion_lost", {"clan": nation_name}))
-		_battle_report = report
-		report.closed.connect(_on_battle_report_closed))
+		report.closed.connect(_continue_turn_start))
 
 
 ## A captured town rises while an army holds it (end_turn's pending_revolt, M18g).
@@ -1678,13 +1744,6 @@ func _play_revolt() -> void:
 				"Dân trấn %s nổi dậy chống lại ta." % town.name, record, BattleRecord.DEFENDER, lines)
 		report.add_counsel(_battle_counsel(result, &"invasion_won", &"invasion_lost", {"clan": Realm.REBEL_NAME}))
 		report.closed.connect(_continue_turn_start))
-
-
-func _counter_nation() -> String:
-	var counter := state.realm.pending_counter
-	if counter.is_empty():
-		return "Quân địch"
-	return state.realm.nations[state.realm.towns[counter.town].nation].name
 
 
 ## The army's general and any item won, for the realm's battle reports.

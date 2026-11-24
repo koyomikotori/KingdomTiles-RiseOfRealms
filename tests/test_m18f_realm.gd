@@ -28,7 +28,16 @@ func _realm_state(seed_value: int = 3) -> KingdomState:
 	state.diplomacy.clans[ids.back()].alliance_turns = 99
 	state.victory.check(state)
 	state.start_realm()
+	# The nations stay still here; their armies are tested in test_m18f_b1_war.gd.
+	state.realm.ai_enabled = false
+	state.realm.armies.clear()
 	return state
+
+
+func _build_barracks(state: KingdomState) -> void:
+	state.stockpile.add({&"food": 900, &"wood": 900, &"stone": 900})
+	state.board.set_land(Vector2i(4, 4), &"grass", false)
+	check_eq(state.build(&"barracks", Vector2i(4, 4)), BuildRules.Result.OK, "Barracks built")
 
 
 func _general(state: KingdomState, stars: int = 3) -> General:
@@ -253,8 +262,8 @@ func test_taking_a_capital_destroys_the_nation() -> void:
 	check(nation.destroyed, "Marked destroyed")
 	check_eq(state.realm.count_owned(nation.id), 0, "Its towns are ours")
 	check_eq(result.gained.size(), 3, "Three more towns handed over")
-	check(state.realm.counter_targets(state.turn + 10).filter(func(town: Realm.Town) -> bool:
-			return town.nation == nation.id).is_empty(), "A destroyed nation cannot strike back")
+	check(state.realm.armies_of(nation.id).is_empty() and not state.realm.treasury.has(nation.id),
+			"No armies or treasury left")
 
 
 func test_what_towns_give() -> void:
@@ -410,18 +419,39 @@ func test_armies_replenish_on_kingdom_towns() -> void:
 	squads[0].soldiers = 5
 	squads[1].soldiers = 19
 	state.realm.end_turn(state)
-	check_eq(squads[0].soldiers, 5 + Realm.CAPITAL_REPLENISH, "+3 at the capital")
+	check_eq(squads[0].soldiers, 5, "No barracks: no replenishment")
+	_build_barracks(state)
+	var home := state.replenish_fraction()
+	check(home > 0.0, "The barracks gives a share")
+	state.realm.end_turn(state)
+	var capital_gain := Realm.replenish_gain(20, minf(home, Realm.CAPITAL_REPLENISH_CAP))
+	check_eq(squads[0].soldiers, 5 + capital_gain, "The kingdom's share at the capital")
 	check_eq(squads[1].soldiers, 20, "Never past full")
 	force.town = RealmMap.town_id(0, RealmMap.Slot.EAST)
 	force.order = Realm.SIEGE
 	force.target = RealmMap.town_id(1, RealmMap.Slot.WEST)
+	var before := squads[0].soldiers
 	state.realm.end_turn(state)
-	check_eq(squads[0].soldiers, 8 + Realm.ARMY_REPLENISH, "+1 in other towns, orders or not")
+	check_eq(squads[0].soldiers, before + Realm.replenish_gain(20, home * Realm.TOWN_REPLENISH_SHARE),
+			"Half of it in other towns, orders or not")
 	var nation := state.realm.nation_in(1)
 	var capital := state.realm.towns[nation.capital()]
 	state.realm.capture(state, capital)
-	check_eq(state.realm.replenish_at(capital.id), Realm.CAPITAL_REPLENISH, "+3 in a capital we took")
-	check_eq(state.realm.replenish_at(RealmMap.town_id(2, RealmMap.Slot.WEST)), 0, "Nothing on enemy land")
+	check_eq(state.realm.replenish_share(capital.id, home), minf(home, Realm.CAPITAL_REPLENISH_CAP),
+			"The whole share in a capital we took")
+	check_eq(state.realm.replenish_share(RealmMap.town_id(2, RealmMap.Slot.WEST), home), 0.0, "Nothing on enemy land")
+
+
+func test_replenish_shares_are_capped() -> void:
+	var state := _realm_state()
+	var town := RealmMap.town_id(0, RealmMap.Slot.EAST)
+	check_eq(state.realm.replenish_share(town, 0.2), 0.1, "Half the kingdom's share in a town")
+	check_eq(state.realm.replenish_share(town, 0.5), Realm.TOWN_REPLENISH_CAP, "Capped in a town")
+	check_eq(state.realm.replenish_share(Realm.HOME_CAPITAL, 0.2), 0.2, "The whole share at the capital")
+	check_eq(state.realm.replenish_share(Realm.HOME_CAPITAL, 0.5), Realm.CAPITAL_REPLENISH_CAP, "Capped at the capital")
+	check_eq(Realm.replenish_gain(20, 0.15), 3, "15% of 20")
+	check_eq(Realm.replenish_gain(8, 0.13), 2, "Rounded up")
+	check_eq(Realm.replenish_gain(20, 0.0), 0, "Nothing at no share")
 
 
 func test_garrisons_regrow() -> void:
@@ -430,51 +460,6 @@ func test_garrisons_regrow() -> void:
 	town.garrison = 0
 	state.realm.end_turn(state)
 	check_eq(town.garrison, ceili(town.max_garrison * Realm.GARRISON_REGEN), "A tenth a turn")
-
-
-func test_counterattacks() -> void:
-	var state := _realm_state()
-	var nation := state.realm.nation_in(1)
-	var lost := state.realm.towns[RealmMap.town_id(nation.region, RealmMap.Slot.WEST)]
-	state.realm.capture(state, lost)
-	check(state.realm.counter_targets(state.turn).is_empty(), "Not right after it fell")
-	check_eq(state.realm.counter_targets(state.turn + Realm.COUNTER_GRACE).size(), 1, "Later it can be struck")
-	var found := false
-	for i in 40:
-		var report := state.end_turn()
-		if report.has("pending_counter"):
-			found = true
-			check_eq(report.pending_counter.town, lost.id, "The lost town is attacked")
-			var simulator: BattleSimulator = report.pending_counter.simulator
-			var defenders := simulator.record.sides[BattleRecord.DEFENDER]
-			check(defenders.display_name.begins_with("Dân binh"), "Its militia defends it")
-			var result := state.finish_counter(_run(simulator))
-			if result.won:
-				check_eq(lost.owner, Realm.PLAYER, "Held")
-			else:
-				check_eq(lost.owner, nation.id, "Lost again")
-			break
-	check(found, "A counterattack came within 40 turns")
-
-
-func test_a_defending_army_and_its_retreat() -> void:
-	var state := _realm_state()
-	var nation := state.realm.nation_in(1)
-	var lost := state.realm.towns[RealmMap.town_id(nation.region, RealmMap.Slot.WEST)]
-	state.realm.capture(state, lost)
-	state.realm.form(state, _general(state), _squads(state, &"swordsman", 1))
-	var force: Realm.Force = state.realm.forces[0]
-	force.town = lost.id
-	var source := RealmMap.town_id(nation.region, RealmMap.CAPITAL)
-	state.realm.pending_counter = {"town": lost.id, "source": source, "sent": 1500}
-	var simulator := state.realm.create_counter(state)
-	check(simulator.record.sides[BattleRecord.DEFENDER].general_name != "", "The army's general leads the defense")
-	var result := state.finish_counter(_run(simulator))
-	check(not result.won, "1500 soldiers take it back")
-	check_eq(lost.owner, nation.id, "Lost")
-	check(state.realm.towns[result.retreated_to].owner == Realm.PLAYER, "Fell back to one of our towns")
-	if not state.realm.forces.is_empty():
-		check_eq(force.town, result.retreated_to, "The army moved there")
 
 
 func test_the_realm_is_saved() -> void:
