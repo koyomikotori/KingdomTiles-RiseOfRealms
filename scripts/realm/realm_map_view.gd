@@ -5,7 +5,10 @@ extends Control
 ## darker), the roads, a fort per town flying its owner's
 ## banner (capitals bigger, with a crown), enemy garrisons, and the kingdom's armies as flags.
 ## Armies with an order (GDD §34, M18g) fly a ringed flag and a dashed line that crawls and blinks
-## toward where they go (green march, red siege, gold the way home).
+## toward where they go (green march, red siege, gold the way home, purple an interception).
+## The nations' armies (M18f-b1) fly their nation's flags on the left of a town, an attack they
+## announced drawn as a red dashed line with an arrow; the number under a town counts its garrison
+## and armies.
 ## A click on a town emits `town_clicked`. Read-only: the screen decides what a click does.
 
 signal town_clicked(town: int)
@@ -34,6 +37,8 @@ const SMALL_FONT_SIZE := 11
 const PICK_RADIUS := 34.0
 const BACKGROUND_COLOR := Color(0.91, 0.84, 0.66)
 const HOME_COLOR := Color(0.78, 0.55, 0.1)
+const INTERCEPT_COLOR := Color(0.55, 0.2, 0.65)
+const ENEMY_ATTACK_COLOR := Color(0.75, 0.05, 0.05)
 ## Order lines: dash length and gap (map units), crawl speed, blink period (seconds).
 const ORDER_DASH := 10.0
 const ORDER_GAP := 7.0
@@ -61,7 +66,8 @@ func _ready() -> void:
 
 ## Order lines move: redraw while any army has an order.
 func _process(delta: float) -> void:
-	if realm == null or not realm.forces.any(func(force: Realm.Force) -> bool: return force.has_order()):
+	if realm == null or (not realm.forces.any(func(force: Realm.Force) -> bool: return force.has_order())
+			and not realm.armies.any(func(army: NationArmy) -> bool: return army.has_target())):
 		return
 	_time += delta
 	queue_redraw()
@@ -73,6 +79,8 @@ static func order_color(order: StringName) -> Color:
 			return ATTACK_COLOR
 		Realm.HOME:
 			return HOME_COLOR
+		Realm.INTERCEPT:
+			return INTERCEPT_COLOR
 	return MOVE_COLOR
 
 
@@ -124,10 +132,13 @@ func _draw() -> void:
 	_draw_reach()
 	for force in realm.forces:
 		_draw_order(force)
+	for army in realm.armies:
+		_draw_threat(army)
 	for town in realm.towns:
 		_draw_town(town)
 	for town in realm.towns:
 		_draw_forces(town.id)
+		_draw_armies(town.id)
 	draw_set_transform(Vector2.ZERO)
 
 
@@ -211,22 +222,40 @@ func _draw_order(force: Realm.Force) -> void:
 	color.a = 0.55 + 0.45 * absf(sin(_time * PI / ORDER_BLINK))
 	var width := 6.0 if force == selected_force else 4.0
 	for i in path.size() - 1:
-		var from := RealmMap.position(path[i])
-		var to := RealmMap.position(path[i + 1])
-		var length := from.distance_to(to)
-		if length <= 0.0:
-			continue
-		var direction := (to - from) / length
-		var period := ORDER_DASH + ORDER_GAP
-		var at := fmod(_time * ORDER_SPEED, period) - period + 22.0
-		while at < length - 22.0:
-			var start := maxf(at, 22.0)
-			var end := minf(at + ORDER_DASH, length - 22.0)
-			if end > start:
-				draw_line(from + direction * start, from + direction * end, color, width)
-			at += period
+		_dash(RealmMap.position(path[i]), RealmMap.position(path[i + 1]), color, width)
 	var goal := RealmMap.position(path.back())
 	draw_arc(goal, 30.0, 0.0, TAU, 32, color, 3.0)
+
+
+## An attack an enemy army announced: a red dashed line with an arrowhead at the town.
+func _draw_threat(army: NationArmy) -> void:
+	if not army.has_target():
+		return
+	var color := ENEMY_ATTACK_COLOR
+	color.a = 0.6 + 0.4 * absf(sin(_time * PI / ORDER_BLINK))
+	var from := RealmMap.position(army.town)
+	var to := RealmMap.position(army.target)
+	_dash(from, to, color, 4.0)
+	var direction := (to - from).normalized()
+	var tip := to - direction * 22.0
+	var side := direction.orthogonal() * 8.0
+	draw_colored_polygon(PackedVector2Array([tip, tip - direction * 14.0 + side, tip - direction * 14.0 - side]), color)
+
+
+## A dashed line crawling from `from` to `to`, kept clear of both towns.
+func _dash(from: Vector2, to: Vector2, color: Color, width: float) -> void:
+	var length := from.distance_to(to)
+	if length <= 0.0:
+		return
+	var direction := (to - from) / length
+	var period := ORDER_DASH + ORDER_GAP
+	var at := fmod(_time * ORDER_SPEED, period) - period + 22.0
+	while at < length - 22.0:
+		var start := maxf(at, 22.0)
+		var end := minf(at + ORDER_DASH, length - 22.0)
+		if end > start:
+			draw_line(from + direction * start, from + direction * end, color, width)
+		at += period
 
 
 ## Rings around the towns the selected army can march to (green) or besiege (red).
@@ -260,7 +289,7 @@ func _draw_town(town: Realm.Town) -> void:
 	var label := ("♛ " if town.is_capital() else "") + town.name
 	_text(font, center + Vector2(0, 30), label, LABEL_FONT_SIZE, UiPalette.TEXT)
 	if town.owner != Realm.PLAYER:
-		_text(font, center + Vector2(0, 44), "⚔ %d" % town.garrison, SMALL_FONT_SIZE, UiPalette.ink(banner))
+		_text(font, center + Vector2(0, 44), "⚔ %d" % realm.town_soldiers(town), SMALL_FONT_SIZE, UiPalette.ink(banner))
 	else:
 		var chance := realm.revolt_chance(town, turn)
 		if chance > 0.0:
@@ -292,3 +321,19 @@ func _draw_forces(town_id: int) -> void:
 		var border := order_color(force.order) if force.has_order() else Color(0.2, 0.12, 0.08)
 		draw_polyline(PackedVector2Array([top, top + Vector2(16, 5), top + Vector2(0, 11), top]), border,
 				3.0 if force.has_order() else 1.0)
+
+
+## One flag per enemy army in the town, above it to the left, in its nation's color, pointing left.
+func _draw_armies(town_id: int) -> void:
+	var here := realm.armies_at(town_id)
+	var base := RealmMap.position(town_id) + Vector2(-18, -30)
+	for i in here.size():
+		var army: NationArmy = here[i]
+		var foot := base - Vector2(i * 14.0, 0.0)
+		var top := foot - Vector2(0, 26)
+		draw_line(foot, top, Color(0.25, 0.17, 0.1), 2.0)
+		var cloth := PackedVector2Array([top, top + Vector2(-16, 5), top + Vector2(0, 11)])
+		draw_colored_polygon(cloth, realm.nations[army.nation].color)
+		var border := ENEMY_ATTACK_COLOR if army.has_target() else Color(0.2, 0.12, 0.08)
+		draw_polyline(PackedVector2Array([top, top + Vector2(-16, 5), top + Vector2(0, 11), top]), border,
+				3.0 if army.has_target() else 1.0)

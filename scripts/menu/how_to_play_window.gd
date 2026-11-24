@@ -97,11 +97,16 @@ const PAGES := [
 		"# Đạo quân",
 		"Lập đạo quân ở kinh đô của ta: 1 tướng và tối đa 20 đơn vị. Lính không theo đạo nào ở lại giữ nhà.",
 		"Chọn đạo quân (hoặc bấm Tab để tới đạo đang chờ lệnh) rồi bấm một trấn kề bên để ra lệnh: trấn của ta là hành quân, trấn địch là công thành (có thanh so sánh lực lượng). Nhiều đạo được lệnh đánh cùng một trấn sẽ hợp quân đánh một trận, tướng giỏi nhất chỉ huy. Lệnh hiện bằng đường gạch đứt nhấp nháy và hủy được tới khi kết thúc lượt. Hành quân diễn ra khi hết lượt; công thành diễn ra ở đầu lượt sau.",
-		"\"Về kinh đô bổ sung quân\" đưa đạo quân về, mỗi lượt một chặng qua các trấn của ta. Quân giữ trấn có tường thành nên khó đánh hơn; kinh đô càng khó. Đạo quân đứng ở trấn của ta hồi +1 lính mỗi đơn vị mỗi lượt, ở kinh đô (của ta hoặc kinh đô địch đã chiếm) +3; \"Xem chi tiết đạo quân\" cho biết từng đơn vị còn bao lâu thì đầy.",
+		"\"Về kinh đô bổ sung quân\" đưa đạo quân về, mỗi lượt một chặng qua các trấn của ta. Quân giữ trấn có tường thành nên khó đánh hơn; kinh đô càng khó. Đạo quân đứng ở trấn của ta hồi một nửa tỉ lệ hồi quân ở nhà (tối đa 15% quân số mỗi lượt), ở kinh đô (của ta hoặc kinh đô địch đã chiếm) đúng tỉ lệ đó (tối đa 30%); \"Xem chi tiết đạo quân\" cho biết từng đơn vị còn bao lâu thì đầy.",
 		"# Trấn và nổi loạn",
 		"Mỗi trấn của ta thêm 5 chỗ cho quân. Trấn chiếm được còn nộp tài nguyên mỗi lượt và có dân binh giữ thành.",
 		"Trấn chiếm được có thể nổi loạn: 20% mỗi lượt khi bỏ trống, 12% khi có đạo quân trấn giữ, 2% khi nước cũ đã bị diệt. Bỏ trống thì mất trấn ngay; có quân thì phải đánh dẹp loạn ở đầu lượt sau.",
-		"Nước mất trấn sẽ tìm cách đánh chiếm lại. Chiếm kinh đô một nước thì nước đó bị diệt, các trấn còn lại về tay ta.",
+		"Chiếm kinh đô một nước thì nước đó bị diệt, các trấn còn lại về tay ta.",
+		"# Đạo quân các nước",
+		"Mỗi nước thu ngân khố theo số trấn và lập đạo quân có tướng riêng (cờ màu nước đó bên trái trấn). Quân giữ trấn ít, nhưng mọi đạo quân đứng trong trấn cùng giữ thành: công trấn đó phải đánh cả hai, nên hợp nhiều đạo của ta.",
+		"Đạo quân địch báo trước lệnh đánh bằng đường gạch đỏ. Lượt sau họ mới đánh: trận giữ trấn ở đầu lượt, mọi đạo quân ta trong trấn và dân binh cùng giữ. Thua thì mất trấn.",
+		"Đánh chặn: chọn đạo quân ta đứng kề, bấm trấn có đạo quân địch đang chuẩn bị đánh, chọn \"Đánh chặn\". Đầu lượt sau đánh riêng đạo đó ngoài thành; thắng thì nó tan và trận đánh bị hủy.",
+		"Các nước cũng đánh nhau; kết quả được báo khi hết lượt.",
 	]],
 ]
 
