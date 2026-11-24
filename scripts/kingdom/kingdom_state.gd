@@ -831,6 +831,7 @@ func get_turn_yield() -> Dictionary[StringName, int]:
 	Economy.add_into(total, magistrate_bonus())
 	Economy.add_into(total, origin_yield_bonus())
 	Economy.add_into(total, realm.total_yield())
+	Economy.add_into(total, realm.tribute())
 	return total
 
 
@@ -974,6 +975,11 @@ func get_income_breakdown() -> Dictionary[StringName, Array]:
 	for resource_id in town_yield:
 		add.call(resource_id, {"source": &"towns", "id": &"", "amount": town_yield[resource_id],
 				"count": realm.captured_towns().size()})
+	# Vassal kings' tribute (M18f-b2a).
+	var tribute := realm.tribute()
+	for resource_id in tribute:
+		add.call(resource_id, {"source": &"vassals", "id": &"", "amount": tribute[resource_id],
+				"count": realm.vassals().size()})
 	# Production buildings, per building type (paused while their upkeep is unpaid).
 	if buildings_supplied:
 		var produced := {}  # building_id -> amounts

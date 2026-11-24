@@ -250,10 +250,15 @@ func _fill_town(town: Realm.Town) -> void:
 		view.amounts("Mỗi lượt", realm.town_yield(town), false)
 		_panel.add_child(_line("+%d đơn vị tối đa · dân binh %d lính" % [Realm.TOWN_SQUADS, realm.militia_soldiers(town)], 14))
 		var chance := realm.revolt_chance(town, _state.turn)
-		var why := "mới chiếm" if chance <= 0.0 else ("nước cũ đã bị diệt" if realm.nations[town.nation].destroyed
-				else ("có quân trấn giữ" if not realm.forces_at(town.id).is_empty() else "không quân trấn giữ"))
-		_panel.add_child(_line("Nguy cơ nổi loạn: %d%% mỗi lượt (%s)" % [roundi(chance * 100.0), why], 14,
+		var old_nation: Realm.Nation = realm.nations[town.nation]
+		var why := "mới chiếm"
+		if chance > 0.0 and old_nation.destroyed:
+			why = "nước cũ đã bị diệt, đang bình định" if old_nation.vassal != null else "nước cũ đã bị diệt, chưa có chư hầu"
+		elif chance > 0.0:
+			why = "có quân trấn giữ" if not realm.forces_at(town.id).is_empty() else "không quân trấn giữ"
+		_panel.add_child(_line("Nguy cơ nổi loạn: %s%% mỗi lượt (%s)" % [CrownDialog._percent(chance), why], 14,
 				UiPalette.WARNING if chance >= Realm.REVOLT_CHANCE else UiPalette.TEXT))
+		_fill_vassal(town, old_nation)
 	else:
 		_panel.add_child(_line("Đất các gia tộc đã thống nhất · +%d đơn vị tối đa" % Realm.TOWN_SQUADS, 14))
 	if town.owner == Realm.PLAYER:
@@ -266,6 +271,42 @@ func _fill_town(town: Realm.Town) -> void:
 				UiPalette.MUTED))
 	if town.id == Realm.HOME_CAPITAL:
 		_panel.add_child(_button("Lập đạo quân mới", _open_army.bind(null)))
+
+
+## The vassal ruling the land of our town `town` (destroyed `nation`): its king, guard, armies and
+## tribute; on the old capital of a destroyed nation without one, "Phong vương lập chư hầu".
+func _fill_vassal(town: Realm.Town, nation: Realm.Nation) -> void:
+	if not nation.destroyed:
+		return
+	var realm := _state.realm
+	if nation.vassal == null:
+		if town.id == nation.capital():
+			_panel.add_child(_line("Phong một tướng làm vua chư hầu để bình định đất %s (nổi loạn giảm dần về 1%%)." %
+					nation.name, 13, UiPalette.MUTED))
+			_panel.add_child(_button("Phong vương lập chư hầu", _open_crown.bind(nation)))
+		return
+	var king := nation.vassal
+	_panel.add_child(_line("Chư hầu %s — vua %s %s" % [nation.name, king.name, king.star_text()], 15, UiPalette.HEADER))
+	_panel.add_child(_line("Võ %d · Thống %d · quân chư hầu giữ trấn %d lính" % [king.might, king.command,
+			realm.vassal_guard(town)], 13))
+	var view := RequirementView.new()
+	_panel.add_child(view)
+	view.amounts("Cống nạp mỗi lượt", Realm.tribute_of(king))
+	var armies := realm.armies_of(nation.id)
+	var soldiers := 0
+	for army in armies:
+		soldiers += army.soldiers
+	_panel.add_child(_line("%d đạo quân chư hầu (%d lính) · ngân khố %d/%d" % [armies.size(), soldiers,
+			floori(realm.treasury.get(nation.id, 0.0)), roundi(RealmWar.MAX_TREASURY)], 13, UiPalette.MUTED))
+
+
+func _open_crown(nation: Realm.Nation) -> void:
+	var dialog := CrownDialog.new()
+	add_child(dialog)
+	dialog.open(_state, nation)
+	dialog.done.connect(func() -> void:
+		_set_status("%s đã thành chư hầu của ta." % nation.name, true)
+		_refresh())
 
 
 ## The selected army: its general, its soldiers by unit, its order and what can be done with it.

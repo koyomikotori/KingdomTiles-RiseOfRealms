@@ -1391,6 +1391,8 @@ func _income_source_text(entry: Dictionary) -> String:
 			return "Hợp đồng với %s" % state.diplomacy.clans[entry.id].data.display_name
 		&"towns":
 			return "Các trấn chiếm được (%d)" % entry.count
+		&"vassals":
+			return "Cống nạp của chư hầu (%d)" % entry.count
 	return String(entry.source)
 
 
