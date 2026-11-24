@@ -1626,6 +1626,10 @@ func _besiege(group: Array, town_id: int, after: Callable = Callable()) -> void:
 			lines.append("Thu được khi chiếm trấn: %s." % loot)
 		if result.destroyed != &"":
 			lines.append("Kinh đô thất thủ: %s bị diệt! %d trấn còn lại về tay ta." % [nation.name, result.gained.size()])
+			for id: int in result.holdouts:
+				var holdout: Realm.Town = state.realm.towns[id]
+				lines.append("Tàn quân %s giữ trấn %s thành phiến quân (%d lính): phải công thành mới lấy được." % [
+						nation.name, holdout.name, holdout.garrison])
 		if result.disbanded > 0:
 			lines.append("%d đạo quân tan rã, những ai còn sống trở về kinh đô." % result.disbanded)
 		var title_text := "Chiếm được %s!" % town.name if result.won else "Công thành thất bại!"

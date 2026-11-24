@@ -686,6 +686,7 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 	var loot: Dictionary[StringName, int] = {}
 	var destroyed: StringName = &""
 	var gained: Array[int] = []
+	var holdouts: Array[int] = []
 	if not won:
 		spread_town_losses(town, enemy_lost)
 	else:
@@ -696,7 +697,7 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 		if town.is_capital() and old_owner != PLAYER and old_owner != REBELS \
 				and nations[old_owner].capital() == town_id:
 			destroyed = old_owner
-			gained = destroy_nation(state, old_owner)
+			gained = destroy_nation(state, old_owner, holdouts)
 	var disbanded := 0
 	for force: Force in group:
 		_drop_lost_squads(state, force)
@@ -707,7 +708,7 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 			disband(state, force, true)
 			disbanded += 1
 	result.merge({"record": record, "won": won, "town": town_id, "enemy_lost": enemy_lost, "general": general,
-			"loot": loot, "destroyed": destroyed, "gained": gained, "disbanded": disbanded, "armies": group.size(),
+			"loot": loot, "destroyed": destroyed, "gained": gained, "holdouts": holdouts, "disbanded": disbanded, "armies": group.size(),
 			"item": state.equipment.roll_loot(true, state.stockpile) if won else {}})
 	return result
 
@@ -744,15 +745,26 @@ func capture(state: KingdomState, town: Town) -> Dictionary[StringName, int]:
 	return loot
 
 
-## The nation falls with its capital: its other towns are handed over. Returns their ids.
-func destroy_nation(state: KingdomState, nation_id: StringName) -> Array[int]:
+## The nation falls with its capital: its other towns are handed over, except the towns its
+## armies stand in, which their soldiers hold as rebels (garrison = those soldiers); the armies
+## break up. Returns the ids handed over; the rebel towns are appended to `holdouts`.
+func destroy_nation(state: KingdomState, nation_id: StringName, holdouts: Array[int] = []) -> Array[int]:
 	nations[nation_id].destroyed = true
 	treasury.erase(nation_id)
+	var left := {}
 	for army in armies_of(nation_id):
+		if towns[army.town].owner == nation_id:
+			left[army.town] = left.get(army.town, 0) + army.soldiers
 		remove_army(army)
 	var gained: Array[int] = []
 	for town in towns:
-		if town.owner == nation_id:
+		if town.owner == nation_id and left.has(town.id):
+			_rebels()
+			town.owner = REBELS
+			town.max_garrison = left[town.id]
+			town.garrison = left[town.id]
+			holdouts.append(town.id)
+		elif town.owner == nation_id:
 			town.owner = PLAYER
 			town.garrison = 0
 			town.max_garrison = 0

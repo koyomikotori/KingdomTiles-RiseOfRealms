@@ -101,7 +101,7 @@ const PAGES := [
 		"# Trấn và nổi loạn",
 		"Mỗi trấn của ta thêm 5 chỗ cho quân. Trấn chiếm được còn nộp tài nguyên mỗi lượt và có dân binh giữ thành.",
 		"Trấn chiếm được có thể nổi loạn: 20% mỗi lượt khi bỏ trống, 12% khi có đạo quân trấn giữ, 2% khi nước cũ đã bị diệt (tới khi lập chư hầu). Bỏ trống thì mất trấn ngay; có quân thì phải đánh dẹp loạn ở đầu lượt sau.",
-		"Chiếm kinh đô một nước thì nước đó bị diệt, các trấn còn lại về tay ta.",
+		"Chiếm kinh đô một nước thì nước đó bị diệt, các trấn còn lại về tay ta. Trấn đang có đạo quân của nước đó thì đạo quân tan thành tàn quân nổi loạn giữ trấn (quân giữ = số lính các đạo đó): phải công thành mới lấy được.",
 		"# Đạo quân các nước",
 		"Mỗi nước thu ngân khố theo số trấn và lập đạo quân có tướng riêng (cờ màu nước đó bên trái trấn). Quân giữ trấn ít, nhưng mọi đạo quân đứng trong trấn cùng giữ thành: công trấn đó phải đánh cả hai, nên hợp nhiều đạo của ta.",
 		"Đạo quân địch báo trước lệnh đánh bằng đường gạch đỏ. Lượt sau họ mới đánh: trận giữ trấn ở đầu lượt, mọi đạo quân ta trong trấn và dân binh cùng giữ. Thua thì mất trấn.",

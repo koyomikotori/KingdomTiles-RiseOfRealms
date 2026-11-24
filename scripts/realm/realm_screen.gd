@@ -242,7 +242,7 @@ func _fill_town(town: Realm.Town) -> void:
 					floori(realm.treasury.get(town.owner, 0.0)), roundi(RealmWar.MAX_TREASURY), roundi(RealmWar.ARMY_COST)],
 					13, UiPalette.MUTED))
 		if town.is_capital() and town.owner != Realm.REBELS:
-			_panel.add_child(_line("Chiếm kinh đô thì %s bị diệt, mọi trấn còn lại về tay ta." % realm.nations[town.owner].name,
+			_panel.add_child(_line("Chiếm kinh đô thì %s bị diệt, các trấn còn lại về tay ta (trấn có đạo quân của họ thành tàn quân nổi loạn)." % realm.nations[town.owner].name,
 					13, UiPalette.MUTED))
 	elif town.is_captured():
 		var view := RequirementView.new()
@@ -360,6 +360,16 @@ func _fill_force(force: Realm.Force) -> void:
 								realm.disband(_state, force)
 								_force = null
 								_refresh(), true))]))
+	# The town it stands in: its card stays one button away, and a destroyed nation's land shows
+	# its vassal (or the crown button on the old capital) right here.
+	var town := realm.towns[force.town]
+	if town.owner == Realm.PLAYER and town.nation != Realm.PLAYER and realm.nations.has(town.nation) \
+			and realm.nations[town.nation].destroyed:
+		_panel.add_child(HSeparator.new())
+		_fill_vassal(town, realm.nations[town.nation])
+	_panel.add_child(_button("Xem trấn %s" % town.name, func() -> void:
+		_force = null
+		_refresh()))
 
 
 ## One chip per unit type in the army: its icon and how many squads.

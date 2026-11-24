@@ -269,3 +269,33 @@ func test_vassals_are_saved() -> void:
 	check_eq(again.vassal_turn, nation.vassal_turn, "Same crowning turn")
 	check_eq(loaded.armies_of(nation.id).size(), 1, "Its army is back")
 	check(loaded.is_ally(loaded.armies_of(nation.id)[0]), "Still an ally")
+
+
+func test_armies_of_a_fallen_nation_hold_their_towns_as_rebels() -> void:
+	var state := _state()
+	var ids: Array = state.diplomacy.clans.keys()
+	for clan_id in ids.slice(0, ids.size() - 1):
+		state.wars.fronts[clan_id].annexed = true
+		state.diplomacy.clans[clan_id].annexed = true
+	state.diplomacy.clans[ids.back()].alliance_turns = 99
+	state.victory.check(state)
+	state.start_realm()
+	var realm := state.realm
+	realm.armies.clear()
+	var nation := realm.nation_in(1)
+	var held := realm.towns[RealmMap.town_id(nation.region, RealmMap.Slot.NORTH)]
+	var empty := realm.towns[RealmMap.town_id(nation.region, RealmMap.Slot.SOUTH)]
+	for soldiers in [150, 90]:
+		var army := RealmWar.raise_army(realm, state, nation)
+		army.town = held.id
+		army.soldiers = soldiers
+	realm.capture(state, realm.towns[nation.capital()])
+	var holdouts: Array[int] = []
+	var gained := realm.destroy_nation(state, nation.id, holdouts)
+	check_eq(holdouts, [held.id] as Array[int], "The town its armies stand in holds out")
+	check_eq(held.owner, Realm.REBELS, "As rebels")
+	check_eq(held.garrison, 240, "Held by the armies' soldiers")
+	check_eq(held.max_garrison, 240, "And never more")
+	check(not gained.has(held.id), "Not handed over")
+	check_eq(empty.owner, Realm.PLAYER, "An empty town is handed over")
+	check(realm.armies_of(nation.id).is_empty(), "The armies break up")

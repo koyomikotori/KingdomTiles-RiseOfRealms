@@ -147,9 +147,10 @@ static func _attack(realm: Realm, state: KingdomState, nation: Realm.Nation) -> 
 			if realm.armies.has(army):
 				army.town = town_id
 		if town.is_capital() and old_owner != Realm.REBELS and realm.nations[old_owner].capital() == town_id:
-			realm.destroy_nation(state, old_owner)
-			news.append("Chư hầu %s chiếm kinh đô %s: %s bị diệt, mọi trấn của họ về tay ta!" % [nation.name,
-					town.name, owner.name])
+			var holdouts: Array[int] = []
+			realm.destroy_nation(state, old_owner, holdouts)
+			news.append("Chư hầu %s chiếm kinh đô %s: %s bị diệt, các trấn của họ về tay ta%s!" % [nation.name,
+					town.name, owner.name, "" if holdouts.is_empty() else " (%d trấn còn tàn quân nổi loạn)" % holdouts.size()])
 		else:
 			news.append("Chư hầu %s chiếm trấn %s của %s cho ta." % [nation.name, town.name, owner.name])
 	return news
