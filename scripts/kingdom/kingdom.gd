@@ -871,6 +871,9 @@ func _continue_turn_start() -> void:
 	if not state.realm.pending_attacks.is_empty():
 		_play_enemy_attack()
 		return
+	if state.realm.pending_submission != &"":
+		_show_submission()
+		return
 	if _news_pending:
 		_news_pending = false
 		var news := ImportantNews.build(state, _last_report, _turn_battle)
@@ -909,6 +912,26 @@ func _continue_turn_start() -> void:
 		if not state.events.pending_request.is_empty():
 			_play_event_request()
 			return
+		_autosave()
+		_continue_turn_start())
+
+
+## A weak neighbor asking to submit (GDD §38): accept or refuse, then the rest of the turn start.
+func _show_submission() -> void:
+	var realm := state.realm
+	if not realm.nations.has(realm.pending_submission) or realm.nations[realm.pending_submission].destroyed:
+		realm.pending_submission = &""
+		_continue_turn_start()
+		return
+	_clear_selection()
+	Sfx.play(&"event")
+	var nation: Realm.Nation = realm.nations[realm.pending_submission]
+	var window := SubmissionWindow.new()
+	$UI.add_child(window)
+	window.open(state, _counsel(&"submission_offer", {"nation": nation.name}))
+	window.closed.connect(func() -> void:
+		_refresh_economy()
+		_refresh_notices()
 		_autosave()
 		_continue_turn_start())
 

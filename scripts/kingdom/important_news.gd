@@ -23,6 +23,12 @@ static func build(state: KingdomState, report: Dictionary, battle: Dictionary = 
 			{"clan": clans[report.war_declared[0]].data.display_name} if not declared.is_empty() else {})
 
 
+	var broke: Array = report.get("realm", {}).get("broke_away", [])
+	var broke_lines: Array[String] = []
+	for name in broke:
+		broke_lines.append("Chư hầu %s ly khai và tuyên chiến với ta!" % name)
+	_add(result, "Chư hầu ly khai", broke_lines, &"news_war", {"clan": broke[0]} if not broke.is_empty() else {})
+
 	var officers: Array[String] = []
 	var general: Dictionary = battle.get("general", {})
 	match general.get("fate", &"none"):

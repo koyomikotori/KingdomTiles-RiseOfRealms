@@ -53,6 +53,8 @@ func build_frame(title_text: String, accent: Color, width_share: float = WIDTH_S
 	var panel := PanelContainer.new()
 	panel.anchor_left = (1.0 - width_share) * 0.5
 	panel.anchor_right = 1.0 - panel.anchor_left
+	# Content wider than the share (the black market's shelves) widens both sides, staying centered.
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	# Centered vertically and as tall as its content.
 	panel.anchor_top = 0.5
 	panel.anchor_bottom = 0.5

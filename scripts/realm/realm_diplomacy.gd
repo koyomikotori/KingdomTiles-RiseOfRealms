@@ -16,6 +16,7 @@ extends RefCounted
 
 enum Pact { WAR, PEACE, NEUTRAL, NAP, ALLIANCE }
 enum Result { OK, NOT_LIVE, AT_WAR, NOT_AT_WAR, REFUSED_RECENTLY, NO_ADVISOR, ADVISOR_BUSY, TOO_LOW, IN_BLOC,
+		NO_DIPLOMAT, DISCORD_TOO_SOON, SAME_NATION,
 		ENEMY_OF_ALLY, ALREADY, TOO_SOON, CANNOT_AFFORD }
 
 const PACT_NAMES: Array[String] = ["Chiến tranh", "Hòa ước", "Trung lập", "Bất tương xâm", "Liên minh"]
@@ -77,6 +78,19 @@ const ALLIANCE_PER_RELATION := 1.0 / 80.0
 const ALLIANCE_PER_DIPLOMACY := 0.02
 const ALLIANCE_MAX := 0.95
 ## Goods sent with a peace offer: shares of the value in food, wood and stone.
+## Sowing discord (GDD §38, M18f-b2c): the Ngoại giao post holder, once every DISCORD_COOLDOWN turns;
+## DISCORD_BASE + DISCORD_PER_DIPLOMACY per point, at most DISCORD_MAX. Success: the two nations'
+## relation DISCORD_HIT at once and DISCORD_PER_TURN for DISCORD_TURNS turns; exposed: both
+## DISCORD_EXPOSED with us.
+const DISCORD_COOLDOWN := 5
+const DISCORD_BASE := 0.2
+const DISCORD_PER_DIPLOMACY := 0.04
+const DISCORD_MAX := 0.75
+const DISCORD_HIT := -50.0
+const DISCORD_PER_TURN := -5.0
+const DISCORD_TURNS := 5
+const DISCORD_EXPOSED := -30.0
+
 const GOODS_SHARES: Dictionary[StringName, float] = {&"food": 0.3, &"wood": 0.3, &"stone": 0.4}
 const GOODS_VALUES: Dictionary[StringName, int] = {&"food": 1, &"wood": 1, &"stone": 2}
 
@@ -93,13 +107,15 @@ class Pair:
 	## The kingdom may ask again from this turn (after a refusal).
 	var asked_after := 0
 	var visit_turn := -100
+	## Turns left of the discord we sowed between the two (DISCORD_PER_TURN each).
+	var discord := 0
 
 	func relation() -> int:
 		return clampi(roundi(base + memory), -100, 100)
 
 	func to_save() -> Dictionary:
 		return {"pact": pact, "turns": turns, "base": base, "memory": memory, "war_since": war_since,
-				"capture": last_capture, "asked": asked_after, "visit": visit_turn}
+				"capture": last_capture, "asked": asked_after, "visit": visit_turn, "discord": discord}
 
 	static func from_save(data: Dictionary) -> Pair:
 		var pair := Pair.new()
@@ -111,6 +127,7 @@ class Pair:
 		pair.last_capture = int(data.get("capture", -100))
 		pair.asked_after = int(data.get("asked", 0))
 		pair.visit_turn = int(data.get("visit", -100))
+		pair.discord = int(data.get("discord", 0))
 		return pair
 
 
@@ -118,6 +135,10 @@ var pairs: Dictionary = {}  # "a|b" (sorted) -> Pair
 var bloc: Array[StringName] = []
 ## Advisors away as envoys until the turn ends.
 var envoys: Array[Advisor] = []
+## Nations fighting on our side (our vassals, kept by Realm.sync_followers): they share our wars.
+var followers: Dictionary = {}  # StringName -> true
+## The turn discord was last sown (DISCORD_COOLDOWN).
+var discord_turn := -100
 
 
 static func key(a: StringName, b: StringName) -> String:
@@ -143,8 +164,15 @@ func pact(a: StringName, b: StringName) -> Pact:
 	return pair(a, b).pact
 
 
-## Whether `a` and `b` fight each other (the rebels fight everyone).
+## The side `id` fights for: the kingdom for our vassals, else itself.
+func side(id: StringName) -> StringName:
+	return Realm.PLAYER if followers.has(id) else id
+
+
+## Whether `a` and `b` fight each other (the rebels fight everyone; vassals fight our wars).
 func at_war(a: StringName, b: StringName) -> bool:
+	a = side(a)
+	b = side(b)
 	if a == b:
 		return false
 	if a == Realm.REBELS or b == Realm.REBELS:
@@ -230,6 +258,8 @@ static func power(realm: Realm, state: KingdomState, id: StringName) -> int:
 		for squad in state.army.squads:
 			total += squad.soldiers
 		for nation in realm.vassals():
+			if nation.submitted:
+				continue
 			for army in realm.armies_of(nation.id):
 				total += army.soldiers
 		return total
@@ -303,6 +333,8 @@ static func tier_name(value: int) -> String:
 
 ## A short status of the pact between the kingdom and `nation_id` ("Hòa ước 12", "Khối chống ta" …).
 func status_text(nation_id: StringName) -> String:
+	if followers.has(nation_id):
+		return "Chư hầu"
 	var p := pair(Realm.PLAYER, nation_id)
 	if p.pact == Pact.WAR:
 		return "Khối chống ta" if bloc.has(nation_id) else "Chiến tranh"
@@ -427,6 +459,9 @@ func end_turn(realm: Realm, state: KingdomState) -> Array[String]:
 			var p := pair(a, b)
 			p.base = move_toward(p.base, targets[key(a, b)], DRIFT)
 			p.memory = move_toward(p.memory, 0.0, MEMORY_FADE)
+			if p.discord > 0:
+				p.discord -= 1
+				p.memory += DISCORD_PER_TURN
 			if p.pact in [Pact.PEACE, Pact.NAP, Pact.ALLIANCE] and p.turns > 0:
 				p.turns -= 1
 				if p.turns == 0:
@@ -541,8 +576,14 @@ func _ai_peace(realm: Realm, state: KingdomState) -> Array[String]:
 
 # --- The kingdom's diplomacy ---------------------------------------------------------------
 
+## A nation standing on its own (not destroyed, not the rebels, not our vassal).
 func _live(realm: Realm, nation_id: StringName) -> bool:
-	return realm.nations.has(nation_id) and nation_id != Realm.REBELS and not realm.nations[nation_id].destroyed
+	return realm.nations.has(nation_id) and nation_id != Realm.REBELS and not realm.nations[nation_id].destroyed \
+			and not realm.nations[nation_id].submitted
+
+
+func _submitted(realm: Realm, nation_id: StringName) -> bool:
+	return realm.nations.has(nation_id) and realm.nations[nation_id].submitted and not realm.nations[nation_id].destroyed
 
 
 func _check_envoy(advisor: Advisor, state: KingdomState) -> Result:
@@ -748,7 +789,7 @@ func ask_alliance(realm: Realm, state: KingdomState, nation_id: StringName, advi
 
 
 func check_visit(realm: Realm, state: KingdomState, nation_id: StringName, advisor: Advisor) -> Result:
-	if not _live(realm, nation_id):
+	if not _live(realm, nation_id) and not _submitted(realm, nation_id):
 		return Result.NOT_LIVE
 	if state.turn - pair(Realm.PLAYER, nation_id).visit_turn < VISIT_COOLDOWN:
 		return Result.TOO_SOON
@@ -764,7 +805,11 @@ func visit(realm: Realm, state: KingdomState, nation_id: StringName, advisor: Ad
 	var result := check_visit(realm, state, nation_id, advisor)
 	if result == Result.OK:
 		var p := pair(Realm.PLAYER, nation_id)
-		p.memory += visit_gain(advisor)
+		if _submitted(realm, nation_id):
+			var nation: Realm.Nation = realm.nations[nation_id]
+			nation.loyalty = mini(Realm.LOYALTY_MAX, nation.loyalty + Realm.LOYALTY_VISIT)
+		else:
+			p.memory += visit_gain(advisor)
 		p.visit_turn = state.turn
 		_send(advisor, name_of(realm, nation_id))
 	return result
@@ -797,8 +842,60 @@ func cancel_alliance(realm: Realm, state: KingdomState, nation_id: StringName) -
 	return Result.OK
 
 
+# --- Sowing discord (GDD §38, M18f-b2c) ----------------------------------------------------------
+
+## Turns before discord may be sown again (0 = now).
+func discord_wait(turn: int) -> int:
+	return maxi(0, discord_turn + DISCORD_COOLDOWN - turn)
+
+
+static func discord_chance(state: KingdomState) -> float:
+	return minf(DISCORD_MAX, DISCORD_BASE + DISCORD_PER_DIPLOMACY * state.advisors.post_stat(&"diplomacy"))
+
+
+func check_discord(realm: Realm, state: KingdomState, a: StringName, b: StringName) -> Result:
+	if not _live(realm, a) or not _live(realm, b):
+		return Result.NOT_LIVE
+	if a == b:
+		return Result.SAME_NATION
+	if discord_wait(state.turn) > 0:
+		return Result.DISCORD_TOO_SOON
+	if state.advisors.active(&"diplomacy") == null:
+		return Result.NO_DIPLOMAT
+	if not state.advisors.active(&"diplomacy").is_ready():
+		return Result.ADVISOR_BUSY
+	return Result.OK
+
+
+## The Ngoại giao post holder goes to set `a` and `b` against each other (away until the turn
+## ends). Returns {"result", "success", "chance"}.
+func sow_discord(realm: Realm, state: KingdomState, a: StringName, b: StringName) -> Dictionary:
+	var result := check_discord(realm, state, a, b)
+	if result != Result.OK:
+		return {"result": result, "success": false, "chance": 0.0}
+	var chance := discord_chance(state)
+	var advisor := state.advisors.active(&"diplomacy")
+	discord_turn = state.turn
+	_send(advisor, "%s và %s" % [name_of(realm, a), name_of(realm, b)])
+	var success := realm.rng.randf() < chance
+	if success:
+		var p := pair(a, b)
+		p.memory += DISCORD_HIT
+		p.discord = DISCORD_TURNS
+	else:
+		add_memory(Realm.PLAYER, a, DISCORD_EXPOSED)
+		add_memory(Realm.PLAYER, b, DISCORD_EXPOSED)
+	return {"result": result, "success": success, "chance": chance}
+
+
 static func describe(result: Result) -> String:
 	match result:
+		Result.NO_DIPLOMAT:
+			return "Cần một mưu sĩ giữ chức Ngoại giao (rảnh, không bị thương)."
+		Result.DISCORD_TOO_SOON:
+			return "Mưu sĩ Ngoại giao vừa đi ly gián; %d lượt mới đi lại được." % DISCORD_COOLDOWN
+		Result.SAME_NATION:
+			return "Chọn hai nước khác nhau."
 		Result.NOT_LIVE:
 			return "Nước này không còn."
 		Result.AT_WAR:
@@ -832,7 +929,7 @@ func to_save(state: KingdomState) -> Dictionary:
 	var pair_saves := {}
 	for k in pairs:
 		pair_saves[k] = pairs[k].to_save()
-	return {"pairs": pair_saves, "bloc": bloc.map(func(id: StringName) -> String: return String(id)),
+	return {"pairs": pair_saves, "discord_turn": discord_turn, "bloc": bloc.map(func(id: StringName) -> String: return String(id)),
 			"envoys": envoys.map(func(advisor: Advisor) -> int: return state.advisors.advisors.find(advisor))}
 
 
@@ -840,6 +937,7 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 	pairs.clear()
 	bloc.clear()
 	envoys.clear()
+	discord_turn = int(data.get("discord_turn", -100))
 	var pair_saves: Dictionary = data.get("pairs", {})
 	for k: String in pair_saves:
 		pairs[k] = Pair.from_save(pair_saves[k])

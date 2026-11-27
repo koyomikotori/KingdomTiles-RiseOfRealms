@@ -12,8 +12,10 @@ const TOWN_INCOME := 1.0
 const CAPITAL_INCOME := 3.0
 const INCOME_BY_DIFFICULTY: Array[float] = [0.7, 1.0, 1.3, 1.6]
 ## What a new army costs; the treasury never holds more than MAX_TREASURY. A nation keeps at most
-## 1 + one army per TOWNS_PER_ARMY towns.
-const TOWNS_PER_ARMY := 3
+## 1 + one army per TOWNS_PER_ARMY towns, never more than MAX_ARMIES (was one per 3 towns with no
+## cap: on Hard / Legendary the big nations' armies lagged the game).
+const TOWNS_PER_ARMY := 4
+const MAX_ARMIES := 4
 const ARMY_COST := 10.0
 const MAX_TREASURY := 20.0
 ## An army's full strength and its general's stars by the nation's distance from the kingdom.
@@ -38,11 +40,11 @@ const ALLY_FOCUS := 1.5
 const ALLY_INTERCEPT_RATIO := 1.2
 
 
-## Every nation still fighting (not destroyed, not the rebels).
+## Every nation still fighting on its own (not destroyed, not the rebels, not our vassal).
 static func live_nations(realm: Realm) -> Array[Realm.Nation]:
 	var result: Array[Realm.Nation] = []
 	for nation: Realm.Nation in realm.nations.values():
-		if not nation.destroyed and nation.id != Realm.REBELS:
+		if not nation.destroyed and nation.id != Realm.REBELS and not nation.submitted:
 			result.append(nation)
 	return result
 
@@ -56,7 +58,7 @@ static func income(realm: Realm, nation_id: StringName, difficulty: int) -> floa
 
 
 static func max_armies(towns_owned: int) -> int:
-	return 1 + towns_owned / TOWNS_PER_ARMY
+	return mini(MAX_ARMIES, 1 + towns_owned / TOWNS_PER_ARMY)
 
 
 static func army_size(nation: Realm.Nation, scale: float) -> int:
@@ -116,7 +118,8 @@ static func run_turn(realm: Realm, state: KingdomState) -> Dictionary:
 			raise_army(realm, state, nation)
 		realm.treasury[nation.id] = minf(treasury, MAX_TREASURY)
 	for army in realm.armies:
-		if realm.towns[army.town].owner == army.nation and army.soldiers < army.max_soldiers:
+		if realm.towns[army.town].owner == army.nation and army.soldiers < army.max_soldiers \
+				and not realm.is_ally(army):
 			army.soldiers = mini(army.max_soldiers, army.soldiers + ceili(army.max_soldiers * ARMY_REGEN))
 	news.append_array(ally_intercepts(realm, state))
 	# Attacks announced on an earlier turn, grouped by nation and town.

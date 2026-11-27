@@ -58,6 +58,10 @@ const PEACE_TRIBUTE_PER_POINT := 100.0
 const PEACE_MAX_CHANCE := 0.95
 const PEACE_MIN_RELATION := -30
 const TRUCE_TURNS := 10
+## Most units one AI army brings to a battle (a clan's, a nation's, a town's defenders), and the
+## troops one helping clan lends; bigger armies come in bigger squads (add_squads).
+const MAX_ENEMY_UNITS := 12
+const MAX_LENT_UNITS := 6
 
 
 ## The kingdom's standing with one clan.
@@ -285,6 +289,7 @@ func add_clan_units(side: BattleSide, clan_id: StringName, soldiers: int, units:
 		return
 	var remaining := soldiers
 	var ids := data.army_units.keys()
+	var shares: Array = []
 	for i in ids.size():
 		var unit: UnitData = units.get(ids[i])
 		if unit == null:
@@ -292,10 +297,41 @@ func add_clan_units(side: BattleSide, clan_id: StringName, soldiers: int, units:
 		var share := remaining if i == ids.size() - 1 else roundi(soldiers * data.army_units[ids[i]] / total_weight)
 		share = mini(share, remaining)
 		remaining -= share
+		shares.append([unit, share])
+	add_squads(side, shares, MAX_LENT_UNITS if lent else MAX_ENEMY_UNITS, data if lent else null)
+
+
+## Adds each [UnitData, soldiers] of `shares` to `side` in squads, at most `max_units` units in all:
+## the usual squad_size, every squad grown alike when there are more soldiers than that fits (a big
+## army on Hard / Legendary made 50+ units and the battle lagged, since its cost grows with the square
+## of the units; the soldiers and the strength stay the same, only gathered into fewer units).
+func add_squads(side: BattleSide, shares: Array, max_units: int = MAX_ENEMY_UNITS, ally: ClanData = null) -> void:
+	var sizes := bulk_squads(shares, max_units)
+	for i in shares.size():
+		var unit: UnitData = shares[i][0]
+		var share: int = shares[i][1]
 		while share > 0:
-			var squad := mini(share, squad_size(unit))
-			side.add_unit(unit, squad, null, data if lent else null)
+			var squad := mini(share, sizes[i])
+			side.add_unit(unit, squad, null, ally)
 			share -= squad
+
+
+## Soldiers per squad for each [UnitData, soldiers] of `shares` so they make at most `max_units`
+## units (more only when there are more kinds of troops than that).
+func bulk_squads(shares: Array, max_units: int = MAX_ENEMY_UNITS) -> Array[int]:
+	var growth := 1.0
+	while true:
+		var sizes: Array[int] = []
+		var count := 0
+		for pair in shares:
+			var size := maxi(1, ceili(squad_size(pair[0]) * growth))
+			sizes.append(size)
+			if pair[1] > 0:
+				count += ceili(float(pair[1]) / size)
+		if count <= max_units or growth > 1000.0:
+			return sizes
+		growth *= 1.1
+	return []
 
 
 func lose_soldiers(clan_id: StringName, amount: int) -> void:

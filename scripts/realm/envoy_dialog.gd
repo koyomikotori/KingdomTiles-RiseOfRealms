@@ -166,7 +166,10 @@ func _refresh() -> void:
 			_preview.note("Liên minh %d lượt: quân của họ ưu tiên đánh kẻ thù của ta và chặn quân địch sắp đánh trấn ta gần họ." %
 					RealmDiplomacy.ALLIANCE_TURNS)
 		Mode.VISIT:
-			_preview.line(&"scroll", "Quan hệ +%d ngay (phai dần như mọi sự kiện)" % roundi(RealmDiplomacy.visit_gain(_advisor)))
+			if _nation.submitted:
+				_preview.line(&"scroll", "Trung thành +%d (hiện %d/%d)" % [Realm.LOYALTY_VISIT, _nation.loyalty, Realm.LOYALTY_MAX])
+			else:
+				_preview.line(&"scroll", "Quan hệ +%d ngay (phai dần như mọi sự kiện)" % roundi(RealmDiplomacy.visit_gain(_advisor)))
 	var result := _check()
 	set_status(RealmDiplomacy.describe(result) if result != RealmDiplomacy.Result.OK else "", result == RealmDiplomacy.Result.OK)
 
@@ -197,7 +200,8 @@ func _send() -> void:
 			text = ("%s đồng ý liên minh!" if good else "%s khước từ liên minh.") % _nation.name
 		Mode.VISIT:
 			dip.visit(realm, _state, _nation.id, _advisor)
-			text = "Sứ giả thăm hỏi %s: quan hệ được cải thiện." % _nation.name
+			text = ("Sứ giả thăm hỏi %s: lòng trung thành tăng." if _nation.submitted
+					else "Sứ giả thăm hỏi %s: quan hệ được cải thiện.") % _nation.name
 	Sfx.play(&"click" if good else &"error")
 	done.emit(text, good)
 	close()

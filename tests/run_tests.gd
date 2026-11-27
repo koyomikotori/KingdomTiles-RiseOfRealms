@@ -50,6 +50,7 @@ const TEST_FILES := [
 	"res://tests/test_m18f_b1_war.gd",
 	"res://tests/test_m18f_b2_vassals.gd",
 	"res://tests/test_m18f_b2b_diplomacy.gd",
+	"res://tests/test_m18f_b2c_submission.gd",
 ]
 
 

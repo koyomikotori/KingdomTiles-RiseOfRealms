@@ -365,6 +365,20 @@
 			["neutral", "Thuộc hạ đã ghi lại. Không có gì thay đổi."]
 		]
 	},
+	"submission_offer": {
+		"linh_nhi": [
+			["surprised", "Chúa công! Sứ giả {nation} tới xin làm chư hầu đó ạ! Họ sợ mình thật rồi!"],
+			["happy", "{nation} muốn quy phục kìa Chúa công! Có thêm cống nạp, lại bớt một kẻ thù, Linh Nhi thấy lời lắm ạ."],
+			["neutral", "Nhận họ thì nhớ thăm hỏi thường xuyên nha Chúa công, kẻo họ giận rồi bỏ đi mất."],
+			["concerned", "Nhưng nếu mình thua trận liên tiếp, {nation} có quay lưng không ạ? Tiểu nữ hơi lo."]
+		],
+		"tu_uyen": [
+			["neutral", "{nation} xin quy phục. Đất họ còn nhỏ, quân họ yếu: nhận thì được cống nạp và thêm một cánh quân đánh giặc cho ta."],
+			["neutral", "Chư hầu quy phục chỉ trung thành khi ta còn mạnh hơn họ. Mất trấn, mất kinh đô thì lòng họ cũng lung lay."],
+			["neutral", "Từ chối cũng được, nhưng năm lượt nữa họ mới xin lại. Chúa công cân nhắc."],
+			["concerned", "Trấn họ chiếm được sẽ là của họ. Nuôi chư hầu lớn quá thì có ngày phải đánh lại chính họ."]
+		]
+	},
 	"spar_won": {
 		"linh_nhi": [
 			["happy", "Oa! {general} hạ được {rival} rồi! Trận đấu hấp dẫn quá!"],

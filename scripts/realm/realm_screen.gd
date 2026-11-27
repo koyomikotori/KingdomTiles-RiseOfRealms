@@ -215,11 +215,15 @@ func _fill_nations() -> void:
 	var realm := _state.realm
 	var dip := realm.diplomacy
 	var nations := RealmWar.live_nations(realm)
+	nations.append_array(realm.submitted_nations())
 	if nations.is_empty():
 		return
 	_panel.add_child(_line("Các nước", 14, UiPalette.HEADER))
 	for nation in nations:
-		var button := _button("%s · %s · %+d" % [nation.name, dip.status_text(nation.id), dip.relation(Realm.PLAYER, nation.id)],
+		var text := "%s · %s · %+d" % [nation.name, dip.status_text(nation.id), dip.relation(Realm.PLAYER, nation.id)]
+		if nation.submitted:
+			text = "%s · Chư hầu · trung thành %d" % [nation.name, nation.loyalty]
+		var button := _button(text,
 				func() -> void:
 					_force = null
 					_siege_target = -1
@@ -284,9 +288,11 @@ func _fill_town(town: Realm.Town) -> void:
 			_panel.add_child(_line("Ngân khố %s: %d/%d (lập đạo quân mới tốn %d)" % [realm.nations[town.owner].name,
 					floori(realm.treasury.get(town.owner, 0.0)), roundi(RealmWar.MAX_TREASURY), roundi(RealmWar.ARMY_COST)],
 					13, UiPalette.MUTED))
-		if town.owner != Realm.REBELS:
+		if town.owner != Realm.REBELS and realm.nations[town.owner].submitted:
+			_fill_submitted(realm.nations[town.owner])
+		elif town.owner != Realm.REBELS:
 			_fill_diplomacy(realm.nations[town.owner])
-		if town.is_capital() and town.owner != Realm.REBELS:
+		if town.is_capital() and town.owner != Realm.REBELS and not realm.nations[town.owner].submitted:
 			_panel.add_child(_line("Chiếm kinh đô thì %s bị diệt, các trấn còn lại về tay ta (trấn có đạo quân của họ thành tàn quân nổi loạn)." % realm.nations[town.owner].name,
 					13, UiPalette.MUTED))
 	elif town.is_captured():
@@ -396,6 +402,8 @@ func _fill_diplomacy(nation: Realm.Nation) -> void:
 	_panel.add_child(_buttons_row(buttons))
 	var more: Array[Button] = [_diplomacy_button("Thăm hỏi", _open_envoy.bind(nation, EnvoyDialog.Mode.VISIT),
 			dip.check_visit(realm, _state, nation.id, null), reasons)]
+	if RealmWar.live_nations(realm).size() >= 2:
+		more.append(_diplomacy_button("Ly gián", _open_discord.bind(nation), _discord_check(nation), reasons))
 	if p.pact != RealmDiplomacy.Pact.WAR:
 		more.append(_button("Tuyên chiến", _ask_declare.bind(nation)))
 	if dip.allied(Realm.PLAYER, nation.id):
@@ -420,6 +428,61 @@ func _diplomacy_button(text: String, on_pressed: Callable, result: RealmDiplomac
 		button.disabled = true
 		reasons.append("%s: %s" % [text, RealmDiplomacy.describe(result)])
 	return button
+
+
+## Whether discord can be sown on `nation` with any second nation (the pick comes in the dialog).
+func _discord_check(nation: Realm.Nation) -> RealmDiplomacy.Result:
+	var realm := _state.realm
+	var result := RealmDiplomacy.Result.SAME_NATION
+	for other in RealmWar.live_nations(realm):
+		if other != nation:
+			result = realm.diplomacy.check_discord(realm, _state, nation.id, other.id)
+			break
+	return result
+
+
+func _open_discord(nation: Realm.Nation) -> void:
+	var dialog := DiscordDialog.new()
+	add_child(dialog)
+	dialog.open(_state, nation)
+	dialog.done.connect(func(text: String, good: bool) -> void:
+		_set_status(text, good)
+		_refresh())
+
+
+## A nation that submitted to us (GDD §38): its king, loyalty and what moves it, tribute, armies,
+## and a visit to raise the loyalty.
+func _fill_submitted(nation: Realm.Nation) -> void:
+	var realm := _state.realm
+	var dip := realm.diplomacy
+	var king := nation.vassal
+	_panel.add_child(HSeparator.new())
+	_panel.add_child(_line("Chư hầu %s — vua %s %s" % [nation.name, king.name, king.star_text()], 15, UiPalette.HEADER))
+	var low := nation.loyalty <= Realm.LOYALTY_LOW
+	_panel.add_child(_line("Trung thành %d/%d%s" % [nation.loyalty, Realm.LOYALTY_MAX, " — nguy cơ ly khai!" if low else ""],
+			14, UiPalette.WARNING if low else UiPalette.GOOD))
+	var theirs := RealmDiplomacy.power(realm, _state, nation.id)
+	var ours := RealmDiplomacy.power(realm, _state, Realm.PLAYER)
+	_panel.add_child(_line("Sức họ %d · sức ta %d%s" % [theirs, ours,
+			" (họ không kém ta: −%d mỗi lượt)" % -Realm.LOYALTY_STRONGER if theirs >= ours else ""], 13,
+			UiPalette.WARNING if theirs >= ours else UiPalette.TEXT))
+	_panel.add_child(_line("Ta mất trấn %d, mất kinh đô %d · ta thắng trận lớn +%d · thăm hỏi +%d · về 0 thì ly khai." % [
+			Realm.LOYALTY_TOWN_LOST, Realm.LOYALTY_CAPITAL_LOST, Realm.LOYALTY_WIN, Realm.LOYALTY_VISIT], 12, UiPalette.MUTED))
+	var view := RequirementView.new()
+	_panel.add_child(view)
+	view.amounts("Cống nạp mỗi lượt", Realm.tribute_of(king))
+	var armies := realm.armies_of(nation.id)
+	var soldiers := 0
+	for army in armies:
+		soldiers += army.soldiers
+	_panel.add_child(_line("%d trấn · %d đạo quân (%d lính) · đánh và hòa theo ta, trấn chiếm được là của họ." % [
+			realm.count_owned(nation.id), armies.size(), soldiers], 13, UiPalette.MUTED))
+	var reasons: Array[String] = []
+	var buttons: Array[Button] = [_diplomacy_button("Thăm hỏi (+%d trung thành)" % Realm.LOYALTY_VISIT,
+			_open_envoy.bind(nation, EnvoyDialog.Mode.VISIT), dip.check_visit(realm, _state, nation.id, null), reasons)]
+	_panel.add_child(_buttons_row(buttons))
+	for reason in reasons:
+		_panel.add_child(_line(reason, 12, UiPalette.MUTED))
 
 
 func _open_envoy(nation: Realm.Nation, mode: EnvoyDialog.Mode) -> void:
