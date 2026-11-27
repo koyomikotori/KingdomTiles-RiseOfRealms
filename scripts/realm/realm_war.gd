@@ -32,6 +32,10 @@ const PLAYER_WEIGHT: Array[float] = [0.5, 1.0, 2.0, 2.0]
 const CAPITAL_WEIGHT := 1.2
 ## Below this share of its strength an army with nothing to attack stays to recover.
 const REST_SHARE := 0.6
+## Our allies' armies favor our enemies' towns this much, and intercept an army about to strike a
+## town of ours next to them when this many times as strong (GDD §37).
+const ALLY_FOCUS := 1.5
+const ALLY_INTERCEPT_RATIO := 1.2
 
 
 ## Every nation still fighting (not destroyed, not the rebels).
@@ -114,6 +118,7 @@ static func run_turn(realm: Realm, state: KingdomState) -> Dictionary:
 	for army in realm.armies:
 		if realm.towns[army.town].owner == army.nation and army.soldiers < army.max_soldiers:
 			army.soldiers = mini(army.max_soldiers, army.soldiers + ceili(army.max_soldiers * ARMY_REGEN))
+	news.append_array(ally_intercepts(realm, state))
 	# Attacks announced on an earlier turn, grouped by nation and town.
 	var groups := {}
 	for army in realm.armies:
@@ -121,7 +126,7 @@ static func run_turn(realm: Realm, state: KingdomState) -> Dictionary:
 			continue
 		var target := realm.towns[army.target]
 		if not RealmMap.are_neighbors(army.town, target.id) or target.owner == army.nation \
-				or target.id == Realm.HOME_CAPITAL:
+				or target.id == Realm.HOME_CAPITAL or not realm.diplomacy.at_war(army.nation, target.owner):
 			army.target = -1
 			continue
 		var key := "%s:%d" % [army.nation, target.id]
@@ -157,13 +162,54 @@ static func run_turn(realm: Realm, state: KingdomState) -> Dictionary:
 	return {"news": news, "threats": threats}
 
 
+## Our allies' armies meet the enemy armies about to strike a town of ours (announced on an earlier
+## turn) when they stand next to them, are at war with them and ALLY_INTERCEPT_RATIO as strong.
+## Returns the news lines.
+static func ally_intercepts(realm: Realm, state: KingdomState) -> Array[String]:
+	var news: Array[String] = []
+	var allies := realm.diplomacy.allies_of_player(realm)
+	if allies.is_empty():
+		return news
+	for enemy in realm.armies.duplicate():
+		if not realm.armies.has(enemy) or realm.is_ally(enemy) or not enemy.has_target() \
+				or enemy.order_turn >= state.turn or realm.towns[enemy.target].owner != Realm.PLAYER:
+			continue
+		for ally_id in allies:
+			if not realm.diplomacy.at_war(ally_id, enemy.nation):
+				continue
+			var group: Array = []
+			var power := 0
+			for army in realm.armies_of(ally_id):
+				if not army.has_target() and RealmMap.are_neighbors(army.town, enemy.town):
+					group.append(army)
+					power += army.soldiers
+			if group.is_empty() or power < enemy.soldiers * ALLY_INTERCEPT_RATIO:
+				continue
+			var ally: Realm.Nation = realm.nations[ally_id]
+			var enemy_nation: Realm.Nation = realm.nations[enemy.nation]
+			var record := RealmVassals._simulate(realm, army_side(realm, state, group, "Quân %s" % ally.name),
+					army_side(realm, state, [enemy], "Quân %s" % enemy_nation.name))
+			spread_losses(realm, group, BattleOutcome.soldiers_lost(record, BattleRecord.ATTACKER))
+			var town_name := realm.towns[enemy.target].name
+			if record.winner == BattleRecord.ATTACKER:
+				realm.remove_army(enemy)
+				realm.diplomacy.add_memory(Realm.PLAYER, ally_id, RealmDiplomacy.FIGHT_TOGETHER)
+				news.append("Đồng minh %s chặn đánh tan đạo quân %s định đánh trấn %s." % [ally.name, enemy_nation.name,
+						town_name])
+			else:
+				spread_losses(realm, [enemy], BattleOutcome.soldiers_lost(record, BattleRecord.DEFENDER))
+				news.append("Đồng minh %s chặn đánh quân %s nhưng thất bại." % [ally.name, enemy_nation.name])
+			break
+	return news
+
+
 ## The neighboring town `army` most wants and can take (ATTACK_RATIO), or -1.
 static func pick_target(realm: Realm, state: KingdomState, army: NationArmy) -> int:
 	var best := -1
 	var best_score := 0.0
 	for id in RealmMap.neighbors(army.town):
 		var town := realm.towns[id]
-		if town.owner == army.nation or id == Realm.HOME_CAPITAL:
+		if town.owner == army.nation or id == Realm.HOME_CAPITAL or not realm.diplomacy.at_war(army.nation, town.owner):
 			continue
 		var power := 0.0
 		for mate in realm.armies_at(army.town):
@@ -177,6 +223,10 @@ static func pick_target(realm: Realm, state: KingdomState, army: NationArmy) -> 
 			score *= PLAYER_WEIGHT[clampi(state.difficulty, 0, PLAYER_WEIGHT.size() - 1)]
 		if town.is_capital():
 			score *= CAPITAL_WEIGHT
+		# Our allies go first for our enemies (GDD §37).
+		if realm.diplomacy.allied(Realm.PLAYER, army.nation) and town.owner != Realm.REBELS \
+				and realm.diplomacy.at_war(Realm.PLAYER, town.owner):
+			score *= ALLY_FOCUS
 		if score > best_score:
 			best = id
 			best_score = score
@@ -270,6 +320,7 @@ static func fight(realm: Realm, state: KingdomState, group: Array, town: Realm.T
 		return "%s đánh trấn %s của %s nhưng thất bại." % [attacker.name, town.name, owner.name]
 	for army: NationArmy in defenders_armies:
 		realm.remove_army(army)
+	realm.diplomacy.note_capture(attacker.id, town.owner, state.turn)
 	town.owner = attacker.id
 	town.max_garrison = Realm.garrison_for(town.id, state.wars.enemy_scale)
 	town.garrison = 0
@@ -285,6 +336,7 @@ static func fight(realm: Realm, state: KingdomState, group: Array, town: Realm.T
 ## `nation` is destroyed by another nation: its towns go to `winner`, its armies break up.
 static func fall(realm: Realm, nation: Realm.Nation, winner: StringName) -> void:
 	nation.destroyed = true
+	realm.diplomacy.remove(nation.id)
 	realm.treasury.erase(nation.id)
 	for town in realm.towns:
 		if town.owner == nation.id:

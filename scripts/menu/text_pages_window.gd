@@ -5,7 +5,6 @@ extends ModalWindow
 
 const ACCENT := UiPalette.ACCENT
 const PAGE_HEIGHT := 420.0
-const RESERVED := 220.0
 
 var _tabs: TabContainer
 
@@ -13,7 +12,7 @@ var _tabs: TabContainer
 func open_frame(title: String, width_share: float = 0.5) -> VBoxContainer:
 	var body := build_frame(title, ACCENT, width_share)
 	_tabs = TabContainer.new()
-	_tabs.custom_minimum_size = Vector2(0, fit_height(PAGE_HEIGHT, RESERVED))
+	flex(_tabs, PAGE_HEIGHT)
 	body.add_child(_tabs)
 	return body
 

@@ -25,6 +25,12 @@ const TAP_SLOP := 12.0
 const SELECTED_COLOR := Color(1.0, 0.9, 0.45)
 
 const EMPTY_COLOR := Color(0.10, 0.11, 0.14)
+## Faded wild land, woods and hills drawn around the board (SCENERY_RING cells wide, fading out) so the
+## kingdom does not float in an empty dark space; purely a picture, never part of the board.
+const SCENERY_RING := 8
+const SCENERY_ALPHA := 0.55
+const SCENERY_TINT := Color(0.55, 0.55, 0.6)
+const SCENERY_TERRAINS: Array[StringName] = [&"", &"", &"", &"", &"", &"forest", &"forest", &"forest", &"hill", &"grass"]
 const GRID_COLOR := Color(0, 0, 0, 0.12)
 const TERRITORY_BORDER_COLOR := Color(1.0, 0.88, 0.4)
 const TERRITORY_SHADOW_COLOR := Color(0.17, 0.11, 0.07, 0.8)
@@ -283,6 +289,7 @@ func _draw() -> void:
 func _draw_ground() -> void:
 	if _board == null:
 		return
+	_draw_scenery()
 	var groups: Dictionary = {}
 	var keys: Array[Rect2] = []
 	for cell in _board.get_all_cells():
@@ -316,6 +323,26 @@ func _draw_ground() -> void:
 	if not border.is_empty():
 		_ground.draw_multiline(border, TERRITORY_SHADOW_COLOR, 4.0)
 		_ground.draw_multiline(border, TERRITORY_BORDER_COLOR, 2.0)
+
+
+## The land around the board: a ring of faded tiles, picked by a hash of the cell so it never changes.
+func _draw_scenery() -> void:
+	var groups: Dictionary = {}
+	for y in range(-SCENERY_RING, _board.height + SCENERY_RING):
+		for x in range(-SCENERY_RING, _board.width + SCENERY_RING):
+			var out := maxi(maxi(-x, x - _board.width + 1), maxi(-y, y - _board.height + 1))
+			if out <= 0:
+				continue
+			var texture := GameArt.terrain(SCENERY_TERRAINS[posmod(hash(Vector2i(x, y)), SCENERY_TERRAINS.size())])
+			if texture == null:
+				continue
+			var fade := 1.0 - float(out - 1) / SCENERY_RING
+			if not groups.has(texture):
+				groups[texture] = []
+			groups[texture].append([_cell_rect(Vector2i(x, y)), Color(SCENERY_TINT, SCENERY_ALPHA * fade * fade)])
+	for texture: Texture2D in groups:
+		for item: Array in groups[texture]:
+			_ground.draw_texture_rect(texture, item[0], false, item[1])
 
 
 func _draw_ghost() -> void:

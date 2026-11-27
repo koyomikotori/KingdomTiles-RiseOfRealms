@@ -10,8 +10,6 @@ extends ModalWindow
 const STAT_BAR_WIDTH := 160
 ## The tab pages keep this height whatever they show (their content scrolls).
 const TABS_HEIGHT := 480
-## Screen height the rest of the window needs (ModalWindow.fit_height).
-const TABS_RESERVED := 260
 
 ## "Đến xưởng rèn" in the Trang bị tab: the kingdom scene opens the forge's Rèn tab for this
 ## officer's kind and the slot shown (M14h).
@@ -90,7 +88,7 @@ func open(state: KingdomState, officer: Officer) -> void:
 	var tabs := TabContainer.new()
 	_tabs = tabs
 	tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tabs.custom_minimum_size = Vector2(0, fit_height(TABS_HEIGHT, TABS_RESERVED))
+	flex(tabs, TABS_HEIGHT)
 	row.add_child(tabs)
 	_stats = _tab(tabs, "Chỉ số")
 	_equip_box = _tab(tabs, "Trang bị")

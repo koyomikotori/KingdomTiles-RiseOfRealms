@@ -30,6 +30,11 @@ var _shapes: Dictionary[StringName, PieceShapeData] = {}
 var _buildings: Dictionary[StringName, BuildingData] = {}
 var _resource_types: Array[ResourceTypeData] = []
 var _resource_labels: Dictionary[StringName, Label] = {}
+## The "(+3)" next to each amount, green when it grows, red when it shrinks.
+var _change_labels: Dictionary[StringName, Label] = {}
+const CHANGE_UP := Color(0.62, 0.95, 0.5)
+const CHANGE_DOWN := Color(1.0, 0.5, 0.42)
+const CHANGE_NONE := Color(0.88, 0.8, 0.66)
 ## Hand index of the selected piece, or NO_SELECTION.
 var _selected := NO_SELECTION
 ## Building chosen in the build tab, or NO_BUILDING. Never set together with _selected.
@@ -482,6 +487,9 @@ func _on_notice_pressed(section_id: StringName, item_id: StringName) -> void:
 	if section_id == &"diplomacy":
 		_open_world_map()
 		return
+	if section_id == &"realm":
+		_open_realm_screen()
+		return
 	match item_id:
 		&"constructing":
 			var origins := state.board.get_construction_origins()
@@ -543,26 +551,10 @@ func _end_turn_now() -> void:
 			_expedition_stages.clear()
 		_expedition_stages.append(report.expedition)
 	_refresh_notices()
-	var lines: Array[String] = ["Lượt %d bắt đầu. Xem bảng thông báo bên trái." % state.turn]
 	_pending_victory = report.victory
-	if report.has("pending_invasion"):
-		lines.append("%s kéo quân xâm lược!" % _clan_name(report.pending_invasion.clan_id))
-	elif report.has("pending_raid"):
-		lines.append("Quân cướp tấn công!")
-	if not report.events.is_empty():
-		lines.append("Có %d sự kiện mới." % report.events.size())
-	for march in report.get("realm", {}).get("marched", []):
-		lines.append("Đạo quân %s đã tới %s." % [march.general, state.realm.towns[march.to].name])
-	for revolt in report.get("realm", {}).get("revolted", []):
-		var lost: Realm.Town = state.realm.towns[revolt.town]
-		lines.append("Trấn %s nổi loạn, về tay %s!" % [lost.name, state.realm.owner_name(lost, state.kingdom_name)])
-	if not state.realm.pending_revolt.is_empty():
-		lines.append("Trấn %s nổi loạn! Quân trấn giữ phải dẹp loạn." % state.realm.towns[state.realm.pending_revolt.town].name)
-	lines.append_array(_realm_war_lines(report.get("realm", {})))
-	var sieges := state.realm.due_siege_groups(state.turn)
-	if not sieges.is_empty():
-		lines.append("%d trận công thành sắp diễn ra." % sieges.size())
-	placement_status.text = "\n".join(lines)
+	# The turn's news lives in the notice column (Notices: "Thiên hạ" for the realm); the line under
+	# the pieces stays for placing land, so it never pushes the pieces out of sight.
+	placement_status.text = ""
 	# With a battle at the start of the turn, the autosave, the events and the end screen wait until it is over.
 	if not report.has("pending_invasion") and not report.has("pending_raid"):
 		_autosave()
@@ -605,7 +597,6 @@ func _play_raid(simulator: BattleSimulator) -> void:
 		var result := state.finish_raid(record)
 		_turn_battle = result
 		_autosave()
-		placement_status.text += " %s" % ("Đã đánh lui." if result.won else "Thất thủ.")
 		var lines := _enemy_officer_lines(result, "Thủ lĩnh đạo tặc")
 		lines.append_array(_ally_lines(result))
 		_show_battle_report(result, lines)
@@ -641,8 +632,7 @@ func _play_invasion(clan_id: StringName, simulator: BattleSimulator) -> void:
 		if not result.castle_fallen:
 			report.add_counsel(_battle_counsel(result, &"invasion_won", &"invasion_lost", {"clan": _clan_name(clan_id)}))
 		_battle_report = report
-		report.closed.connect(_on_battle_report_closed)
-		placement_status.text += " %s" % ("Đã đẩy lui." if result.won else "Thất thủ, mất đất."))
+		report.closed.connect(_on_battle_report_closed))
 
 
 ## The player attacks a clan (from the world map): whole army against theirs.
@@ -800,6 +790,7 @@ func _annex_line(clan_id: StringName, side: Vector2i) -> String:
 ## Rebuilds the notice column from the state and the last turn's report.
 func _refresh_notices() -> void:
 	if _notices != null and state != null:
+		_notices.keep_open = state.tutorial != null and state.tutorial.is_active()
 		_notices.show_notices(Notices.build(state, _last_report), state.turn)
 
 
@@ -971,7 +962,7 @@ func _autosave() -> void:
 		return
 	var error := _save_system.save(state, SaveSystem.AUTO_SLOT)
 	if error != OK:
-		placement_status.text += "\nKhông tự lưu được (lỗi %s)." % error_string(error)
+		placement_status.text = "Không tự lưu được (lỗi %s)." % error_string(error)
 
 
 func _open_game_menu() -> void:
@@ -1317,6 +1308,12 @@ func _build_resource_labels() -> void:
 				_toggle_resource_popup(resource_id))
 		row.add_child(label)
 		_resource_labels[type.resource_id] = label
+		var change := Label.new()
+		change.theme_type_variation = &"WoodLabel"
+		change.add_theme_font_size_override("font_size", 15)
+		change.mouse_filter = Control.MOUSE_FILTER_PASS
+		row.add_child(change)
+		_change_labels[type.resource_id] = change
 
 
 ## Resource bar (stock, net income per turn and its breakdown) and the army tab depend on stock,
@@ -1343,13 +1340,18 @@ func _refresh_economy() -> void:
 		var label := _resource_labels[type.resource_id]
 		var amount := state.stockpile.get_amount(type.resource_id)
 		var change: int = net.get(type.resource_id, 0)
-		label.text = "%d (%+d)" % [amount, change]
+		label.text = str(amount)
+		var change_label := _change_labels[type.resource_id]
+		change_label.text = "(%+d)" % change
+		change_label.add_theme_color_override("font_color",
+				CHANGE_UP if change > 0 else (CHANGE_DOWN if change < 0 else CHANGE_NONE))
 		var lines: Array[String] = ["%s: %d (%+d mỗi lượt)" % [type.display_name, amount, change]]
 		for entry: Dictionary in breakdown.get(type.resource_id, []):
 			lines.append("  %+d  %s" % [entry.amount, _income_source_text(entry)])
 		if lines.size() == 1:
 			lines.append("  Chưa có nguồn thu hay chi nào.")
 		label.tooltip_text = "\n".join(lines)
+		change_label.tooltip_text = label.tooltip_text
 		if _resource_popup_id == type.resource_id:
 			_resource_popup_text.text = label.tooltip_text
 	army_panel.refresh(state)
@@ -1593,7 +1595,7 @@ func _play_due_siege(armies: Array) -> void:
 		if state.realm.check_siege(force, town_id) == Realm.Result.OK:
 			group.append(force)
 		else:
-			placement_status.text += "\nĐạo quân %s không thể công thành %s nữa." % [force.general.name,
+			placement_status.text = "Đạo quân %s không thể công thành %s nữa." % [force.general.name,
 					state.realm.towns[town_id].name]
 	if group.is_empty():
 		_continue_turn_start()
@@ -1644,25 +1646,6 @@ func _besiege(group: Array, town_id: int, after: Callable = Callable()) -> void:
 				_open_realm_screen(town_id)))
 
 
-## The nations' news at the end of the turn (M18f-b1): fights between them, attacks announced on
-## our towns and attacks to fight now.
-func _realm_war_lines(realm_report: Dictionary) -> Array[String]:
-	var lines: Array[String] = []
-	var realm := state.realm
-	for line in realm_report.get("news", []):
-		lines.append(line)
-	for entry in realm_report.get("attacks", []):
-		var group := realm.attack_armies(entry)
-		if not group.is_empty():
-			lines.append("Quân %s đánh trấn %s của ta!" % [realm.nations[group[0].nation].name, realm.towns[entry.town].name])
-	for threat in realm_report.get("threats", []):
-		var army := realm.army_by_id(threat.army)
-		if army != null:
-			lines.append("Đạo quân %s (%s) chuẩn bị đánh trấn %s (lượt sau)." % [army.general.name,
-					realm.nations[army.nation].name, realm.towns[threat.town].name])
-	return lines
-
-
 ## Our armies intercept an enemy army that announced an attack (GDD §35): the orders are spent
 ## either way, then the turn start goes on.
 func _play_intercept(armies: Array) -> void:
@@ -1672,7 +1655,7 @@ func _play_intercept(armies: Array) -> void:
 	if simulator == null:
 		for force: Realm.Force in armies:
 			state.realm.cancel_order(force)
-		placement_status.text += "\nKhông đánh chặn được: đạo quân địch đã đi nơi khác."
+		placement_status.text = "Không đánh chặn được: đạo quân địch đã đi nơi khác."
 		_continue_turn_start()
 		return
 	if _realm_screen != null:

@@ -101,9 +101,12 @@ static func groups_of(state: KingdomState) -> Array[Dictionary]:
 	if state.realm.active:
 		for force in state.realm.forces:
 			var general := force.general
-			var title := "Đạo quân %s %s · %s" % [general.name if general != null else "?",
-					general.star_text() if general != null else "", state.realm.towns[force.town].name]
-			result.append({"key": "force:%d" % force.get_instance_id(), "title": title, "squads": force.squads})
+			# The flag already says it is an army: the name line keeps only the general, the town
+			# goes on the second line with the counts.
+			var title := "%s %s" % [general.name if general != null else "?",
+					general.star_text() if general != null else ""]
+			result.append({"key": "force:%d" % force.get_instance_id(), "title": title, "squads": force.squads,
+					"force": force, "place": state.realm.towns[force.town].name})
 	if not expedition.is_empty():
 		result.append({"key": EXPEDITION_GROUP, "title": "Đang thảo phạt", "squads": expedition})
 	return result
@@ -132,7 +135,7 @@ func _add_group(group: Dictionary) -> void:
 		full += _state.units[squad.unit_id].squad_size
 	var is_open: bool = _open.get(key, false)
 	var header := _fold_button("%s %s" % ["▾" if is_open else "▸", group.title],
-			"%d đơn vị · %d/%d lính" % [squads.size(), soldiers, full], HEADER_COLOR, null)
+			"%d đơn vị · %d/%d lính" % [squads.size(), soldiers, full], HEADER_COLOR, null, group.get("force"), group.get("place", ""))
 	header.pressed.connect(_toggle.bind(key))
 	_groups.add_child(header)
 	if not is_open:
@@ -206,7 +209,8 @@ func _toggle(key: String) -> void:
 
 ## A flat full-width button holding a row: the unit's icon if any, `text` (clipped) on the left
 ## in `color`, `count` on the right.
-func _fold_button(text: String, count: String, color: Color, unit: UnitData) -> Button:
+func _fold_button(text: String, count: String, color: Color, unit: UnitData, force: Realm.Force = null,
+		place: String = "") -> Button:
 	var button := Button.new()
 	button.flat = true
 	button.focus_mode = Control.FOCUS_NONE
@@ -219,6 +223,9 @@ func _fold_button(text: String, count: String, color: Color, unit: UnitData) -> 
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if unit != null:
 		row.add_child(ArmyDetailWindow.unit_icon(unit, ICON_SIZE))
+	if force != null:
+		row.add_child(ArmyFlag.of(force, 0.85))
+		button.custom_minimum_size.y = 44
 	var name_label := Label.new()
 	name_label.text = text
 	name_label.clip_text = true
@@ -227,6 +234,24 @@ func _fold_button(text: String, count: String, color: Color, unit: UnitData) -> 
 	name_label.add_theme_font_size_override("font_size", 14 if unit == null else 13)
 	name_label.add_theme_color_override("font_color", color)
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if force != null:
+		# An army: two lines (name, then where it stands and its counts), so nothing is cut off.
+		var lines := VBoxContainer.new()
+		lines.add_theme_constant_override("separation", 0)
+		lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lines.alignment = BoxContainer.ALIGNMENT_CENTER
+		lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lines.add_child(name_label)
+		var info := Label.new()
+		info.text = "%s · %s" % [place, count] if place != "" else count
+		info.clip_text = true
+		info.add_theme_font_size_override("font_size", 12)
+		info.add_theme_color_override("font_color", UiPalette.MUTED)
+		info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lines.add_child(info)
+		row.add_child(lines)
+		button.add_child(row)
+		return button
 	row.add_child(name_label)
 	var right := Label.new()
 	right.text = count

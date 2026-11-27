@@ -27,6 +27,10 @@ var _footer: Control
 var _footer_home: Node
 var _sections: Array[Dictionary] = []
 var _turn := 1
+## A turn with nothing to say folds the column by itself; » opens it anyway until the next turn.
+var _peek := false
+## Never folds by itself while this is on (the tutorial points at the column).
+var keep_open := false
 
 
 ## `top`: the column starts this far down (under the top bar). `footer` (the cell info panel) moves
@@ -58,7 +62,10 @@ func setup(top: float, footer: Control, footer_home: Node) -> void:
 	_toggle.focus_mode = Control.FOCUS_NONE
 	_toggle.custom_minimum_size = Vector2(32, 30)
 	_toggle.pressed.connect(func() -> void:
-		GameSettings.set_notices_open(not GameSettings.notices_open())
+		if GameSettings.notices_open() and _sections.is_empty():
+			_peek = not _peek
+		else:
+			GameSettings.set_notices_open(not GameSettings.notices_open())
 		_apply_open())
 	header.add_child(_toggle)
 	_scroll = ScrollContainer.new()
@@ -76,19 +83,28 @@ func setup(top: float, footer: Control, footer_home: Node) -> void:
 
 ## Shows the notices for `turn` (Notices.build).
 func show_notices(sections: Array[Dictionary], turn: int) -> void:
+	if turn != _turn:
+		_peek = false
 	_sections = sections
 	_turn = turn
 	_rebuild()
+	_apply_open()
+
+
+## Open when the player wants it open and there is something to read (or they asked to look).
+func is_open() -> bool:
+	return GameSettings.notices_open() and (not _sections.is_empty() or _peek or keep_open)
 
 
 func _apply_open() -> void:
-	var open := GameSettings.notices_open()
+	var open := is_open()
 	custom_minimum_size.x = WIDTH if open else FOLDED_WIDTH
 	offset_right = offset_left + custom_minimum_size.x
 	_title.visible = open
 	_scroll.visible = open
 	_toggle.text = "«" if open else "»"
-	_toggle.tooltip_text = "Thu gọn bảng thông báo" if open else "Mở bảng thông báo"
+	_toggle.tooltip_text = "Thu gọn bảng thông báo" if open else (
+			"Mở bảng thông báo (lượt này không có gì đáng chú ý)" if _sections.is_empty() else "Mở bảng thông báo")
 	if _footer == null:
 		return
 	if open and _footer.get_parent() != _footer_slot:
