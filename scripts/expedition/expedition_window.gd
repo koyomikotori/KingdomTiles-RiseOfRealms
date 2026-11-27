@@ -9,7 +9,6 @@ extends ModalWindow
 signal replay_requested(index: int)
 
 const LIST_HEIGHT := 360
-const RESERVED := 300
 
 var _state: KingdomState
 var _general: General
@@ -43,8 +42,8 @@ func open(state: KingdomState, replays: int = 0) -> void:
 		return
 	var body := build_frame("Vùng nổi loạn (%d ô)" % uprising.cells.size(), UiPalette.WARNING, 0.56)
 	var tabs := TabContainer.new()
-	tabs.custom_minimum_size = Vector2(0, fit_height(LIST_HEIGHT, RESERVED))
 	body.add_child(tabs)
+	flex(tabs, LIST_HEIGHT)
 	_fill_enemy_tab(_tab(tabs, "Quân địch"))
 	_pick_box = _tab(tabs, "Cử quân")
 	_send_button = add_action("Tiến hành thảo phạt", _send)

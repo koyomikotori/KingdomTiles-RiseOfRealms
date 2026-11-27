@@ -107,7 +107,7 @@ static func _attack(realm: Realm, state: KingdomState, nation: Realm.Nation) -> 
 		if not army.has_target() or army.order_turn >= state.turn:
 			continue
 		var target := realm.towns[army.target]
-		if target.owner == Realm.PLAYER or not RealmMap.are_neighbors(army.town, target.id):
+		if target.owner == Realm.PLAYER or not RealmMap.are_neighbors(army.town, target.id) 				or not realm.diplomacy.at_war(Realm.PLAYER, target.owner):
 			army.target = -1
 			continue
 		if not groups.has(target.id):
@@ -139,6 +139,7 @@ static func _attack(realm: Realm, state: KingdomState, nation: Realm.Nation) -> 
 		for army: NationArmy in holders:
 			realm.remove_army(army)
 		var old_owner := town.owner
+		realm.diplomacy.note_capture(Realm.PLAYER, old_owner, state.turn)
 		town.owner = Realm.PLAYER
 		town.garrison = 0
 		town.max_garrison = 0
@@ -166,7 +167,7 @@ static func _new_orders(realm: Realm, nation: Realm.Nation, turn: int) -> void:
 		var best_ratio := 0.0
 		for id in RealmMap.neighbors(army.town):
 			var town := realm.towns[id]
-			if town.owner == Realm.PLAYER or id == Realm.HOME_CAPITAL:
+			if town.owner == Realm.PLAYER or id == Realm.HOME_CAPITAL 					or not realm.diplomacy.at_war(Realm.PLAYER, town.owner):
 				continue
 			var power := 0.0
 			for mate in realm.armies_at(army.town):

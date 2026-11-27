@@ -10,6 +10,8 @@ extends ModalWindow
 
 signal done
 
+## Most height the squad list takes (it gets less on a short screen: ModalWindow.flex).
+const SQUAD_LIST_HEIGHT := 420.0
 const WIDTH := 0.62
 const GENERAL_PORTRAIT := 0.5
 const TILE_SIZE := Vector2(126, 92)
@@ -74,13 +76,14 @@ func open(state: KingdomState, force: Realm.Force = null) -> void:
 	body.add_child(_tab_bar)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size.y = fit_height(200.0, 520.0)
 	_grid = GridContainer.new()
 	_grid.columns = GRID_COLUMNS
 	_grid.add_theme_constant_override("h_separation", 6)
 	_grid.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(_grid)
 	body.add_child(scroll)
+	# The squad list takes whatever height the screen leaves, so only it scrolls, never the window.
+	flex(scroll, SQUAD_LIST_HEIGHT)
 	var bulk := HBoxContainer.new()
 	bulk.add_theme_constant_override("separation", 8)
 	bulk.add_child(_button("Chọn hết mục này", _select_shown.bind(true)))

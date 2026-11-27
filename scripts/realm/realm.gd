@@ -27,7 +27,7 @@ extends RefCounted
 
 enum Result { OK, NOT_ACTIVE, NO_GENERAL, GENERAL_BUSY, NO_SQUADS, TOO_MANY_SQUADS, SQUAD_BUSY, NOT_AT_CAPITAL,
 		ALREADY_MOVED, NOT_NEIGHBOR, ENEMY_TOWN, OWN_TOWN, GENERAL_WOUNDED, ALREADY_HOME, NO_ROUTE, NO_ORDER, NO_ENEMY_ARMY, NOT_MARCHING,
-		NOT_CONQUERED, ALREADY_VASSAL, IS_COMMANDER }
+		NOT_CONQUERED, ALREADY_VASSAL, IS_COMMANDER, NOT_AT_WAR }
 
 ## Army orders (GDD §34, M18g): given during the turn, carried out when it ends (a march, a step of
 ## the way home) or at the start of the next one (a siege, after the turn's raid or expedition).
@@ -49,6 +49,10 @@ const HOME_CAPITAL := RealmMap.HOME_REGION * RealmMap.TOWNS_PER_REGION + RealmMa
 ## Generals the kingdom may keep in the realm phase (GDD §33: 3 → 9).
 const MAX_GENERALS := 9
 const MAX_ARMY_SQUADS := 20
+## Each army's own flag color (Force.flag), told apart on the map and in the lists; MAX_GENERALS of them.
+const FLAG_COLORS: Array[Color] = [Color(0.96, 0.78, 0.12), Color(0.12, 0.78, 0.88), Color(0.95, 0.4, 0.75),
+		Color(0.5, 0.85, 0.2), Color(0.98, 0.52, 0.1), Color(0.97, 0.97, 0.95), Color(0.28, 0.4, 0.98),
+		Color(0.6, 0.3, 0.9), Color(0.2, 0.2, 0.24)]
 ## Garrison soldiers of a town by its region's distance from the kingdom (1 … 3).
 const GARRISON_BY_DISTANCE: Array[int] = [0, 110, 160, 220]
 const CAPITAL_GARRISON := 2.0
@@ -161,6 +165,8 @@ class Force:
 	var order_turn := 0
 	## The enemy army an INTERCEPT order is against (NationArmy.id), else -1.
 	var army := -1
+	## Index in FLAG_COLORS (also shown as number flag + 1).
+	var flag := 0
 
 	func has_order() -> bool:
 		return order != &""
@@ -189,6 +195,8 @@ var ai_enabled := true
 ## create_revolt / finish_revolt); saved.
 var pending_revolt := {}
 var rng := RandomNumberGenerator.new()
+## Pacts and relations between the kingdom and the nations (GDD §37, M18f-b2b).
+var diplomacy := RealmDiplomacy.new()
 
 
 ## Starts the phase: the nations take shuffled regions, every town gets its name and garrison.
@@ -234,6 +242,7 @@ func start(state: KingdomState) -> void:
 		towns.append(town)
 	for nation in RealmWar.live_nations(self):
 		RealmWar.raise_army(self, state, nation)
+	diplomacy.start(self, state)
 
 
 ## The four non-capital slots in order (N, W, E, S) → 0..3.
@@ -385,11 +394,27 @@ func form(state: KingdomState, general: General, squads: Array[Army.Squad]) -> R
 		return result
 	var force := Force.new()
 	force.general = general
+	force.flag = free_flag()
 	forces.append(force)
 	_set_away(general, true, "dẫn đạo quân")
 	_assign_squads(state, force, squads)
 	state.generals.changed.emit()
 	return Result.OK
+
+
+## The first flag color no army uses.
+func free_flag() -> int:
+	var used := {}
+	for force in forces:
+		used[force.flag] = true
+	for i in FLAG_COLORS.size():
+		if not used.has(i):
+			return i
+	return forces.size() % FLAG_COLORS.size()
+
+
+static func flag_color(force: Force) -> Color:
+	return FLAG_COLORS[posmod(force.flag, FLAG_COLORS.size())]
 
 
 ## Changes the squads of an army standing at the kingdom's capital.
@@ -568,6 +593,8 @@ func check_siege(force: Force, town: int) -> Result:
 		return basic
 	if towns[town].owner == PLAYER:
 		return Result.OWN_TOWN
+	if not diplomacy.at_war(PLAYER, towns[town].owner):
+		return Result.NOT_AT_WAR
 	if force.general == null or force.general.wounded_turns > 0:
 		return Result.GENERAL_WOUNDED
 	return Result.OK
@@ -687,12 +714,14 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 	var destroyed: StringName = &""
 	var gained: Array[int] = []
 	var holdouts: Array[int] = []
+	diplomacy.note_player_attack(self, town.owner)
 	if not won:
 		spread_town_losses(town, enemy_lost)
 	else:
 		for army in armies_at(town_id):
 			remove_army(army)
 		var old_owner := town.owner
+		diplomacy.note_capture(PLAYER, old_owner, state.turn)
 		loot = capture(state, town)
 		if town.is_capital() and old_owner != PLAYER and old_owner != REBELS \
 				and nations[old_owner].capital() == town_id:
@@ -750,6 +779,7 @@ func capture(state: KingdomState, town: Town) -> Dictionary[StringName, int]:
 ## break up. Returns the ids handed over; the rebel towns are appended to `holdouts`.
 func destroy_nation(state: KingdomState, nation_id: StringName, holdouts: Array[int] = []) -> Array[int]:
 	nations[nation_id].destroyed = true
+	diplomacy.remove(nation_id)
 	treasury.erase(nation_id)
 	var left := {}
 	for army in armies_of(nation_id):
@@ -1030,6 +1060,7 @@ func end_turn(state: KingdomState) -> Dictionary:
 					"to": force.town})
 	var news: Array[String] = []
 	news.append_array(RealmVassals.run_turn(self, state))
+	news.append_array(diplomacy.end_turn(self, state))
 	var war := {"news": [], "threats": []}
 	if ai_enabled:
 		war = RealmWar.run_turn(self, state)
@@ -1111,7 +1142,7 @@ func finish_enemy_attack(state: KingdomState, record: BattleRecord) -> Dictionar
 func check_intercept(force: Force, army: NationArmy) -> Result:
 	if army != null and is_ally(army):
 		return Result.NO_ENEMY_ARMY
-	if army == null or not armies.has(army):
+	if army == null or not armies.has(army) or not diplomacy.at_war(PLAYER, army.nation):
 		return Result.NO_ENEMY_ARMY
 	var basic := _check_step(force, army.town)
 	if basic != Result.OK:
@@ -1330,6 +1361,8 @@ static func describe(result: Result) -> String:
 			return "Vùng này đã có chư hầu."
 		Result.IS_COMMANDER:
 			return "Không phong vương Tổng tướng được: đổi Tổng tướng trước."
+		Result.NOT_AT_WAR:
+			return "Không chiến tranh với nước này (đang có hòa ước / hiệp ước)."
 	return ""
 
 
@@ -1352,14 +1385,15 @@ func to_save(state: KingdomState) -> Dictionary:
 	var force_saves: Array = []
 	for force in forces:
 		force_saves.append({"general": state.generals.generals.find(force.general), "town": force.town,
-				"order": String(force.order), "target": force.target, "order_turn": force.order_turn, "army": force.army,
+				"order": String(force.order), "target": force.target, "order_turn": force.order_turn, "army": force.army, "flag": force.flag,
 				"squads": force.squads.map(func(squad: Army.Squad) -> int: return state.army.squads.find(squad))})
 	var treasury_saves := {}
 	for nation_id in treasury:
 		treasury_saves[String(nation_id)] = treasury[nation_id]
 	return {"v": SAVE_VERSION, "towns": town_saves, "nations": nation_saves, "forces": force_saves,
 			"revolt": pending_revolt, "armies": armies.map(func(army: NationArmy) -> Dictionary: return army.to_save()),
-			"treasury": treasury_saves, "next_army": next_army_id, "attacks": pending_attacks}
+			"treasury": treasury_saves, "next_army": next_army_id, "attacks": pending_attacks,
+			"diplomacy": diplomacy.to_save(state)}
 
 
 static func _officer_from(state: KingdomState, ref: Dictionary) -> Officer:
@@ -1424,6 +1458,9 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 		force.target = int(entry.get("target", -1))
 		force.order_turn = int(entry.get("order_turn", 0))
 		force.army = int(entry.get("army", -1))
+		force.flag = int(entry.get("flag", -1))
+		if force.flag < 0:
+			force.flag = free_flag()
 		for squad_index in entry.squads:
 			if int(squad_index) >= 0 and int(squad_index) < state.army.squads.size():
 				force.squads.append(state.army.squads[int(squad_index)])
@@ -1447,3 +1484,8 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 				town.garrison = mini(town.garrison, town.max_garrison)
 		for nation in RealmWar.live_nations(self):
 			RealmWar.raise_army(self, state, nation)
+	# Before M18f-b2b there was no diplomacy: at war with everyone, the bloc formed now.
+	if data.has("diplomacy"):
+		diplomacy.load_save(data.diplomacy, state)
+	else:
+		diplomacy.start(self, state)

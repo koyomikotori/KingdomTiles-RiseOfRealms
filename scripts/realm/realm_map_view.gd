@@ -33,6 +33,8 @@ const ATTACK_COLOR := Color(0.8, 0.15, 0.1)
 const LABEL_OUTLINE := Color(0.96, 0.92, 0.8, 0.9)
 const LABEL_FONT_SIZE := 13
 const SMALL_FONT_SIZE := 11
+## Garrison numbers under enemy towns.
+const BADGE_FONT_SIZE := 13
 ## A click this close (map units) to a town picks it.
 const PICK_RADIUS := 34.0
 const BACKGROUND_COLOR := Color(0.91, 0.84, 0.66)
@@ -45,6 +47,8 @@ const ORDER_DASH := 10.0
 const ORDER_GAP := 7.0
 const ORDER_SPEED := 22.0
 const ORDER_BLINK := 0.9
+## Room between our armies' flags.
+const FLAG_STEP := 26.0
 
 var _time := 0.0
 
@@ -58,6 +62,8 @@ var selected_force: Realm.Force
 var turn := 0
 var _territory: ImageTexture
 var _territory_key := ""
+var _plate: StyleBoxFlat
+var _badge_box: StyleBoxFlat
 
 
 func _ready() -> void:
@@ -140,6 +146,9 @@ func _draw() -> void:
 	for town in realm.towns:
 		_draw_forces(town.id)
 		_draw_armies(town.id)
+	# Names and numbers last, so army flags never hide a town's name.
+	for town in realm.towns:
+		_draw_town_labels(town)
 	draw_set_transform(Vector2.ZERO)
 
 
@@ -286,16 +295,42 @@ func _draw_town(town: Realm.Town) -> void:
 			draw_texture_rect(team, rect, false, banner)
 	else:
 		draw_circle(center, 18.0 if town.is_capital() else 13.0, banner)
+
+
+func _draw_town_labels(town: Realm.Town) -> void:
+	var center := RealmMap.position(town.id)
+	var banner := realm.owner_color(town, player_color)
 	var font := ThemeDB.fallback_font
 	var label := ("♛ " if town.is_capital() else "") + town.name
 	_text(font, center + Vector2(0, 30), label, LABEL_FONT_SIZE, UiPalette.TEXT)
 	if town.owner != Realm.PLAYER:
-		_text(font, center + Vector2(0, 44), "⚔ %d" % realm.town_soldiers(town), SMALL_FONT_SIZE, UiPalette.ink(banner))
+		_badge(font, center + Vector2(0, 47), "⚔ %d" % realm.town_soldiers(town), banner)
+		# A nation's pact with us under its capital (GDD §37); plain war says nothing.
+		if town.is_capital() and town.owner != Realm.REBELS and realm.nations[town.owner].capital() == town.id:
+			var status := realm.diplomacy.status_text(town.owner)
+			if status != "Chiến tranh":
+				var hostile := realm.diplomacy.at_war(Realm.PLAYER, town.owner)
+				_text(font, center + Vector2(0, 66), status, SMALL_FONT_SIZE, UiPalette.WARNING if hostile else UiPalette.GOOD)
 	else:
 		var chance := realm.revolt_chance(town, turn)
 		if chance > 0.0:
 			_text(font, center + Vector2(0, 44), "Loạn %d%%" % roundi(chance * 100.0), SMALL_FONT_SIZE,
 					UiPalette.WARNING if chance >= Realm.REVOLT_CHANCE else UiPalette.MUTED)
+
+
+## A town's garrison: cream numbers on a dark pill in the owner's color, readable on any ground.
+func _badge(font: Font, at: Vector2, text: String, color: Color) -> void:
+	var text_size := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, BADGE_FONT_SIZE)
+	var rect := Rect2(at - Vector2(text_size.x * 0.5 + 6, BADGE_FONT_SIZE + 1), Vector2(text_size.x + 12, BADGE_FONT_SIZE + 7))
+	if _badge_box == null:
+		_badge_box = StyleBoxFlat.new()
+		_badge_box.set_corner_radius_all(7)
+		_badge_box.set_border_width_all(1)
+		_badge_box.border_color = Color(0.1, 0.06, 0.03, 0.9)
+	_badge_box.bg_color = Color(color.darkened(0.45), 0.92)
+	draw_style_box(_badge_box, rect)
+	draw_string(font, at - Vector2(text_size.x * 0.5, 0.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, BADGE_FONT_SIZE,
+			Color(1.0, 0.96, 0.86))
 
 
 func _text(font: Font, at: Vector2, text: String, font_size: int, color: Color) -> void:
@@ -305,23 +340,34 @@ func _text(font: Font, at: Vector2, text: String, font_size: int, color: Color) 
 	draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
-## One small flag per army in the town, above it to the right; the selected army's flag is ringed.
+## Our armies in the town: their numbered flags (each army's own color) side by side on a small
+## light plate above the town to the right, so they stand out from the map; the selected army's flag
+## glows, an army with an order has its flag outlined in the order's color.
 func _draw_forces(town_id: int) -> void:
 	var here := realm.forces_at(town_id)
-	var base := RealmMap.position(town_id) + Vector2(18, -30)
+	if here.is_empty():
+		return
+	var base := RealmMap.position(town_id) + Vector2(20, -30)
+	var plate := Rect2(base + Vector2(-6, -ArmyFlag.POLE - 8), Vector2(here.size() * FLAG_STEP + 8, ArmyFlag.POLE + 12))
+	if _plate == null:
+		_plate = StyleBoxFlat.new()
+		_plate.bg_color = Color(0.98, 0.95, 0.85, 0.92)
+		_plate.border_color = Color(0.3, 0.2, 0.1)
+		_plate.set_border_width_all(2)
+		_plate.set_corner_radius_all(6)
+		_plate.shadow_color = Color(0, 0, 0, 0.25)
+		_plate.shadow_size = 3
+	draw_style_box(_plate, plate)
 	for i in here.size():
 		var force: Realm.Force = here[i]
-		var foot := base + Vector2(i * 14.0, 0.0)
-		var top := foot - Vector2(0, 26)
+		var foot := base + Vector2(i * FLAG_STEP, 0.0)
 		if force == selected_force:
-			draw_circle(foot - Vector2(-6, 13), 17.0, Color(SELECTED_COLOR, 0.35))
-		draw_line(foot, top, Color(0.25, 0.17, 0.1), 2.0)
-		var cloth := PackedVector2Array([top, top + Vector2(16, 5), top + Vector2(0, 11)])
-		draw_colored_polygon(cloth, player_color)
-		# An army with an order: its flag gets the order's color as a thick border.
-		var border := order_color(force.order) if force.has_order() else Color(0.2, 0.12, 0.08)
-		draw_polyline(PackedVector2Array([top, top + Vector2(16, 5), top + Vector2(0, 11), top]), border,
-				3.0 if force.has_order() else 1.0)
+			var pulse := 0.35 + 0.3 * absf(sin(_time * PI / ORDER_BLINK))
+			draw_rect(Rect2(foot + Vector2(-4, -ArmyFlag.POLE - 5), Vector2(FLAG_STEP, ArmyFlag.POLE + 7)),
+					Color(SELECTED_COLOR, pulse))
+		var border := order_color(force.order) if force.has_order() else ArmyFlag.OUTLINE
+		ArmyFlag.draw_flag(self, foot, Realm.flag_color(force), force.flag + 1, 1.0, border,
+				3.0 if force.has_order() else 1.5)
 
 
 ## One flag per enemy army in the town, above it to the left, in its nation's color, pointing left.

@@ -18,6 +18,12 @@ const SCREEN_MARGIN := 12.0
 
 ## Guards _fit_body against calling itself through the layout signals it sets off.
 var _fitting := false
+## The one inner list or tab area that gives up height so the whole body fits on screen: the window
+## then never shows its own scrollbar next to the list's (one scrollbar, not two). See flex().
+var _flex: Control
+var _flex_preferred := 0.0
+## The least height the flexible part keeps; below that the window scrolls as a whole instead.
+const FLEX_MIN := 140.0
 var _status: Label
 var _actions: HBoxContainer
 var _close_button: Button
@@ -106,6 +112,15 @@ func _fit_body() -> void:
 	var wanted := _frame_body.get_combined_minimum_size().y
 	var others := _frame_panel.get_combined_minimum_size().y - _frame_scroll.custom_minimum_size.y
 	var room := maxf(MIN_BODY_HEIGHT, get_viewport_rect().size.y - SCREEN_MARGIN * 2.0 - others)
+	if is_instance_valid(_flex):
+		# Everything but the flexible part, then the flexible part gets what is left (up to its
+		# preferred height), so the body fits and only the inner list scrolls.
+		var current := _flex.custom_minimum_size.y
+		var rest := wanted - current
+		var flex_height := clampf(room - rest, minf(FLEX_MIN, _flex_preferred), _flex_preferred)
+		if not is_equal_approx(flex_height, current):
+			_flex.custom_minimum_size.y = flex_height
+		wanted = rest + flex_height
 	var height := minf(wanted, room)
 	if not is_equal_approx(height, _frame_scroll.custom_minimum_size.y):
 		_frame_scroll.custom_minimum_size.y = height
@@ -155,6 +170,17 @@ func _keep_on_screen(panel: Control) -> void:
 	if not is_equal_approx(top, panel.offset_top):
 		panel.offset_top = top
 		panel.offset_bottom = top
+
+
+## Makes `control` (a list's ScrollContainer, or a TabContainer whose pages scroll) the part of the
+## body that grows or shrinks with the screen: up to `preferred` px, less when the rest of the window
+## needs the room. Use this instead of fit_height() for a scrolling list, so the window itself never
+## scrolls too (two scrollbars). Only one per window.
+func flex(control: Control, preferred: float) -> void:
+	_flex = control
+	_flex_preferred = preferred
+	control.custom_minimum_size.y = preferred
+	_fit_body.call_deferred()
 
 
 ## `preferred` px, or less when the screen is short: what is left after `reserved` px of the rest

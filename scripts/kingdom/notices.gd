@@ -5,8 +5,9 @@ extends RefCounted
 ## and detail lines the player can fold away. Resources collected are left out on purpose.
 ## Pure: built from the state and the last end_turn() report (empty after loading a game).
 
-const SECTIONS: Array[StringName] = [&"buildings", &"diplomacy", &"army"]
+const SECTIONS: Array[StringName] = [&"realm", &"buildings", &"diplomacy", &"army"]
 const SECTION_TITLES: Dictionary[StringName, String] = {
+	&"realm": "Thiên hạ",
 	&"buildings": "Công trình",
 	&"diplomacy": "Ngoại giao",
 	&"army": "Quân đội & tướng sĩ",
@@ -20,6 +21,8 @@ static func build(state: KingdomState, report: Dictionary) -> Array[Dictionary]:
 	for section_id in SECTIONS:
 		var items: Array[Dictionary] = []
 		match section_id:
+			&"realm":
+				items = _realm_items(state, report)
 			&"buildings":
 				items = _building_items(state, report)
 			&"diplomacy":
@@ -40,6 +43,43 @@ static func key(section_id: StringName, item_id: StringName) -> String:
 static func _item(id: StringName, title: String, lines: Array[String], warning: bool = false) -> Dictionary:
 	return {"id": id, "title": "%s (%d)" % [title, lines.size()] if lines.size() > 1 else title, "lines": lines,
 			"warning": warning}
+
+
+## The realm phase (M18f): what happens this turn start (battles to fight, revolts, enemy attacks)
+## and what happened at the end of the last turn (marches, the nations' wars, announced attacks).
+## Was the status line under the pieces, which grew past the panel late in the game.
+static func _realm_items(state: KingdomState, report: Dictionary) -> Array[Dictionary]:
+	var realm := state.realm
+	if realm == null or not realm.active:
+		return []
+	var realm_report: Dictionary = report.get("realm", {})
+	var danger: Array[String] = []
+	var marched: Array[String] = []
+	var news: Array[String] = []
+	var threats: Array[String] = []
+	for revolt in realm_report.get("revolted", []):
+		var lost: Realm.Town = realm.towns[revolt.town]
+		danger.append("Trấn %s nổi loạn, về tay %s." % [lost.name, realm.owner_name(lost, state.kingdom_name)])
+	if not realm.pending_revolt.is_empty():
+		danger.append("Trấn %s nổi loạn: quân trấn giữ phải dẹp loạn." % realm.towns[realm.pending_revolt.town].name)
+	for entry in realm_report.get("attacks", []):
+		var group := realm.attack_armies(entry)
+		if not group.is_empty():
+			danger.append("Quân %s đánh trấn %s của ta." % [realm.nations[group[0].nation].name, realm.towns[entry.town].name])
+	var sieges := realm.due_siege_groups(state.turn)
+	if not sieges.is_empty():
+		danger.append("%d trận công thành sắp diễn ra." % sieges.size())
+	for march in realm_report.get("marched", []):
+		marched.append("Đạo quân %s đã tới %s." % [march.general, realm.towns[march.to].name])
+	for line in realm_report.get("news", []):
+		news.append(line)
+	for threat in realm_report.get("threats", []):
+		var army := realm.army_by_id(threat.army)
+		if army != null:
+			threats.append("Đạo quân %s (%s) chuẩn bị đánh trấn %s (lượt sau)." % [army.general.name,
+					realm.nations[army.nation].name, realm.towns[threat.town].name])
+	return [_item(&"realm_danger", "Chiến sự", danger, true), _item(&"realm_threats", "Địch sắp đánh", threats, true),
+			_item(&"realm_marched", "Hành quân", marched), _item(&"realm_news", "Tin các nước", news)]
 
 
 static func _building_items(state: KingdomState, report: Dictionary) -> Array[Dictionary]:

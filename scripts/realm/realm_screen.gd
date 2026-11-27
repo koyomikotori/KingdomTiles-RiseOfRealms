@@ -182,6 +182,7 @@ func _fill_roster() -> void:
 	for force in realm.forces:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
+		row.add_child(ArmyFlag.of(force))
 		var portrait := PortraitView.new()
 		portrait.setup(force.general, ROSTER_PORTRAIT, _state.player_color)
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -206,6 +207,48 @@ func _fill_roster() -> void:
 			_refresh()))
 	if not buttons.is_empty():
 		_panel.add_child(_buttons_row(buttons))
+	_fill_nations()
+
+
+## Every nation standing: its pact with us and our relation; a click shows its capital.
+func _fill_nations() -> void:
+	var realm := _state.realm
+	var dip := realm.diplomacy
+	var nations := RealmWar.live_nations(realm)
+	if nations.is_empty():
+		return
+	_panel.add_child(_line("Các nước", 14, UiPalette.HEADER))
+	for nation in nations:
+		var button := _button("%s · %s · %+d" % [nation.name, dip.status_text(nation.id), dip.relation(Realm.PLAYER, nation.id)],
+				func() -> void:
+					_force = null
+					_siege_target = -1
+					_town = nation.capital()
+					_refresh())
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_font_size_override("font_size", 13)
+		button.custom_minimum_size.y = 32
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.add_child(_swatch(nation.color))
+		row.add_child(button)
+		_panel.add_child(row)
+
+
+## A small square in a nation's color, for lists where colored text would be hard to read.
+static func _swatch(color: Color) -> Panel:
+	var swatch := Panel.new()
+	var box := StyleBoxFlat.new()
+	box.bg_color = color
+	box.border_color = Color(0.15, 0.09, 0.05)
+	box.set_border_width_all(2)
+	box.set_corner_radius_all(3)
+	swatch.add_theme_stylebox_override("panel", box)
+	swatch.custom_minimum_size = Vector2(18, 18)
+	swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return swatch
 
 
 ## "chờ lệnh", "→ X", "⚔ X", "⌂ về kinh đô"; the long form for the army card.
@@ -241,6 +284,8 @@ func _fill_town(town: Realm.Town) -> void:
 			_panel.add_child(_line("Ngân khố %s: %d/%d (lập đạo quân mới tốn %d)" % [realm.nations[town.owner].name,
 					floori(realm.treasury.get(town.owner, 0.0)), roundi(RealmWar.MAX_TREASURY), roundi(RealmWar.ARMY_COST)],
 					13, UiPalette.MUTED))
+		if town.owner != Realm.REBELS:
+			_fill_diplomacy(realm.nations[town.owner])
 		if town.is_capital() and town.owner != Realm.REBELS:
 			_panel.add_child(_line("Chiếm kinh đô thì %s bị diệt, các trấn còn lại về tay ta (trấn có đạo quân của họ thành tàn quân nổi loạn)." % realm.nations[town.owner].name,
 					13, UiPalette.MUTED))
@@ -300,6 +345,110 @@ func _fill_vassal(town: Realm.Town, nation: Realm.Nation) -> void:
 			floori(realm.treasury.get(nation.id, 0.0)), roundi(RealmWar.MAX_TREASURY)], 13, UiPalette.MUTED))
 
 
+## Our pact and relation with `nation`, its wars and treaties, and what we can do (GDD §37).
+func _fill_diplomacy(nation: Realm.Nation) -> void:
+	var realm := _state.realm
+	var dip := realm.diplomacy
+	var p := dip.pair(Realm.PLAYER, nation.id)
+	_panel.add_child(HSeparator.new())
+	_panel.add_child(_line("Ngoại giao với %s" % nation.name, 15, UiPalette.HEADER))
+	var status := RealmDiplomacy.PACT_NAMES[p.pact]
+	if p.pact == RealmDiplomacy.Pact.WAR:
+		status += " (%d lượt)" % (_state.turn - p.war_since)
+	elif p.pact != RealmDiplomacy.Pact.NEUTRAL:
+		status += ", còn %d lượt" % p.turns
+	_panel.add_child(_line(status, 14, UiPalette.WARNING if p.pact == RealmDiplomacy.Pact.WAR else UiPalette.GOOD))
+	if dip.in_bloc(nation.id):
+		_panel.add_child(_line("Khối liên minh chống ta: %s" % ", ".join(dip.bloc.map(func(id: StringName) -> String:
+				return RealmDiplomacy.name_of(realm, id))), 13, UiPalette.WARNING))
+	var rel := p.relation()
+	var goal := roundi(dip.target(realm, _state, Realm.PLAYER, nation.id))
+	_panel.add_child(_line("Quan hệ %+d (%s) · về lâu dài %+d" % [rel, RealmDiplomacy.tier_name(rel), goal], 14))
+	for factor in dip.factors(realm, _state, Realm.PLAYER, nation.id):
+		_panel.add_child(_line("  • %s %+d" % [factor.text, factor.value], 12, UiPalette.MUTED))
+	if absf(p.memory) >= 0.5:
+		_panel.add_child(_line("  • Sự kiện gần đây %+d (phai dần)" % roundi(p.memory), 12, UiPalette.MUTED))
+	var wars: Array[String] = []
+	var friends: Array[String] = []
+	for id in RealmDiplomacy.parties(realm):
+		if id == nation.id or id == Realm.PLAYER:
+			continue
+		if dip.at_war(nation.id, id):
+			wars.append(RealmDiplomacy.name_of(realm, id))
+		elif dip.pact(nation.id, id) != RealmDiplomacy.Pact.NEUTRAL:
+			friends.append("%s (%s)" % [RealmDiplomacy.name_of(realm, id), RealmDiplomacy.PACT_NAMES[dip.pact(nation.id, id)]])
+	if not wars.is_empty():
+		_panel.add_child(_line("Đang đánh: %s" % ", ".join(wars), 12, UiPalette.MUTED))
+	if not friends.is_empty():
+		_panel.add_child(_line("Hòa hảo: %s" % ", ".join(friends), 12, UiPalette.MUTED))
+	var buttons: Array[Button] = []
+	var reasons: Array[String] = []
+	if p.pact == RealmDiplomacy.Pact.WAR:
+		buttons.append(_diplomacy_button("Cầu hòa", _open_envoy.bind(nation, EnvoyDialog.Mode.PEACE),
+				dip.check_peace(realm, _state, nation.id, null), reasons))
+	else:
+		buttons.append(_diplomacy_button("Bất tương xâm", func() -> void:
+			dip.sign_nap(realm, _state, nation.id)
+			_set_status("Ký bất tương xâm với %s." % nation.name, true)
+			_refresh(), dip.check_nap(realm, _state, nation.id), reasons))
+		buttons.append(_diplomacy_button("Liên minh", _open_envoy.bind(nation, EnvoyDialog.Mode.ALLIANCE),
+				dip.check_alliance(realm, _state, nation.id, null), reasons))
+	_panel.add_child(_buttons_row(buttons))
+	var more: Array[Button] = [_diplomacy_button("Thăm hỏi", _open_envoy.bind(nation, EnvoyDialog.Mode.VISIT),
+			dip.check_visit(realm, _state, nation.id, null), reasons)]
+	if p.pact != RealmDiplomacy.Pact.WAR:
+		more.append(_button("Tuyên chiến", _ask_declare.bind(nation)))
+	if dip.allied(Realm.PLAYER, nation.id):
+		more.append(_button("Hủy liên minh", func() -> void:
+			ConfirmWindow.ask(self, "Hủy liên minh", "Hủy liên minh với %s?" % nation.name,
+					func(view: RequirementView) -> void:
+						view.note("Phá ước: %s %+d quan hệ, mọi nước khác %+d." % [nation.name,
+								roundi(RealmDiplomacy.BREAK_VICTIM), roundi(RealmDiplomacy.BREAK_OTHERS)]),
+					"Hủy liên minh", func() -> void:
+						dip.cancel_alliance(realm, _state, nation.id)
+						_refresh(), true)))
+	_panel.add_child(_buttons_row(more))
+	for reason in reasons:
+		_panel.add_child(_line(reason, 12, UiPalette.MUTED))
+
+
+## A diplomacy button, disabled with its reason listed when `result` is not OK (an advisor still to
+## be picked counts as OK).
+func _diplomacy_button(text: String, on_pressed: Callable, result: RealmDiplomacy.Result, reasons: Array[String]) -> Button:
+	var button := _button(text, on_pressed)
+	if result != RealmDiplomacy.Result.OK and result != RealmDiplomacy.Result.NO_ADVISOR:
+		button.disabled = true
+		reasons.append("%s: %s" % [text, RealmDiplomacy.describe(result)])
+	return button
+
+
+func _open_envoy(nation: Realm.Nation, mode: EnvoyDialog.Mode) -> void:
+	var dialog := EnvoyDialog.new()
+	add_child(dialog)
+	dialog.open(_state, nation, mode)
+	dialog.done.connect(func(text: String, good: bool) -> void:
+		_set_status(text, good)
+		_refresh())
+
+
+func _ask_declare(nation: Realm.Nation) -> void:
+	var dip := _state.realm.diplomacy
+	var p := dip.pair(Realm.PLAYER, nation.id)
+	var breaking := p.pact in [RealmDiplomacy.Pact.PEACE, RealmDiplomacy.Pact.NAP, RealmDiplomacy.Pact.ALLIANCE]
+	ConfirmWindow.ask(self, "Tuyên chiến", "Tuyên chiến với %s?" % nation.name,
+			func(view: RequirementView) -> void:
+				if breaking:
+					view.note("Phá %s: %s %+d quan hệ, mọi nước khác %+d." % [RealmDiplomacy.PACT_NAMES[p.pact].to_lower(),
+							nation.name, roundi(RealmDiplomacy.BREAK_VICTIM), roundi(RealmDiplomacy.BREAK_OTHERS)])
+				else:
+					view.note("Đang trung lập: không phá ước nào."),
+			"Tuyên chiến", func() -> void:
+				var joined := dip.player_declares(_state.realm, _state, nation.id)
+				_set_status("Chiến tranh với %s." % ", ".join(joined.map(func(id: StringName) -> String:
+						return RealmDiplomacy.name_of(_state.realm, id))), true)
+				_refresh(), true)
+
+
 func _open_crown(nation: Realm.Nation) -> void:
 	var dialog := CrownDialog.new()
 	add_child(dialog)
@@ -345,6 +494,7 @@ func _fill_force(force: Realm.Force) -> void:
 			var result := realm.order_home(force, _state.turn)
 			if result == Realm.Result.OK:
 				Sfx.play(&"place_land")
+				_after_order(force.town)
 			else:
 				_set_status(Realm.describe(result), false)
 			_refresh())
@@ -491,8 +641,7 @@ func _give_intercept(group: Array, army: NationArmy) -> void:
 			break
 	if _status_text == "":
 		Sfx.play(&"place_land")
-		_siege_target = -1
-		_town = group[0].town
+		_after_order(group[0].town)
 	_refresh()
 
 
@@ -505,9 +654,16 @@ func _give_order(group: Array, town: int) -> void:
 			break
 	if _status_text == "" or _status_good:
 		Sfx.play(&"place_land")
-		_siege_target = -1
-		_town = group[0].town
+		_after_order(group[0].town)
 	_refresh()
+
+
+## An order given: the army is let go, so the next click on the map picks something else (another
+## army standing next to it, say) instead of a target for this one.
+func _after_order(town: int) -> void:
+	_force = null
+	_siege_target = -1
+	_town = town
 
 
 func _select_force(force: Realm.Force) -> void:

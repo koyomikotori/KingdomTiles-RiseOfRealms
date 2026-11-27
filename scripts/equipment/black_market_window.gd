@@ -11,7 +11,11 @@ const CARD_SIZE := Vector2(270, 236)
 const GAP := 10
 ## Room the window frame and the portrait column take beside the cards.
 const FRAME_ROOM := 120.0
-const PORTRAIT_SCALE := 2.0
+const PORTRAIT_SCALE := 1.5
+## The left column (portrait, greeting, the counselor's word, tools): wide enough for the counsel
+## box, which used to sit under the shelves and made the window taller than the screen (two
+## scrollbars with the sell list).
+const LEFT_WIDTH := 290.0
 const GREETINGS: Array[String] = [
 	"Hề hề… Chúa công muốn xem hàng tốt chứ? Đồ của ta không hỏi nguồn gốc đâu nhé.",
 	"Suỵt… hàng hiếm vừa về. Qua lượt này là ta biến mất đấy.",
@@ -32,12 +36,14 @@ var _mode_button: Button
 
 func open(state: KingdomState) -> void:
 	_state = state
-	var body := build_frame("Chợ đen", UiPalette.ACCENT, 0.85)
+	# When it leaves is in the title, so the left column stays short enough for the screen.
+	var body := build_frame("Chợ đen · chỉ ở lại lượt này, %d lượt sau mới quay lại" % BlackMarket.INTERVAL,
+			UiPalette.ACCENT, 0.85)
 	var row := _row([])
 	row.add_theme_constant_override("separation", 16)
 	body.add_child(row)
 	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(PortraitView.SIZE * PORTRAIT_SCALE, 0)
+	left.custom_minimum_size = Vector2(LEFT_WIDTH, 0)
 	row.add_child(left)
 	var portrait := TextureRect.new()
 	portrait.texture = GameArt.npc_portrait(&"black_market")
@@ -50,14 +56,17 @@ func open(state: KingdomState) -> void:
 	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait.add_child(frame)
+	portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	left.add_child(portrait)
-	for text: String in [GREETINGS[state.turn / BlackMarket.INTERVAL % GREETINGS.size()],
-			"Chỉ ở lại lượt này. Đóng cửa sổ là gã rời đi; %d lượt sau mới quay lại." % BlackMarket.INTERVAL]:
-		var label := _label(text, 14 if left.get_child_count() == 1 else 13)
-		label.custom_minimum_size = Vector2(PortraitView.SIZE * PORTRAIT_SCALE, 0)
-		if left.get_child_count() > 1:
-			label.add_theme_color_override("font_color", MUTED_COLOR)
-		left.add_child(label)
+	var greeting := _label(GREETINGS[state.turn / BlackMarket.INTERVAL % GREETINGS.size()], 14)
+	greeting.custom_minimum_size = Vector2(LEFT_WIDTH, 0)
+	left.add_child(greeting)
+	# The counselors' word on the visit (M16i), under the merchant's.
+	var counsel := Counsel.lines(&"black_market", state.counselor)
+	if not counsel.is_empty():
+		var box := CounselBox.new()
+		box.setup(counsel, LEFT_WIDTH)
+		left.add_child(box)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(spacer)
@@ -71,7 +80,7 @@ func open(state: KingdomState) -> void:
 	right.add_theme_constant_override("separation", GAP)
 	row.add_child(right)
 	# A narrow screen (a phone at a big UI scale, M15b) gets 2 columns × 3 rows instead of 3 × 2.
-	var columns := 3 if get_viewport().get_visible_rect().size.x >= page_size(3).x + PortraitView.SIZE * PORTRAIT_SCALE + FRAME_ROOM else 2
+	var columns := 3 if get_viewport().get_visible_rect().size.x >= page_size(3).x + LEFT_WIDTH + FRAME_ROOM else 2
 	var page_box := page_size(columns)
 	var page := Control.new()
 	page.custom_minimum_size = page_box
@@ -89,12 +98,6 @@ func open(state: KingdomState) -> void:
 	_sell_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_sell_list.add_theme_constant_override("separation", 6)
 	_sell_page.add_child(_sell_list)
-	# The counselors' word on the visit (M16i), under the shelves.
-	var counsel := Counsel.lines(&"black_market", state.counselor)
-	if not counsel.is_empty():
-		var box := CounselBox.new()
-		box.setup(counsel, page_box.x + PortraitView.SIZE * PORTRAIT_SCALE)
-		body.add_child(box)
 	_close_button.text = Touch.keys("Rời đi (Esc)")
 	closed.connect(state.black_market.leave)
 	state.black_market.changed.connect(_refresh)
