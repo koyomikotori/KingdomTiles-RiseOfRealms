@@ -10,6 +10,9 @@ extends Control
 ## One figure on the field stands for this many soldiers (was 4: big late-game armies lagged;
 ## a full 20-man squad is now 3 figures).
 const SOLDIERS_PER_FIGURE := 7
+## A unit never shows more figures than this: the bigger squads of big AI armies (Wars.add_squads)
+## let each figure stand for more soldiers instead.
+const MAX_FIGURES := 10
 ## Width share of each side zone (18% of the screen out of the 80% this control covers).
 const SIDE_ZONE_SHARE := 18.0 / 80.0
 ## Sprites (16×16, the bodyguard 24×20) are drawn ×3; spacing is in screen pixels.
@@ -163,7 +166,7 @@ func setup(simulator: BattleSimulator, left_side: int) -> void:
 			view.unit = unit
 			view.battle_side = s
 			view.screen_side = 0 if s == left_side else 1
-			for k in (1 if _is_duelist(unit) else ceili(float(unit.start_soldiers) / SOLDIERS_PER_FIGURE)):
+			for k in (1 if _is_duelist(unit) else ceili(float(unit.start_soldiers) / per_figure(unit))):
 				var figure := Figure.new()
 				figure.offset = _figure_offset(k, view.screen_side)
 				figure.slot = figure.offset
@@ -370,7 +373,12 @@ func _update_guard_target(view: UnitView) -> void:
 func _figures_wanted(view: UnitView) -> int:
 	if _is_duelist(view.unit):
 		return 1 if view.unit.alive() > 0 else 0
-	return ceili(float(view.unit.alive()) / SOLDIERS_PER_FIGURE)
+	return ceili(float(view.unit.alive()) / per_figure(view.unit))
+
+
+## Soldiers one figure of `unit` stands for: SOLDIERS_PER_FIGURE, more for a squad past MAX_FIGURES.
+static func per_figure(unit: BattleSide.Unit) -> float:
+	return maxf(SOLDIERS_PER_FIGURE, float(unit.start_soldiers) / MAX_FIGURES)
 
 
 func _update_figures(view: UnitView, delta: float) -> void:

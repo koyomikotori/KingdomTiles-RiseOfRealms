@@ -118,6 +118,10 @@ const PAGES := [
 		"Từ lượt sau, nổi loạn ở vùng đó giảm 0,2% mỗi lượt trong 5 lượt (2% → 1%), rồi giảm thêm 0,05% mỗi điểm Thống suất của vua. Mỗi trấn của vùng có thêm 40 + 5 × Võ lực của vua lính chư hầu giữ thành.",
 		"Chư hầu cống nạp mỗi lượt 5 × số sao của vua mỗi loại lương thực, gỗ, đá; vua từ 4 sao cống thêm khoáng sản, gỗ cứng, ngựa (4 sao 2, 5 sao 4, 6 sao 6 mỗi loại).",
 		"Chư hầu tự lập đạo quân (280 lính, tướng kém vua 1 sao) như một nước AI, giữ vùng, đánh chặn quân địch sắp đánh vùng đó khi mạnh gấp 1,2 lần, và đánh trấn địch giáp ranh khi mạnh gấp đôi (báo trước một lượt bằng đường vàng). Trấn chư hầu chiếm được về tay ta. Mất hết các trấn của vùng thì chư hầu sụp đổ.",
+		"# Quy phục và ly gián",
+		"Một nước giáp ranh ta chỉ còn tối đa 2 trấn và sức không quá một nửa ta có thể tự xin làm chư hầu (20% mỗi lượt, +2% mỗi điểm Ngoại giao của mưu sĩ giữ chức Ngoại giao). Đầu lượt hiện cửa sổ để Chấp nhận hoặc Từ chối (từ chối thì 5 lượt sau họ mới xin lại).",
+		"Chư hầu quy phục giữ các trấn của mình, đánh và hòa theo ta, có đạo quân riêng, cống nạp như chư hầu phong vương; trấn họ chiếm được là của họ. Họ có độ trung thành (bắt đầu 50): −5 mỗi lượt khi sức họ không kém ta, −10 khi ta mất một trấn, −20 khi ta mất một kinh đô, +3 khi ta thắng trận lớn, +10 khi mưu sĩ thăm hỏi. Về 0 thì họ ly khai và tuyên chiến.",
+		"Ly gián: trên bảng ngoại giao của một nước, chọn nước thứ hai; mưu sĩ Ngoại giao đi (5 lượt một lần), 20% + 4% mỗi điểm Ngoại giao, tối đa 75%. Thành: quan hệ giữa hai nước −50 ngay và −5 mỗi lượt trong 5 lượt, có thể làm khối rã hoặc họ đánh nhau. Lộ: cả hai nước −30 với ta.",
 	]],
 ]
 

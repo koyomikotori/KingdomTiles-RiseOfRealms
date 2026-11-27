@@ -18,7 +18,7 @@ const INCOME_FACTOR := 1.0
 
 
 static func raise_army(realm: Realm, state: KingdomState, nation: Realm.Nation) -> NationArmy:
-	var land := realm.region_towns(nation.region)
+	var land := realm.land_of(nation)
 	if land.is_empty():
 		return null
 	var home := land[0]
@@ -39,7 +39,7 @@ static func raise_army(realm: Realm, state: KingdomState, nation: Realm.Nation) 
 
 static func income(realm: Realm, nation: Realm.Nation) -> float:
 	var total := 0.0
-	for town in realm.region_towns(nation.region):
+	for town in realm.land_of(nation):
 		total += RealmWar.CAPITAL_INCOME if town.is_capital() else RealmWar.TOWN_INCOME
 	return total * INCOME_FACTOR
 
@@ -48,7 +48,7 @@ static func income(realm: Realm, nation: Realm.Nation) -> float:
 static func run_turn(realm: Realm, state: KingdomState) -> Array[String]:
 	var news: Array[String] = []
 	for nation in realm.vassals():
-		var land := realm.region_towns(nation.region)
+		var land := realm.land_of(nation)
 		if land.is_empty():
 			continue
 		var treasury: float = realm.treasury.get(nation.id, 0.0) + income(realm, nation)
@@ -57,7 +57,7 @@ static func run_turn(realm: Realm, state: KingdomState) -> Array[String]:
 			raise_army(realm, state, nation)
 		realm.treasury[nation.id] = minf(treasury, RealmWar.MAX_TREASURY)
 		for army in realm.armies_of(nation.id):
-			if realm.towns[army.town].owner == Realm.PLAYER and army.soldiers < army.max_soldiers:
+			if _friendly(realm, realm.towns[army.town].owner) and army.soldiers < army.max_soldiers:
 				army.soldiers = mini(army.max_soldiers, army.soldiers + ceili(army.max_soldiers * RealmWar.ARMY_REGEN))
 		news.append_array(_intercept(realm, state, nation))
 		news.append_array(_attack(realm, state, nation))
@@ -74,7 +74,7 @@ static func _intercept(realm: Realm, state: KingdomState, nation: Realm.Nation) 
 				or enemy.order_turn >= state.turn:
 			continue
 		var target := realm.towns[enemy.target]
-		if target.owner != Realm.PLAYER or target.nation != nation.id:
+		if not _in_land(nation, target):
 			continue
 		var group: Array = []
 		var power := 0
@@ -107,7 +107,7 @@ static func _attack(realm: Realm, state: KingdomState, nation: Realm.Nation) -> 
 		if not army.has_target() or army.order_turn >= state.turn:
 			continue
 		var target := realm.towns[army.target]
-		if target.owner == Realm.PLAYER or not RealmMap.are_neighbors(army.town, target.id) 				or not realm.diplomacy.at_war(Realm.PLAYER, target.owner):
+		if not RealmMap.are_neighbors(army.town, target.id) or not realm.diplomacy.at_war(nation.id, target.owner):
 			army.target = -1
 			continue
 		if not groups.has(target.id):
@@ -139,6 +139,21 @@ static func _attack(realm: Realm, state: KingdomState, nation: Realm.Nation) -> 
 		for army: NationArmy in holders:
 			realm.remove_army(army)
 		var old_owner := town.owner
+		if nation.submitted:
+			# A submitted nation keeps what it takes (GDD §38).
+			realm.diplomacy.note_capture(nation.id, old_owner, state.turn)
+			town.owner = nation.id
+			town.max_garrison = Realm.garrison_for(town.id, state.wars.enemy_scale)
+			town.garrison = 0
+			for army: NationArmy in group:
+				if realm.armies.has(army):
+					army.town = town_id
+			if town.is_capital() and old_owner != Realm.REBELS and realm.nations[old_owner].capital() == town_id:
+				RealmWar.fall(realm, owner, nation.id)
+				news.append("Chư hầu %s chiếm kinh đô %s: %s bị diệt!" % [nation.name, town.name, owner.name])
+			else:
+				news.append("Chư hầu %s chiếm trấn %s của %s." % [nation.name, town.name, owner.name])
+			continue
 		realm.diplomacy.note_capture(Realm.PLAYER, old_owner, state.turn)
 		town.owner = Realm.PLAYER
 		town.garrison = 0
@@ -167,7 +182,7 @@ static func _new_orders(realm: Realm, nation: Realm.Nation, turn: int) -> void:
 		var best_ratio := 0.0
 		for id in RealmMap.neighbors(army.town):
 			var town := realm.towns[id]
-			if town.owner == Realm.PLAYER or id == Realm.HOME_CAPITAL 					or not realm.diplomacy.at_war(Realm.PLAYER, town.owner):
+			if id == Realm.HOME_CAPITAL or not realm.diplomacy.at_war(nation.id, town.owner):
 				continue
 			var power := 0.0
 			for mate in realm.armies_at(army.town):
@@ -186,9 +201,21 @@ static func _new_orders(realm: Realm, nation: Realm.Nation, turn: int) -> void:
 				army.town = step
 
 
+## A town owned by our side (the kingdom or a vassal).
+static func _friendly(realm: Realm, owner: StringName) -> bool:
+	return realm.diplomacy.side(owner) == Realm.PLAYER
+
+
+## A town of the vassal's land: its own (submitted) or ours in its region (crowned).
+static func _in_land(nation: Realm.Nation, town: Realm.Town) -> bool:
+	if nation.submitted:
+		return town.owner == nation.id
+	return town.owner == Realm.PLAYER and town.nation == nation.id
+
+
 static func _on_border(realm: Realm, town: int) -> bool:
 	for id in RealmMap.neighbors(town):
-		if realm.towns[id].owner != Realm.PLAYER:
+		if not _friendly(realm, realm.towns[id].owner):
 			return true
 	return false
 
@@ -209,7 +236,7 @@ static func step_to_border(realm: Realm, nation: Realm.Nation, from: int) -> int
 			return step
 		for next in RealmMap.neighbors(town):
 			var candidate := realm.towns[next]
-			if not came_from.has(next) and candidate.owner == Realm.PLAYER and candidate.nation == nation.id:
+			if not came_from.has(next) and _in_land(nation, candidate):
 				came_from[next] = town
 				queue.append(next)
 	return -1

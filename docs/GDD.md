@@ -1368,7 +1368,7 @@ Chi tiết từng phần bàn khi bắt đầu phần đó; dưới đây là kh
 Chia M18f-b thành b1 (đạo quân AI, các nước đánh nhau) và b2 (chư hầu giữ trấn, ngoại giao đầy đủ với các nước, liên minh theo độ khó). Code không giả định đúng 5 nước để sau này thêm nước (tới khoảng 10).
 
 - **Quân giữ trấn giảm một nửa:** 110 / 160 / 220 lính theo khoảng cách (kinh đô ×2, nhân hệ số độ khó). Sức chống cự chủ yếu đến từ đạo quân đứng trong trấn. Save cũ được giảm theo khi tải.
-- **Ngân khố mỗi nước:** mỗi lượt thu 1 điểm mỗi trấn (kinh đô 3), nhân theo độ khó (Dễ ×0.7, Bình thường ×1, Khó ×1.3, Huyền thoại ×1.6). Đủ 10 điểm thì lập một đạo quân ở kinh đô (ngân khố giữ tối đa 20), tối đa 1 + (số trấn đang giữ / 3) đạo. Mất trấn thì nghèo đi.
+- **Ngân khố mỗi nước:** mỗi lượt thu 1 điểm mỗi trấn (kinh đô 3), nhân theo độ khó (Dễ ×0.7, Bình thường ×1, Khó ×1.3, Huyền thoại ×1.6). Đủ 10 điểm thì lập một đạo quân ở kinh đô (ngân khố giữ tối đa 20), tối đa 1 + (số trấn đang giữ / 4) đạo, **không quá 4 đạo** (trước là / 3, không giới hạn: Khó / Huyền thoại quân quá đông gây lag). Mất trấn thì nghèo đi.
 - **Đạo quân địch:** một tướng sinh ngẫu nhiên có chân dung (2 / 3 / 4 sao theo khoảng cách, Huyền thoại +1) và 200 / 280 / 380 lính (nhân hệ số độ khó), lính theo kiểu của nước đó. Đứng ở trấn của nước mình thì hồi 10% quân mỗi lượt.
 - **AI ra lệnh (cuối lượt):** đạo quân không có lệnh chọn trấn kề không phải của nước mình mà nó đủ sức: sức các đạo cùng đứng đó ≥ 1.5 × sức thủ nếu là trấn ta, ≥ 2 × nếu là trấn nước khác (các nước dè chừng nhau). Sức thủ = (quân giữ + các đạo quân trong trấn, hoặc với trấn ta: các đạo quân ta + dân binh) × tường thành. Dân binh: trấn chiếm được 40, trấn đất nhà (các gia tộc đã thống nhất) 300. Trấn của ta được ưu tiên theo độ khó (Dễ ×0.5, Bình thường ×1, Khó / Huyền thoại ×2). Kinh đô của ta (bàn cờ vương quốc) không bị nhắm ở b1. Không có mục tiêu thì đạo quân thiếu quân ở lại hồi sức, còn lại đi một chặng về phía biên giới.
 - **Báo trước một lượt:** lệnh đánh hiện bằng đường gạch đỏ từ đạo quân địch tới trấn bị nhắm. Lượt sau lệnh mới thực hiện, nên ta có một lượt để đưa quân tới giữ hoặc đánh chặn.
@@ -1392,7 +1392,7 @@ M18f-b2 chia thành b2a (chư hầu, phần này) và phần ngoại giao / liê
 - **Phong vương:** bấm kinh đô cũ (đang là của ta) của nước đã bị diệt, "Phong vương lập chư hầu", chọn một tướng ở nhà, sẵn sàng, không phải Tổng tướng. Có bảng xem trước (quân giữ trấn, mức nổi loạn cuối, cống nạp, sao tướng chư hầu) và hỏi xác nhận lần nữa. Tướng rời khỏi ta vĩnh viễn; trang bị được thu về kho (có thể vượt giới hạn kho). Mỗi vùng một vua. Các trấn vẫn là của ta (tài nguyên, chỗ quân, dân binh giữ nguyên).
 - **Chỉ số vua:** chỉ tính chỉ số gốc (trang bị đã thu về). Chỉ số gốc tối đa 10, mỗi lần đột phá +2: tướng 6★ tối đa 16 → quân giữ tối đa 120 / trấn, nổi loạn giảm thêm tối đa 0,8%.
 - **Quân chư hầu giữ thành:** mỗi trấn ta giữ trong vùng có thêm 40 + 5 × Võ lực của vua cùng giữ thành (hồi đầy mỗi lượt), cộng vào sức thủ mà AI tính khi chọn mục tiêu.
-- **Đạo quân chư hầu:** ngân khố cố định như AI độ khó Trung bình (1 điểm / trấn ta giữ trong vùng, kinh đô 3, ×1); 10 điểm lập một đạo, tối đa 1 + số trấn / 3. Mỗi đạo 280 lính, tướng sinh ngẫu nhiên kém vua 1 sao; đạo đầu lập ngay khi phong vương. Đứng ở trấn ta thì hồi 10% mỗi lượt. Cờ đạo quân mang màu nước cũ.
+- **Đạo quân chư hầu:** ngân khố cố định như AI độ khó Trung bình (1 điểm / trấn ta giữ trong vùng, kinh đô 3, ×1); 10 điểm lập một đạo, tối đa 1 + số trấn / 4, không quá 4 đạo. Mỗi đạo 280 lính, tướng sinh ngẫu nhiên kém vua 1 sao; đạo đầu lập ngay khi phong vương. Đứng ở trấn ta thì hồi 10% mỗi lượt. Cờ đạo quân mang màu nước cũ.
 - **Hành động (cuối lượt, trước các nước AI):** đánh chặn đạo quân địch đã báo lệnh đánh một trấn trong vùng khi các đạo chư hầu đứng kề nó mạnh ≥ 1,2 lần; đánh các trấn không phải của ta giáp ranh khi mạnh ≥ 2 lần sức thủ (báo trước một lượt bằng đường vàng); không có mục tiêu thì đi một chặng trong vùng về phía biên giới. Trấn chư hầu chiếm được về tay ta (chiếm kinh đô thì nước đó bị diệt). Các nước AI không nhắm đạo quân chư hầu, ta không đánh chặn được chúng.
 - **Giữ trấn:** khi địch đánh một trấn trong vùng, quân chư hầu giữ thành và các đạo chư hầu trong trấn cùng ta giữ thành. Thắng thì đạo chư hầu mất phần thương vong theo tỉ lệ quân; thua thì các đạo đó tan.
 - **Cống nạp mỗi lượt** (vào thu nhập vương quốc, dòng "Cống nạp của chư hầu"): 5 × sao vua mỗi loại lương thực, gỗ, đá; vua từ 4★ cống thêm khoáng sản, gỗ cứng, ngựa 2 × (sao − 3) mỗi loại (4★ 2, 5★ 4, 6★ 6).
@@ -1426,3 +1426,31 @@ Phần còn lại của M18f-b2 chia đôi: **b2b** (phần này: quan hệ, hò
   - **Tự rã:** quan hệ giữa hai nước trong khối (vì e dè kẻ mạnh) xuống dưới 20 thì nước yếu hơn rời khối; dưới −20 mà giáp ranh thì có thể tuyên chiến nhau. Khối còn 1 nước là tan.
 - **Các nước AI với nhau:** ngoài khối thì ban đầu chiến tranh với nhau (như b1). Hai nước chiến tranh ≥ 10 lượt mà không ai chiếm được trấn nào của bên kia thì 10% mỗi lượt ký hòa ước 15 lượt. Hai nước trung lập giáp ranh tuyên chiến khi quan hệ ≤ −20, hoặc < 20 mà nước mạnh hơn gấp 2 lần.
 - **Bảng ngoại giao:** trên thẻ trấn của một nước (và danh sách "Các nước" dưới danh sách đạo quân, bấm để xem kinh đô; dưới tên kinh đô trên bản đồ ghi "Khối chống ta" / hòa ước / bất tương xâm / liên minh): trạng thái và số lượt còn lại, thanh quan hệ + chi tiết yếu tố, khối, các nước họ đang chiến tranh / liên minh, các nút Cầu hòa / Bất tương xâm / Liên minh / Thăm hỏi (mưu sĩ, 1 lần / 5 lượt mỗi nước) / Tuyên chiến / Hủy liên minh, có % và lý do khóa.
+
+## 38. Quy phục và ly gián (M18f-b2c, đã chốt)
+
+- **Tự xin quy phục (không có nút ép):** cuối mỗi lượt, một nước độc lập còn sống **giáp ranh đất ta**, chỉ còn **tối đa 2 trấn** (kinh đô + 1 trấn) **và** sức ≤ 1/2 sức ta (sức như §37) có khả năng **20% + 2% mỗi điểm Ngoại giao của mưu sĩ giữ chức Ngoại giao** tự xin làm chư hầu. Mỗi lượt nhiều nhất một nước xin. Nước xa (không giáp ranh) không xin.
+- **Cửa sổ đầu lượt** (sau các trận của lượt, trước bảng tin quan trọng): sức, số trấn, vua của họ, cống nạp dự tính, lời cố vấn; nút **Chấp nhận** / **Từ chối**. Từ chối thì 5 lượt sau nước đó mới xin lại.
+- **Chư hầu quy phục:** nước vẫn giữ các trấn của mình (màu cũ), có vua riêng (tướng sinh ngẫu nhiên, sao = sao tướng nước đó theo khoảng cách + 1, tối đa 6). Rời khối chống ta; mọi lệnh đánh giữa hai bên bị hủy. **Chiến tranh / hòa theo ta:** họ đánh đúng các nước đang chiến tranh với ta, không đánh các nước ta có hòa ước / bất tương xâm / liên minh. Các nước AI đang chiến tranh với ta cũng đánh trấn của họ.
+  - Cống nạp mỗi lượt như chư hầu phong vương (§36, theo sao vua); có ngân khố và đạo quân như chư hầu phong vương (đạo 280 lính, tướng kém vua 1 sao, hồi 10% ở trấn của họ hoặc của ta), chặn đạo quân địch sắp đánh trấn của họ, đánh trấn kẻ thù của ta giáp ranh khi mạnh ≥ 2 lần.
+  - **Trấn họ chiếm được là của họ** (họ lớn lên); chiếm kinh đô thì nước kia bị diệt, các trấn về tay họ.
+  - Không nổi loạn, không có quân chư hầu giữ trấn của ta (họ giữ trấn của họ bằng quân thủ như trước).
+  - Sức ta (khi các nước tính) không gồm quân của chư hầu quy phục.
+- **Trung thành** (0–100, bắt đầu 50; chư hầu phong vương không có, không bao giờ phản):
+  - Mỗi lượt sức họ ≥ sức ta: −5 (tới khi ta mạnh hơn trở lại).
+  - Ta mất một trấn: −10; mất một kinh đô (bất kỳ vùng nào): −20.
+  - Ta thắng trận lớn (công thành, giữ thành, đánh chặn): +3.
+  - Thăm hỏi bằng mưu sĩ (vắng 1 lượt, 5 lượt một lần mỗi nước): +10.
+  - **Về 0: ly khai**, tuyên chiến với ta; vua thành vua nước độc lập (đạo quân, ngân khố giữ nguyên, quan hệ với ta −30).
+- **Ly gián** (nút trên bảng ngoại giao của một nước độc lập, chọn nước thứ hai): mưu sĩ giữ chức Ngoại giao đi (vắng 1 lượt), **chỉ 1 lần mỗi 5 lượt**. Khả năng 20% + 4% mỗi điểm Ngoại giao, tối đa 75%, hiện trước khi gửi.
+  - Thành công: quan hệ giữa hai nước −50 ngay (phai dần như sự kiện), thêm −5 mỗi lượt trong 5 lượt. Có thể làm khối chống ta rã hoặc họ tuyên chiến nhau (theo luật §37).
+  - Lộ (thất bại): cả hai nước −30 quan hệ với ta.
+- **Chiến thắng (M18f-c):** nước bị diệt hoặc đã thành chư hầu (phong vương hay quy phục) đều tính là đã chinh phục; không còn nước độc lập nào thì Chúa công xưng Hoàng đế.
+
+## 39. Chống lag khi quân AI đông (đã chốt)
+
+- **Nguyên nhân:** trận đánh tính chậm theo bình phương số đơn vị. Đo: 700 lính mỗi phe (25 đơn vị) mất 1 giây một trận, 1500 lính 4 giây, 3000 lính 15 giây; các trận giữa các nước AI (cả liên minh) tính trọn lúc hết lượt nên máy đứng.
+- **Gộp đơn vị:** mỗi phe AI trong một trận (gia tộc, nước, quân giữ trấn, quân phản loạn) **tối đa 12 đơn vị**; mỗi gia tộc cho mượn quân tối đa 6 đơn vị. Quân đông hơn thì mỗi đơn vị to hơn (mọi loại quân lớn đều nhau), tổng lính và sức mạnh giữ nguyên. Sau khi gộp, trận 3000 lính mỗi phe chỉ còn ~0,3 giây.
+- **Hình người:** mỗi đơn vị vẽ tối đa 10 hình; đơn vị to thì mỗi hình đại diện nhiều lính hơn (ít nhất 7).
+- **Số đạo quân mỗi nước:** 1 + 1 đạo mỗi 4 trấn, tối đa 4 đạo (cả chư hầu).
+- Quân của người chơi không bị gộp (mỗi đội vẫn là một đơn vị).

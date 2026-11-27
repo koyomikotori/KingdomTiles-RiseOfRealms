@@ -113,6 +113,28 @@ const TRIBUTE_BASIC: Array[StringName] = [&"food", &"wood", &"stone"]
 const TRIBUTE_RARE_FROM := 4
 const TRIBUTE_RARE_PER_STAR := 2
 const TRIBUTE_RARE: Array[StringName] = [&"ore", &"hardwood", &"horses"]
+## A weak neighbor asking to submit (GDD §38, M18f-b2c): at most SUBMIT_MAX_TOWNS towns, power at
+## most SUBMIT_POWER_SHARE of ours, bordering our land; SUBMIT_CHANCE + SUBMIT_PER_DIPLOMACY per
+## point of the Ngoại giao post holder a turn; refused, it asks again SUBMIT_REFUSE_WAIT turns later.
+const SUBMIT_MAX_TOWNS := 2
+const SUBMIT_POWER_SHARE := 0.5
+const SUBMIT_CHANCE := 0.2
+const SUBMIT_PER_DIPLOMACY := 0.02
+const SUBMIT_REFUSE_WAIT := 5
+## A submitted nation's king: the stars of its nation's generals + this.
+const SUBMIT_KING_STARS := 1
+## Loyalty of a submitted nation (0..LOYALTY_MAX, starts at LOYALTY_START; at 0 it breaks away).
+const LOYALTY_START := 50
+const LOYALTY_MAX := 100
+const LOYALTY_STRONGER := -5
+const LOYALTY_TOWN_LOST := -10
+const LOYALTY_CAPITAL_LOST := -20
+const LOYALTY_WIN := 3
+const LOYALTY_VISIT := 10
+## Loyalty at or under this shows as a warning.
+const LOYALTY_LOW := 20
+## The relation with us of a nation breaking away.
+const BREAKAWAY_MEMORY := -30.0
 
 
 class Town:
@@ -145,6 +167,11 @@ class Nation:
 	## `vassal_turn`.
 	var vassal: General = null
 	var vassal_turn := 0
+	## A living nation that asked to be our vassal (GDD §38): keeps its towns, follows our wars, pays
+	## tribute; `loyalty` 0 → it breaks away. `submit_after`: it may ask again from this turn.
+	var submitted := false
+	var loyalty := 0
+	var submit_after := 0
 
 	func capital() -> int:
 		return RealmMap.town_id(region, RealmMap.CAPITAL)
@@ -197,6 +224,8 @@ var pending_revolt := {}
 var rng := RandomNumberGenerator.new()
 ## Pacts and relations between the kingdom and the nations (GDD §37, M18f-b2b).
 var diplomacy := RealmDiplomacy.new()
+## The nation asking to submit at the start of the turn (GDD §38), &"" for none; saved.
+var pending_submission: StringName = &""
 
 
 ## Starts the phase: the nations take shuffled regions, every town gets its name and garrison.
@@ -679,16 +708,16 @@ static func _add_rebels(side: BattleSide, soldiers: int, state: KingdomState) ->
 static func _add_weighted(side: BattleSide, weights: Dictionary, soldiers: int, state: KingdomState) -> void:
 	var ids := weights.keys()
 	var remaining := soldiers
+	var shares: Array = []
 	for i in ids.size():
 		var unit: UnitData = state.units.get(ids[i])
 		if unit == null:
 			continue
 		var share := remaining if i == ids.size() - 1 else mini(remaining, roundi(soldiers * weights[ids[i]]))
 		remaining -= share
-		while share > 0:
-			var count := mini(share, state.wars.squad_size(unit))
-			side.add_unit(unit, count)
-			share -= count
+		shares.append([unit, share])
+	# At most Wars.MAX_ENEMY_UNITS units, bigger squads for a big army (the battle's cost).
+	state.wars.add_squads(side, shares)
 
 
 ## The walls: every defender (lent or not) fights better and holds longer.
@@ -723,6 +752,7 @@ func finish_siege(state: KingdomState, group: Array, town_id: int, record: Battl
 		var old_owner := town.owner
 		diplomacy.note_capture(PLAYER, old_owner, state.turn)
 		loot = capture(state, town)
+		change_loyalty(LOYALTY_WIN)
 		if town.is_capital() and old_owner != PLAYER and old_owner != REBELS \
 				and nations[old_owner].capital() == town_id:
 			destroyed = old_owner
@@ -881,7 +911,7 @@ func vassal_of(town: Town) -> Nation:
 	if town.owner != PLAYER or town.nation == PLAYER or not nations.has(town.nation):
 		return null
 	var nation := nations[town.nation]
-	return nation if nation.vassal != null else null
+	return nation if nation.vassal != null and not nation.submitted else null
 
 
 func vassals() -> Array[Nation]:
@@ -969,6 +999,7 @@ func crown(state: KingdomState, nation_id: StringName, general: General) -> Resu
 	nation.vassal_turn = state.turn
 	treasury[nation_id] = 0.0
 	RealmVassals.raise_army(self, state, nation)
+	sync_followers()
 	return Result.OK
 
 
@@ -977,13 +1008,133 @@ func crown(state: KingdomState, nation_id: StringName, general: General) -> Resu
 func check_vassals() -> Array[String]:
 	var fallen: Array[String] = []
 	for nation in vassals():
-		if region_towns(nation.region).is_empty():
+		if land_of(nation).is_empty() or (nation.submitted and nation.destroyed):
 			nation.vassal = null
+			nation.submitted = false
 			treasury.erase(nation.id)
 			for army in armies_of(nation.id):
 				remove_army(army)
 			fallen.append(nation.name)
+	sync_followers()
 	return fallen
+
+
+## The towns a vassal rules: a submitted nation's own towns, or the towns we hold in a crowned
+## vassal's region.
+func land_of(nation: Nation) -> Array[Town]:
+	if not nation.submitted:
+		return region_towns(nation.region)
+	var result: Array[Town] = []
+	for town in towns:
+		if town.owner == nation.id:
+			result.append(town)
+	return result
+
+
+## Tells the diplomacy which nations fight on our side (every vassal).
+func sync_followers() -> void:
+	diplomacy.followers.clear()
+	for nation in vassals():
+		diplomacy.followers[nation.id] = true
+
+
+func submitted_nations() -> Array[Nation]:
+	return vassals().filter(func(nation: Nation) -> bool: return nation.submitted)
+
+
+# --- Submission (GDD §38, M18f-b2c) ------------------------------------------------------------
+
+## Whether `nation` is weak enough and close enough to ask to submit this turn (the roll aside).
+func can_submit(state: KingdomState, nation: Nation, turn: int) -> bool:
+	if nation.destroyed or nation.submitted or nation.id == REBELS or turn < nation.submit_after:
+		return false
+	if count_owned(nation.id) > SUBMIT_MAX_TOWNS or not RealmDiplomacy.borders(self, nation.id, PLAYER):
+		return false
+	return RealmDiplomacy.power(self, state, nation.id) <= RealmDiplomacy.power(self, state, PLAYER) * SUBMIT_POWER_SHARE
+
+
+static func submission_chance(state: KingdomState) -> float:
+	return SUBMIT_CHANCE + SUBMIT_PER_DIPLOMACY * state.advisors.post_stat(&"diplomacy")
+
+
+## The stars of the king a submitting nation would have.
+static func king_stars(nation: Nation, difficulty: int) -> int:
+	return mini(RealmWar.MAX_STARS, RealmWar.general_stars(nation, difficulty) + SUBMIT_KING_STARS)
+
+
+## Accepts the pending offer: the nation becomes our vassal with its own king.
+func accept_submission(state: KingdomState) -> Result:
+	var nation_id := pending_submission
+	pending_submission = &""
+	if not nations.has(nation_id) or nations[nation_id].destroyed or nations[nation_id].submitted:
+		return Result.NOT_CONQUERED
+	submit(state, nations[nation_id])
+	return Result.OK
+
+
+func refuse_submission(state: KingdomState) -> void:
+	if nations.has(pending_submission):
+		nations[pending_submission].submit_after = state.turn + SUBMIT_REFUSE_WAIT
+	pending_submission = &""
+
+
+## `nation` becomes our vassal: a king of its own, loyalty LOYALTY_START, out of the bloc, every
+## order between it and us called off; from now on it fights our wars.
+func submit(state: KingdomState, nation: Nation) -> void:
+	nation.vassal = state.generals.generate(king_stars(nation, state.difficulty))
+	nation.vassal_turn = state.turn
+	nation.submitted = true
+	nation.loyalty = LOYALTY_START
+	diplomacy.remove(nation.id)
+	diplomacy.set_pact(self, state, PLAYER, nation.id, RealmDiplomacy.Pact.NEUTRAL)
+	for army in armies_of(nation.id):
+		army.target = -1
+	sync_followers()
+
+
+func change_loyalty(amount: int) -> void:
+	for nation in submitted_nations():
+		nation.loyalty = clampi(nation.loyalty + amount, 0, LOYALTY_MAX)
+
+
+## `nation` breaks away: no longer our vassal, at war with us, at peace with no one else.
+func break_away(state: KingdomState, nation: Nation) -> void:
+	nation.submitted = false
+	nation.vassal = null
+	nation.loyalty = 0
+	nation.submit_after = state.turn + SUBMIT_REFUSE_WAIT
+	sync_followers()
+	for id in RealmDiplomacy.parties(self):
+		if id != nation.id and id != PLAYER:
+			diplomacy.set_pact(self, state, nation.id, id, RealmDiplomacy.Pact.NEUTRAL)
+	diplomacy.set_pact(self, state, PLAYER, nation.id, RealmDiplomacy.Pact.WAR)
+	diplomacy.add_memory(PLAYER, nation.id, BREAKAWAY_MEMORY)
+
+
+## End of a turn for the submitted nations: loyalty falls while they are as strong as we are; at 0
+## they break away. Then, with no offer yet, one weak neighbor may ask to submit. Returns
+## {"news": [String], "broke_away": [names]}.
+func _submission_turn(state: KingdomState) -> Dictionary:
+	var news: Array[String] = []
+	var broke: Array[String] = []
+	var ours := RealmDiplomacy.power(self, state, PLAYER)
+	for nation in submitted_nations():
+		if RealmDiplomacy.power(self, state, nation.id) >= ours:
+			nation.loyalty = maxi(0, nation.loyalty + LOYALTY_STRONGER)
+			news.append("Chư hầu %s thấy mình không kém ta, lòng trung thành giảm (còn %d)." % [nation.name, nation.loyalty])
+		elif nation.loyalty <= LOYALTY_LOW:
+			news.append("Chư hầu %s có lòng trung thành thấp (%d): nên cử mưu sĩ thăm hỏi." % [nation.name, nation.loyalty])
+		if nation.loyalty <= 0:
+			break_away(state, nation)
+			broke.append(nation.name)
+			news.append("Chư hầu %s ly khai và tuyên chiến với ta!" % nation.name)
+	pending_submission = &""
+	var chance := submission_chance(state)
+	for nation in RealmWar.live_nations(self):
+		if can_submit(state, nation, state.turn + 1) and rng.randf() < chance:
+			pending_submission = nation.id
+			break
+	return {"news": news, "broke_away": broke}
 
 
 ## The vassal's share of a battle for `town`: its armies there lose their share of the defenders'
@@ -1019,7 +1170,7 @@ func end_turn(state: KingdomState) -> Dictionary:
 	pending_attacks.clear()
 	if not active:
 		return {"replenished": 0, "marched": [], "news": [], "threats": [], "attacks": [], "revolted": [],
-				"revolt": {}}
+				"revolt": {}, "broke_away": [], "submission": &""}
 	# Squads that deserted (unpaid upkeep) or were lost elsewhere leave their army; an empty army
 	# breaks up.
 	for force in forces.duplicate():
@@ -1083,8 +1234,11 @@ func end_turn(state: KingdomState) -> Dictionary:
 			pending_revolt = {"town": town.id, "rebels": rebels}
 	for name in check_vassals():
 		news.append("Chư hầu %s sụp đổ: vùng đất đã mất hết." % name)
+	var submission := _submission_turn(state)
+	news.append_array(submission.news)
 	return {"replenished": regained, "marched": marched, "news": news, "threats": war.threats,
-			"attacks": pending_attacks.duplicate(true), "revolted": revolted, "revolt": pending_revolt}
+			"attacks": pending_attacks.duplicate(true), "revolted": revolted, "revolt": pending_revolt,
+			"broke_away": submission.broke_away, "submission": pending_submission}
 
 
 # --- Enemy attacks on our towns and interceptions (M18f-b1) -----------------------------------
@@ -1205,6 +1359,7 @@ func finish_intercept(state: KingdomState, group: Array, army_id: int, record: B
 	if army != null:
 		if won:
 			remove_army(army)
+			change_loyalty(LOYALTY_WIN)
 		else:
 			RealmWar.spread_losses(self, [army], enemy_lost)
 	var disbanded := 0
@@ -1277,6 +1432,8 @@ func _finish_town_battle(state: KingdomState, town: Town, record: BattleRecord, 
 	var enemy_lost := BattleOutcome.soldiers_lost(record, BattleRecord.ATTACKER)
 	var retreated_to := -1
 	_vassal_losses(town, record, won)
+	if won and not revolt:
+		change_loyalty(LOYALTY_WIN)
 	if not won:
 		retreated_to = _lose_town(state, town, maxi(1, attackers - enemy_lost), revolt, to)
 	for force in here:
@@ -1293,6 +1450,7 @@ func _finish_town_battle(state: KingdomState, town: Town, record: BattleRecord, 
 ## nation's land, to the rebels) holding `holders` soldiers; armies there fall back to a
 ## neighboring town of ours (or the capital) and drop their orders. Returns where they went.
 func _lose_town(state: KingdomState, town: Town, holders: int, revolt: bool, to: StringName = &"") -> int:
+	change_loyalty(LOYALTY_CAPITAL_LOST if town.is_capital() else LOYALTY_TOWN_LOST)
 	if to != &"":
 		town.owner = to
 		town.max_garrison = garrison_for(town.id, state.wars.enemy_scale)
@@ -1381,6 +1539,11 @@ func to_save(state: KingdomState) -> Dictionary:
 		if nation.vassal != null:
 			entry["vassal"] = nation.vassal.to_save()
 			entry["vassal_turn"] = nation.vassal_turn
+		if nation.submitted:
+			entry["submitted"] = true
+			entry["loyalty"] = nation.loyalty
+		if nation.submit_after > 0:
+			entry["submit_after"] = nation.submit_after
 		nation_saves[String(nation.id)] = entry
 	var force_saves: Array = []
 	for force in forces:
@@ -1393,7 +1556,7 @@ func to_save(state: KingdomState) -> Dictionary:
 	return {"v": SAVE_VERSION, "towns": town_saves, "nations": nation_saves, "forces": force_saves,
 			"revolt": pending_revolt, "armies": armies.map(func(army: NationArmy) -> Dictionary: return army.to_save()),
 			"treasury": treasury_saves, "next_army": next_army_id, "attacks": pending_attacks,
-			"diplomacy": diplomacy.to_save(state)}
+			"diplomacy": diplomacy.to_save(state), "submission": String(pending_submission)}
 
 
 static func _officer_from(state: KingdomState, ref: Dictionary) -> Officer:
@@ -1413,9 +1576,12 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 	armies.clear()
 	treasury.clear()
 	pending_attacks.clear()
+	pending_submission = &""
+	diplomacy.followers.clear()
 	next_army_id = 1
 	if not active:
 		return
+	pending_submission = StringName(data.get("submission", ""))
 	var revolt: Dictionary = data.get("revolt", {})
 	if not revolt.is_empty():
 		pending_revolt = {"town": int(revolt.town), "rebels": int(revolt.rebels)}
@@ -1430,6 +1596,9 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 		if not vassal_data.is_empty():
 			nation.vassal = General.from_save(vassal_data)
 			nation.vassal_turn = int(entry.get("vassal_turn", 0))
+		nation.submitted = bool(entry.get("submitted", false)) and nation.vassal != null
+		nation.loyalty = int(entry.get("loyalty", 0))
+		nation.submit_after = int(entry.get("submit_after", 0))
 		nation.color = REBEL_COLOR if nation.id == REBELS else RealmMap.nation_color(nation.id, state.player_color)
 		nations[nation.id] = nation
 	for i in data.towns.size():
@@ -1489,3 +1658,4 @@ func load_save(data: Dictionary, state: KingdomState) -> void:
 		diplomacy.load_save(data.diplomacy, state)
 	else:
 		diplomacy.start(self, state)
+	sync_followers()
